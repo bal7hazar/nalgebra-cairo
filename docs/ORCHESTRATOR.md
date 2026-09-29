@@ -100,7 +100,9 @@ large directly.
   automatically) and the ENFORCING job `Consumer cost` that merges them into one verdict (the
   required check; `report_only` entries of `consumer_cost.toml`, the facade among them, are shown and
   never gated; `--report-only-marginals` is the transition switch that gates lines and closures
-  only). A deeper measurement of a few crates: `--package A --package B --no-closures --repeat 9
+  only: ON in `ci.yml` until the re-cut of the crate map, owner decision 2026-09-29, because
+  `nalgebra_dynamic`'s marginal median is 8.7 s on the current map; `--merge` accepts it too, to
+  re-judge downloaded shard files). A deeper measurement of a few crates: `--package A --package B --no-closures --repeat 9
   --interleave`.
 - `scripts/facade_features.py` (CI job `Facade features`): consumers of the workspace facade naming
   its five no-op features (`statistics`, `blas`, `dynamic`, `sparse`, `io`; docs/SPLIT.md §17) build,

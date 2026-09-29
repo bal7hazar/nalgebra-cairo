@@ -70,6 +70,10 @@ jobs:
   # own baseline, and the job `Consumer cost` merges the shards into ONE verdict (the required check).
   # The facade and the closures that contain it are `report_only` in consumer_cost.toml (they fail
   # gate 3 by construction, docs/SPLIT.md §12.1).
+  # TRANSITION (WP 9-NS11b, owner decision 2026-09-29): `--report-only-marginals` keeps gate 2 (the
+  # marginal cost) reported only while the crate map is re-cut: `nalgebra_dynamic`'s marginal median
+  # is 8.7 s on the current map (run 36542273626). Lines (gate 1) and the declared closures (gate 3)
+  # are enforced. The orchestrator drops the flag after the re-cut.
   consumer-cost-shard:
     name: Consumer cost shard (${{ matrix.shard }})
     runs-on: ubuntu-latest
@@ -85,7 +89,7 @@ jobs:
         run: |
           [ -x /usr/bin/time ] || sudo apt-get install -y time > /dev/null
           echo "runner: $(nproc) vCPU, $(free -g | awk '/Mem:/ {print $2}') GB"
-          python3 scripts/consumer_cost.py --report-only --repeat 5 --interleave \
+          python3 scripts/consumer_cost.py --report-only --report-only-marginals --repeat 5 --interleave \
             --shard "${{ matrix.shard }}/${{ strategy.job-total }}" \
             --json "consumer_cost_${{ matrix.shard }}.json" | tee consumer_cost.md
           { echo "### Consumer cost, shard ${{ matrix.shard }}/${{ strategy.job-total }}"; echo; cat consumer_cost.md; } >> "$GITHUB_STEP_SUMMARY"

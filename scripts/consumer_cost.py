@@ -665,7 +665,7 @@ def render(results, gates, metric, rounds, modules=False):
     return "\n".join(lines)
 
 
-def merge(paths, json_out):
+def merge(paths, json_out, report_only_marginals=False):
     """Combine the JSON files of several shards: one table, one verdict (exit 1 when a gated row
     fails in any shard, 2 when a file is missing or unreadable)."""
     rows, gates, metric, rounds, baselines = [], None, "raw", 1, []
@@ -681,6 +681,13 @@ def merge(paths, json_out):
         rounds = max(rounds, data.get("rounds", 1))
         baselines.append({"file": path, "shard": data.get("shard"), "baseline": data.get("baseline")})
         rows += data["results"]
+    if report_only_marginals:  # re-judge: gate 2 reported only (the shards may have gated it)
+        for r in rows:
+            moved = [f for f in r.get("fails", []) if f.startswith("marginal ")]
+            if moved:
+                r["fails"] = [f for f in r["fails"] if f not in moved]
+                r["reported_fails"] = r.get("reported_fails", []) + moved
+                r["verdict"] += " (marginal reported, not gated)"
     names = [r["crate"] for r in rows]
     dup = sorted({n for n in names if names.count(n) > 1})
     if dup:
@@ -744,7 +751,7 @@ def main():
     if args.self_test:
         return self_test()
     if args.merge:
-        return merge(args.merge, args.json)
+        return merge(args.merge, args.json, args.report_only_marginals)
     if args.repeat < 1:
         sys.exit("error: --repeat must be at least 1")
 
