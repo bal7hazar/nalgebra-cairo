@@ -818,3 +818,27 @@ which everyday methods of dimensions ≤ 4 (`norm()`, `normalize()`, `dot`, `tra
 `fixed_rows`, …) live in `core` / `static3` / `static4` and therefore do not need those five
 crates. If the common methods are already in the light closures, the five families are advanced
 use and a documented cost is enough; the programme session decides with the table after NS11.
+
+## 17. Facade features in 0.1.1 and the release prerequisites (programme session, 2026-09-29)
+
+Supersedes §12.1's removal rule for the patch release: **not breaking a consumer manifest wins**.
+- `statistics`, `blas`, `dynamic`, `sparse`, `io` save nothing once their code is in sub-crates
+  the facade always depends on; they stay in 0.1.1 as **documented no-ops** and are removed in
+  0.2.0. Conditions: the facade's `Scarb.toml` comments each of the five ("kept for manifest
+  compatibility; saves nothing since the split; removed in 0.2.0"); the README's feature table
+  separates the features that still save compile work (`closures` and the linalg families, which
+  still gate code inside the sub-crates, with the measured saving of `default-features = false` on
+  the facade) from the five no-ops; CHANGELOG 0.1.1 has a **Deprecated** section naming them and
+  pointing to the sub-crates; a **CI test resolves a manifest that names each of the five**.
+- `nalgebra_linalg6`'s marginal (4.1 s / 0.96 GB in one CI round after NS10): decided on the median
+  of several runner rounds; above the gate, cut it (SVD / eigen versus QR / Cholesky / UDU) before
+  the release. The gate is not relaxed.
+- Needed for the release go: the end-of-split table of §16 / §16.2 (dimension 5-6 closures, the
+  five base families with static 1-4, cheapest cuts, everyday methods already in the light crates,
+  `nalgebra_reflections6`), the final name list for the owner, and the note that `nalgebra_glam`
+  0.1.1 needs `glam` ≥ 0.4.1.
+
+Remaining lots: NS11a (dynamic, sparse, pure facade, strict path proof) → NS11b (READMEs incl. the
+facade tables, no-op features with the CI compatibility test, CHANGELOG 0.1.1, resumable release
+script, `Consumer cost` enforcing on medians, `linalg6` decision) → NS12 (the end-of-split
+measurement table on the GitHub runner) → release go.
