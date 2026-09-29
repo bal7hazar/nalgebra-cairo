@@ -7,7 +7,7 @@ use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::vector2::Vector2;
-use nalgebra_linalg4::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 
 /// The tridiagonalisation `A = Q T Qᵀ` of a symmetric `Matrix2<T>`: `T` symmetric tridiagonal,

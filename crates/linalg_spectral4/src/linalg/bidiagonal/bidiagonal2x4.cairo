@@ -8,7 +8,7 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix2x4::Matrix2x4;
 use nalgebra_core::base::vector2::Vector2;
-use nalgebra_linalg4::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 
 /// The bidiagonalisation `A = U D Vᵀ` of a `Matrix2x4<T>`: `D` 2x2 LOWER bidiagonal (`2 < 4`),

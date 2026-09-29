@@ -7,6 +7,7 @@
 //! squares, `docs/API_PARITY.md`).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
 use nalgebra_shapes5::base::matrix5::Matrix5;

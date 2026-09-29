@@ -4,11 +4,11 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 use crate::base::matrix5::Matrix5;
 use crate::base::vector4::Vector4;
 use crate::base::vector5::Vector5;
-use crate::linalg::householder_kernels::HouseholderKernelTrait;
 
 /// The Hessenberg decomposition `A = Q H Qᵀ` of a `Matrix5<T>`: `H` upper Hessenberg (zero below
 /// the first subdiagonal), `Q` orthogonal.

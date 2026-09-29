@@ -8,6 +8,7 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_static3::base::matrix1::Matrix1Trait;
 use nalgebra_static3::base::matrix2::Matrix2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;

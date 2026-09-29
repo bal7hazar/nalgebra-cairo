@@ -7,7 +7,7 @@ use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::vector2::Vector2;
-use nalgebra_linalg4::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use simba::scalar::Real;
 
 /// The Hessenberg decomposition `A = Q H Qᵀ` of a `Matrix2<T>`: `H` upper Hessenberg (zero below

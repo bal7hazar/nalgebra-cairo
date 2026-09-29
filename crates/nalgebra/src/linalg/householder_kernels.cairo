@@ -18,5 +18,3 @@
 //! Rounding: every norm is ONE floored square root of an exact sum of squares (`Real::normN` /
 //! the wide accumulator), every quotient correctly rounded with one prepared divisor per pass. A
 //! one-component axis is `sign(x0)`, exactly. Panics on overflow (`|x0| + |x|` must fit).
-
-pub use nalgebra_linalg4::linalg::householder_kernels::*;

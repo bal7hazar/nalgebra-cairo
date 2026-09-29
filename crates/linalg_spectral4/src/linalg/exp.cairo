@@ -10,6 +10,7 @@ use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::base::matrix4::Matrix4;
+use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_linalg4::linalg::lu::lu2::Lu2Trait;
 use nalgebra_linalg4::linalg::lu::lu3::Lu3Trait;
 use nalgebra_linalg4::linalg::lu::lu4::Lu4Trait;

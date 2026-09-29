@@ -4,6 +4,7 @@
 //! covers `DMatrix` too: not ported (`SquareMatrix` only requires the static squares,
 //! `docs/API_PARITY.md`).
 
+use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_shapes5::base::matrix5::Matrix5;
 use nalgebra_shapes6::base::matrix6::Matrix6;
 use nalgebra_static5::base::matrix5::Matrix5Trait;
