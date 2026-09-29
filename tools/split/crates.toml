@@ -4,12 +4,11 @@
 # R1 state: every crate but the decompositions follows the approved re-cut
 # (`tools/split/crates.recut.toml`, §18.1): `core`, `types2`..`types6`, `static_core`,
 # `static2`..`static6_*`, `geometry2`..`geometry6`, `transform2` / `transform3`,
-# `statistics2`..`statistics6`, `blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse`, and
-# `linalg_core` with the Givens methods (`GivensRotationTrait`). The decomposition crates keep
-# their names and their contents (`linalg4`, `linalg_svd_eigen4`, `linalg_pivot4`,
-# `linalg_spectral4`, `linalg5`, `linalg_pivot5`, `linalg_spectral5`, `linalg6`, `linalg_pivot6`,
-# `linalg_spectral6`, with the rules of the 27-crate map) until move R2 switches them to the
-# proposal's `linalg*2`..`linalg*6`.
+# `statistics2`..`statistics6`, `blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse`. The
+# decomposition crates keep their names and their contents (`linalg4`, `linalg_svd_eigen4`,
+# `linalg_pivot4`, `linalg_spectral4`, `linalg5`, `linalg_pivot5`, `linalg_spectral5`, `linalg6`,
+# `linalg_pivot6`, `linalg_spectral6`, with the rules of the 27-crate map) until move R2 switches
+# them to the proposal's `linalg*2`..`linalg*6`.
 #
 # Read by `tools/split/cratemap.py`, hence by the generators (`tools/shapegen`, `tools/linalggen`),
 # `scripts/api_parity.py`, `tools/split/public_paths.py` and `tools/split/rewrite_imports.py`.
@@ -88,7 +87,6 @@ statistics4 = "nalgebra_statistics4"
 statistics5 = "nalgebra_statistics5"
 statistics6 = "nalgebra_statistics6"
 blas = "nalgebra_blas"
-linalg_core = "nalgebra_linalg_core"
 linalg4 = "nalgebra_linalg4"
 linalg_svd_eigen4 = "nalgebra_linalg_svd_eigen4"
 linalg_pivot4 = "nalgebra_linalg_pivot4"
@@ -146,6 +144,8 @@ names = [
     # WP 9-R1: the type-level kernels of the rotation / translation conversions (docs/SPLIT.md
     # §18.3), called by the geometry methods of the crates above
     "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait",
+    # WP 9-R1 (`transform2`): the kernels of the homogeneous transforms, used by `transform3`
+    "TransformKernels",
 ]
 
 # [label_bands]: the dimension of the items whose name does not say it, for `strict_calls`
@@ -259,17 +259,21 @@ by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
 # R1 (until R2): the permutation methods stay with their types (the proposal moves them to
-# `linalg2`..`linalg5` with the decompositions); the field accessors of `GivensRotation` stay in
-# `core`: the `GivensRotate` impls of every types crate read them (docs/SPLIT.md §18.5)
+# `linalg2`..`linalg5` with the decompositions, docs/SPLIT.md §18.5)
 [[rule]]
 file = ["linalg/lu.cairo", "linalg/lu/perm1_5.cairo"]
 name = "Perm[1-5]Trait"
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5" }
 
+# `GivensRotation` (upstream `linalg::givens`), its methods and the traits of its impls: `types2`,
+# the lowest crate that can hold `cancel_y(Vector2)`; the struct's fields are crate-private, so its
+# constructors cannot sit in a crate above it, and the declarations of `GivensRotate` /
+# `GivensRotateRows` name it (WP 9-R1: not `core` / `linalg_core`)
 [[rule]]
-name = "GivensRotationInternalTrait"
-crate = "core"
+name = "GivensRotation|GivensRotationTrait|GivensRotationInternalTrait|GivensRotate|GivensRotateRows"
+kind = ["trait", "struct", "inherent"]
+crate = "types2"
 
 # generic trait declarations: `core` (their impls sit with the types of each band, below)
 [[rule]]
@@ -559,12 +563,6 @@ default = "linalg4"
 [[rule]]
 file = ["linalg/householder*.cairo"]
 crate = "linalg4"
-
-# the Givens methods (`GivensRotationTrait`: `cancel_y(Vector2)`...): `linalg_core`, the shared
-# linalg crate of the proposal (created by R1 for them; R2 adds the other shared kernels)
-[[rule]]
-file = ["linalg/givens.cairo"]
-crate = "linalg_core"
 
 [[rule]]
 file = ["linalg/lu.cairo", "linalg/lu/*", "linalg/inverse.cairo", "linalg/cholesky*", "linalg/ldlt*",

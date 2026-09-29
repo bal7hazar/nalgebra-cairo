@@ -118,6 +118,8 @@ names = [
     # WP 9-R1: the type-level kernels of the rotation / translation conversions (docs/SPLIT.md
     # §18.3), called by the geometry methods of the crates above
     "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait",
+    # WP 9-R1 (`transform2`): the kernels of the homogeneous transforms, used by `transform3`
+    "TransformKernels",
 ]
 
 # [band_split]: crate-internal kernel traits holding every dimension, split per band by the moves
@@ -257,18 +259,21 @@ trait = ["PermuteRows", "PermuteColumns"]
 args_any = ["Perm6"]
 crate = "static6_wide"
 
-# the field accessors of `GivensRotation` stay in `core`: the `GivensRotate` impls of every types
-# crate read them (WP 9-R1)
-[[rule]]
-name = "GivensRotationInternalTrait"
-crate = "core"
-
 # the type-level kernels of the conversions of a rotation / translation into a matrix (docs/SPLIT.md
 # §18.3, WP 9-R1): with the matrix's types (the largest digit of the name)
 [[rule]]
 name = "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait"
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
+# `GivensRotation` (upstream `linalg::givens`), its methods and the traits of its impls: `types2`,
+# the lowest crate that can hold `cancel_y(Vector2)`; the struct's fields are crate-private, so its
+# constructors cannot sit in a crate above it, and the declarations of `GivensRotate` /
+# `GivensRotateRows` name it (WP 9-R1: not `core` / `linalg_core`)
+[[rule]]
+name = "GivensRotation|GivensRotationTrait|GivensRotationInternalTrait|GivensRotate|GivensRotateRows"
+kind = ["trait", "struct", "inherent"]
+crate = "types2"
 
 # generic trait declarations: `core` (their impls sit with the types of each band, below)
 [[rule]]
