@@ -882,6 +882,292 @@ release script, `Consumer cost` enforcing on medians, a CHANGELOG skeleton); the
 tables and NS12's table follow the new map. Release stays 0.1.1, non-breaking, on the programme
 session's written go.
 
+### 18.1 The proposed map (WP 9-NS13, plan only, no code moved)
+
+The proposal is `tools/split/crates.recut.toml` (the live `crates.toml` is unchanged until the moves):
+**52 sub-crates** + the facade `nalgebra` + `nalgebra_glam` (today 27 + 2). Every number in a
+name is exactly one dimension: the dimension of a rectangular shape is max(rows, columns);
+dimension 1 is folded into the shared crates (types in `core`, methods in `static_core`) and into
+the crates of dimension 2 (1D geometry in `geometry2`, the 1x1 / 1xN decompositions in
+`linalg*2`); `geometryN` / `transformN` are the N-dimensional geometry (upstream's numbering:
+`Rotation3`, `Isometry3`, `Point5`), whose homogeneous matrices are (N+1)x(N+1).
+
+"Lines": physical library lines of the prototype crate (`files.py`, `consumer_cost.py`'s rules).
+"Runner marginal": cold build of an empty consumer of the crate minus an empty consumer of its
+direct dependencies together, median of 9 interleaved rounds on one GitHub runner, IQR of the
+per-round differences (run [36549381566](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36549381566)). Ordered lowest first (a crate depends only on crates above it).
+
+| crate | content (upstream module paths kept) | lines | direct deps (besides `simba`) | runner marginal s (IQR) / GB |
+|---|---|---:|---|---:|
+| `nalgebra_core` | generic trait declarations (`MatrixMul`, `MatrixTrMul`, `MatrixIndex`, `Norm`, `Normed` / `Unit`, `MatrixSolve`, `PermuteRows`, `GivensRotate`, `LuSteps`, Householder / balancing, `TransformMul`), errors, fused kernels; the dimension-1 types (`Matrix1`, `Vector1`, `Point1`, `Translation1`, `Perm1`, `Reflection1`) | 2,392 | – | 0.5 (0.4–0.6) / 0.03 |
+| `nalgebra_types2` | the types of dimension 2 (shapes with max(rows, cols) = 2, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); `Point2`, `Translation2`, `Perm2`, `Rotation2`, `Reflection2` | 3,079 | core | 0.3 (0.3–0.4) / 0.07 |
+| `nalgebra_types3` | the types of dimension 3 (as `types2`); `Point3`, `Translation3`, `Perm3`, `Rotation3`, `Reflection3` | 6,382 | core, types2 | 0.5 (0.5–0.5) / 0.15 |
+| `nalgebra_types4` | the types of dimension 4 (as `types2`); `Point4`, `Translation4`, `Perm4`, `Reflection4` | 12,312 | core, types2, types3 | 0.7 (0.7–0.8) / 0.26 |
+| `nalgebra_types5` | the types of dimension 5 (as `types2`); `Point5`, `Translation5`, `Perm5` | 24,948 | core, types2, types3, types4 | 1.6 (1.6–1.7) / 0.46 |
+| `nalgebra_types6` | the types of dimension 6 (as `types2`, without the edit kernels); `Point6`, `Translation6` | 37,463 | core, types2, types3, types4, types5 | 2.7 (2.7–2.8) / 0.68 |
+| `nalgebra_static_core` | the methods of the dimension-1 shapes (`Matrix1`, `Vector1`, `RowVector1`, `UnitVector1`) | 1,669 | core, types2, types3 | 0.3 (0.2–0.3) / 0.04 |
+| `nalgebra_static2` | the methods of the dimension-2 shapes (`Matrix2`, `Vector2`, `RowVector2`, `Matrix1x2`...) | 4,747 | core, types2, types3 | 0.6 (0.5–0.7) / 0.09 |
+| `nalgebra_static3` | the methods of the dimension-3 shapes (`Matrix3`, `Vector3`, `Matrix2x3`, `Matrix3x2`...) | 9,435 | core, static2, types2, types3, types4 | 1.2 (1.0–1.2) / 0.20 |
+| `nalgebra_static4` | the methods of the dimension-4 shapes | 16,350 | core, static2, static3, types2, types3, types4, types5 | 1.8 (1.5–2.0) / 0.32 |
+| `nalgebra_static5` | the methods of the dimension-5 shapes | 27,040 | core, static2, static3, static4, types2, types3, types4, types5, types6 | 2.0 (1.9–2.1) / 0.51 |
+| `nalgebra_static6_tall` | the methods of the shapes with 6 rows and fewer columns (`Matrix6x1`..`Matrix6x5`, `Vector6`); dimension-6 edit kernels | 24,652 | core, static2, static3, static4, static5, types2, types3, types4, types5, types6 | 1.8 (1.9–2.0) / 0.39 |
+| `nalgebra_static6_wide` | the methods of the shapes with 6 columns (`Matrix6`, `Matrix2x6`..`Matrix5x6`, `RowVector6`); `Lu6`, `Perm6` | 31,643 | core, static6_tall, types2, types3, types4, types5, types6 | 1.8 (1.5–1.9) / 0.49 |
+| `nalgebra_geometry2` | the 1D / 2D geometry: `UnitComplex`, `Rotation2` methods, isometries, similarities, points / translations / scales / reflections 1-2 methods, swizzles, `Matrix2` / `Matrix3` homogeneous (`cg`) | 6,425 | core, types2, types3 | 0.6 (0.6–0.8) / 0.14 |
+| `nalgebra_geometry3` | the 3D geometry: quaternions, unit quaternions, `Rotation3` methods, isometries, similarities, dual quaternions, `AbstractRotation`, point / translation / scale / reflection 3 methods, `Matrix4` homogeneous | 10,361 | core, geometry2, static3, types2, types3, types4 | 0.8 (0.8–0.9) / 0.23 |
+| `nalgebra_geometry4` | point / translation / scale / reflection 4 methods, `Matrix5` homogeneous | 1,675 | core, types2, types3, types4, types5 | 0.3 (0.2–0.5) / 0.03 |
+| `nalgebra_geometry5` | points, translations, scales, reflections of dimension 5 (`Reflection5` whole), `Matrix6` homogeneous | 3,395 | core, types2, types3, types4, types5, types6 | 0.5 (0.3–0.6) / 0.08 |
+| `nalgebra_geometry6` | points, translations, scales, reflections of dimension 6 (`Reflection6` whole) | 2,918 | core, types2, types3, types4, types5, types6 | 0.4 (0.3–0.5) / 0.08 |
+| `nalgebra_transform2` | `Transform2`, `Projective2`, `Affine2` and their products (upstream `geometry::transform`) | 3,687 | core, geometry2, static2, static3, types2, types3, types4 | 0.4 (0.4–0.5) / 0.08 |
+| `nalgebra_transform3` | `Transform3`, `Projective3`, `Affine3`, `Perspective3`, `Orthographic3` and their products | 4,097 | core, geometry2, geometry3, static2, static3, static4, transform2, types3, types4 | 0.6 (0.5–0.9) / 0.11 |
+| `nalgebra_blocks` | unchanged: row / column blocks, resize, pad / crop, Kronecker products | 21,574 | core, static6_tall, types2, types3, types4, types5, types6 | 0.9 (0.7–1.2) / 0.32 |
+| `nalgebra_views` | unchanged: `FixedView` and its 441 impls | 23,485 | blocks, core, types2, types3, types4, types5, types6 | 0.5 (0.4–0.6) / 0.31 |
+| `nalgebra_norm` | unchanged: the norm markers and every `Norm` impl | 4,042 | core, static2, static3, static4, static5, static6_tall, static6_wide, static_core, types2, types3, types4, types5, types6 | 0.7 (0.4–1.1) / 0.10 |
+| `nalgebra_statistics2` | `base::statistics` of the dimension-2 shapes (one inherent trait per shape) | 822 | core, types2 | 0.2 (-0.0–0.2) / 0.00 |
+| `nalgebra_statistics3` | `base::statistics` of dimension 3 | 1,356 | core, types2, types3 | 0.2 (0.2–0.3) / 0.02 |
+| `nalgebra_statistics4` | `base::statistics` of dimension 4 | 2,445 | core, types2, types3, types4 | -0.1 (-0.2–0.2) / 0.04 |
+| `nalgebra_statistics5` | `base::statistics` of dimension 5 | 5,487 | core, types2, types3, types4, types5 | 0.2 (0.2–0.3) / 0.07 |
+| `nalgebra_statistics6` | `base::statistics` of dimension 6 | 9,418 | core, types2, types3, types4, types5, types6 | 0.2 (0.1–0.4) / 0.10 |
+| `nalgebra_blas` | unchanged: `base::blas` (`MatrixGemm` and its 216 impls, the per-shape BLAS traits) | 12,322 | core, types2, types3, types4, types5, types6 | 2.3 (2.3–2.5) / 0.36 |
+| `nalgebra_linalg_core` | shared linalg kernels: Householder kernels and steps (`clear_column_unchecked`, `assemble_q`), `reflection_axis_mut`, balancing, Givens methods, the SVD right-vector kernel trait | 1,141 | core, types2 | 0.3 (0.2–0.4) / 0.02 |
+| `nalgebra_linalg2` | LU, Cholesky, LDLᵀ / UDU, QR, inverse of dimension 2 (and 1) | 2,020 | core, static2, types2 | 0.2 (-0.1–0.3) / 0.04 |
+| `nalgebra_linalg_svd_eigen2` | SVD and symmetric eigen of dimension 2 (and 1) | 2,328 | core, linalg_core, static2, types2 | 0.3 (0.3–0.4) / 0.05 |
+| `nalgebra_linalg_pivot2` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 2 (and 1) | 2,456 | core, types2 | 0.5 (0.4–0.5) / 0.06 |
+| `nalgebra_linalg_spectral2` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 2 (and 1) | 2,406 | core, linalg2, linalg_core, static2, static_core, types2 | 0.1 (-0.0–0.3) / 0.06 |
+| `nalgebra_linalg3` | LU, Cholesky (+ the column updates of dimension 2), LDLᵀ / UDU, QR, inverse of dimension 3 | 2,920 | core, linalg2, static3, types2, types3 | 0.3 (0.2–0.4) / 0.07 |
+| `nalgebra_linalg_svd_eigen3` | SVD and symmetric eigen of dimension 3 | 3,417 | core, linalg_core, linalg_svd_eigen2, static3, types2, types3 | 0.5 (0.5–0.6) / 0.08 |
+| `nalgebra_linalg_pivot3` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 3 | 3,716 | core, types2, types3 | 0.3 (0.2–0.3) / 0.08 |
+| `nalgebra_linalg_spectral3` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 3 | 3,578 | core, linalg2, linalg3, linalg_core, static2, static3, types2, types3 | 0.4 (0.3–0.4) / 0.08 |
+| `nalgebra_linalg4` | LU, Cholesky (+ the column updates of dimension 3), LDLᵀ / UDU, QR, inverse of dimension 4 | 4,587 | core, linalg2, linalg3, static4, types2, types3, types4 | 0.4 (0.2–0.4) / 0.10 |
+| `nalgebra_linalg_svd_eigen4` | SVD and symmetric eigen of dimension 4 | 5,903 | core, linalg_core, linalg_svd_eigen2, linalg_svd_eigen3, types2, types3, types4 | 0.6 (0.4–0.7) / 0.12 |
+| `nalgebra_linalg_pivot4` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 4 | 7,193 | core, types2, types3, types4 | 0.2 (0.2–0.3) / 0.13 |
+| `nalgebra_linalg_spectral4` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 4 | 6,749 | core, linalg2, linalg3, linalg4, linalg_core, static2, static3, static4, types2, types3, types4 | 0.6 (0.5–0.7) / 0.15 |
+| `nalgebra_linalg5` | LU, Cholesky (+ the column updates of dimension 4), LDLᵀ / UDU, QR, inverse of dimension 5 | 4,133 | core, types2, types3, types4, types5 | 0.5 (0.4–0.5) / 0.08 |
+| `nalgebra_linalg_svd_eigen5` | SVD and symmetric eigen of dimension 5 | 10,829 | core, linalg_core, linalg_svd_eigen2, linalg_svd_eigen3, linalg_svd_eigen4, types2, types3, types4, types5 | 0.8 (0.7–0.8) / 0.19 |
+| `nalgebra_linalg_pivot5` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 5 | 13,712 | core, types2, types3, types4, types5 | 0.9 (0.8–0.9) / 0.22 |
+| `nalgebra_linalg_spectral5` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 5 | 13,481 | core, linalg_core, static2, static3, static4, static5, types2, types3, types4, types5 | 1.0 (0.9–1.2) / 0.28 |
+| `nalgebra_linalg6` | Cholesky, LDLᵀ / UDU, QR, inverse of dimension 6 (`Lu6` is in `static6_wide`) | 8,827 | core, static6_wide, types2, types3, types4, types5, types6 | 0.7 (0.3–0.8) / 0.18 |
+| `nalgebra_linalg_svd_eigen6` | SVD and symmetric eigen of dimension 6 | 17,545 | core, linalg_core, linalg_svd_eigen2, linalg_svd_eigen3, linalg_svd_eigen4, linalg_svd_eigen5, types2, types3, types4, types5, types6 | 1.2 (1.1–1.2) / 0.30 |
+| `nalgebra_linalg_pivot6` | column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6 | 24,847 | core, static6_wide, types2, types3, types4, types5, types6 | 1.2 (1.0–1.6) / 0.37 |
+| `nalgebra_linalg_spectral6` | bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 6 | 24,030 | core, linalg2, linalg3, linalg4, linalg_core, static2, static3, static4, static5, static6_wide, types2, types3, types4, types5, types6 | 1.4 (1.2–1.5) / 0.48 |
+| `nalgebra_dynamic` | unchanged: `DMatrix`, `DVector`, the dynamic forms | 18,348 | blocks, core, static2, static3, static4, static5, static6_tall, static6_wide, static_core, types2, types3, types4, types5, types6 | 3.0 (2.9–3.2) / 0.47 |
+| `nalgebra_sparse` | unchanged: `sparse`, `io` | 3,638 | core, dynamic, types2, types3, types4, types5, types6 | 0.6 (0.4–0.8) / 0.10 |
+| **`nalgebra`** (facade) | unchanged: root functions, macros, `LuInvert`, `MatrixInfSup`, the 0.1.0 module tree | 12,942 (today) | every sub-crate | gate 3 only |
+| `nalgebra_glam` | unchanged API | 1,315 | glam_core, core, geometry2, geometry3, static2, static3, types2, types3, types4 | 0.1 (0.0–0.1) / 0.03 |
+
+Two new names beyond §18's list: **`nalgebra_transform2` / `nalgebra_transform3`** (upstream
+`geometry::transform`: `Transform`, `Projective`, `Affine`, plus `Perspective3` / `Orthographic3`).
+The general homogeneous transforms run the methods of dimension N + 1 (`Transform3::try_inverse`,
+`Projective3::inverse` run `Matrix4Trait`); inside `geometry3` they would pull `static4` and
+`types5` into every 3D-geometry user, `nalgebra_glam` included (measured below: glam's closure
+stays at today's cost because `geometry3` does not depend on `static4`). The number still means
+the dimension (the 3D transforms), and the crates follow upstream's module name.
+
+**The three shared crates.** `core` holds what every crate needs and nothing that needs a
+shape above dimension 1: the generic trait declarations (their impls sit with the types of each
+dimension, Cairo's lookup), errors, fused kernels, `Unit` / `Normed`, and the dimension-1 TYPES.
+The dimension-1 METHODS cannot be in `core` (`Matrix1::insert_row` builds a `Vector2`, `Matrix1`'s
+methods reach `Vector3`): they are `static_core`, which no other static crate needs (a
+`static2` user does not pay it; `norm`, `dynamic` and `linalg_spectral2` do). `linalg_core` holds
+the shared linalg kernels that are not declarations (Householder kernels and steps, balancing,
+Givens methods, the SVD right-vector kernel trait split per dimension); the declarations it would
+need below the types (`LuSteps`, `HouseholderAxis`, `ColumnMajor`, `Balancing`, `GivensRotate`,
+`PermuteRows`) are in `core`, as a generic declaration must sit below every type whose module
+holds an impl of it.
+
+**Acyclicity** (`mapplan.py --map tools/split/crates.recut.toml`, 0 upward dependencies; the
+prototype: `upward references (not imported): 0`). **Anchors**: `cratemap.py --map
+tools/split/crates.recut.toml --anchors --no-placement` gives **0 findings** on the pre-split tree
+and, with `--source-map tools/split/crates.toml`, **0 findings on today's split tree**; the proposal
+places the 5,757 item labels of today's tree exactly as it places those of the pre-split tree (the
+3 extra labels of today, `SvdRightTrait5` / `6` and `GivensRotationInternalTrait`, go to
+`linalg_svd_eigen5` / `6` and `linalg_core`). **Zero break**: the prototype of the map (pre-split
+tree `a35e55b`, `prototype.py`, `facade.py --explicit`, `glam_proto.py`) compiles, and
+`public_paths.py`'s consumer of **all 9,289 0.1.0 paths** plus the `usage` module (methods,
+operators, products, norms, solves, LU, cross-crate products, views, geometry, macros) **builds
+against the prototype facade** (68 s, 10.6 GB on the orchestrator machine). Surface of the
+prototype facade: 9,289 expected, **0 missing**, 42 extra: all 42 are the facade's OWN items that
+the prototype generator makes `pub` (`LuInvert` and its 4 impls, the 36 `MatrixInfSup` impls under
+`root`, the `dimension_mismatch` macro); the committed facade keeps them crate-visible since NS11a
+(strict 9,289 / 0 / 0 in CI) and the re-cut does not change the facade's content. Every move PR
+runs the strict proof on the real tree.
+
+Tooling added by NS13 (`tools/split/`): `mapplan.py` reads a map's `[band_split]`,
+`strict_calls` / `[label_bands]` (a method-call edge towards a LARGER dimension that the item does
+not name is the analysis's over-approximation) and `kernel_wrappers` (impls that get a type-level
+kernel, stubbed in the prototype); `edges.py` no longer counts a method defined or called under a
+free function's name as a reference to it (`HouseholderAxis::reflection_axis_mut`: the live map's
+prototype failed on it since NS9); `plan.py` no longer resolves corelib method names (`unwrap`,
+`into`...) to a trait of another top-level module; `facade.py --explicit` (0.1.0 names by name);
+`cratemap.py --anchors --no-placement`, `--source-map`; `split-measure.yml` inputs `map` and
+`source` (the tree is split since NS11a, so a measurement takes the library from the pre-split
+commit: `-f source=a35e55b2d2d43176dc6b23fca585caaa92754bb0`).
+
+### 18.2 Declared closures on the runner (re-expressed on the new names)
+
+Added over the no-dependency baseline, median of 15 interleaved rounds, IQR, one runner per
+closure (run [36549381566](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36549381566)); the live map's closures measured the same day on the same pre-split source
+(run [36549419555](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36549419555); the dimension-6 decomposition closures re-measured in run [36553869948](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36553869948)). Budget: 15 s / 3 GB for dimensions ≤ 4, 20 s / 4.5 GB for a closure with
+dimension 5 or 6 (§19).
+
+| closure | content | re-cut s (IQR) / GB | re-measured | live map same day s / GB | budget | verdict |
+|---|---|---:|---:|---:|---|---|
+| `nalgebra_glam` | `nalgebra_glam` (glam_core 0.4.1) | 7.4 (7.4–7.5) / 1.77 | – | 6.5 / 1.68 | 15 s / 3 GB | pass |
+| `static3_svd` | static 2-3 + SVD / eigen 2-3 | 5.8 (5.7–5.9) / 1.23 | – | – | 15 s / 3 GB | pass |
+| `static4_svd` | static 2-4 + SVD / eigen 2-4 (the content of the old `static3_svd` + static4) | 6.9 (6.7–7.0) / 2.11 | – | 6.9 / 1.59 | 15 s / 3 GB | pass |
+| `core_pivot` | pivoting decompositions 2-4 (types 2-4 only) | 3.5 (3.4–3.6) / 1.04 | – | 2.8 / 0.94 | 15 s / 3 GB | pass |
+| `static4_geometry` | static 2-4 + geometry 2-4 + transforms 2-3 | 11.2 (11.0–11.5) / 2.44 | – | 10.0 / 2.46 | 15 s / 3 GB | pass |
+| `static4_factor` | static 2-4 + LU / Cholesky / QR 2-4 | 8.9 (8.7–9.0) / 2.06 | – | 8.7 / 2.35 | 15 s / 3 GB | pass |
+| `static3_geometry` | static 2-3 + geometry 2-3 (new: the knot broken) | 6.3 (6.2–6.3) / 1.43 | – | – | 15 s / 3 GB | pass |
+| `static5` | types + methods of dimension 5 | 12.9 (12.9–13.0) / 3.05 | – | – | 20 s / 4.5 GB | pass |
+| `static5_factor` | static 5 + LU / Cholesky / QR 5 | 10.9 (10.9–11.0) / 3.13 | – | – | 20 s / 4.5 GB | pass |
+| `static5_svd` | static 5 + SVD / eigen 5 | 10.4 (10.2–10.7) / 3.53 | – | – | 20 s / 4.5 GB | pass |
+| `static5_pivot` | static 5 + pivoting 5 | 9.4 (9.3–9.7) / 3.26 | – | – | 20 s / 4.5 GB | pass |
+| `static5_spectral` | static 5 + spectral 5 | 14.8 (14.7–14.9) / 3.35 | – | – | 20 s / 4.5 GB | pass |
+| `static5_geometry` | static 5 + geometry 5 | 13.3 (13.2–13.4) / 3.14 | – | – | 20 s / 4.5 GB | pass |
+| `static6` | types + methods of dimension 6 (`static6_wide` pulls `static6_tall`) | 17.3 (17.2–17.7) / 3.93 | 17.2 / 3.92 | – | 20 s / 4.5 GB | pass |
+| `static6_factor` | static 6 + Cholesky / QR 6 | 17.7 (17.6–17.9) / 4.11 | – | – | 20 s / 4.5 GB | pass |
+| `static6_svd` | static 6 + SVD / eigen 6 | 21.5 (21.2–21.7) / 4.70 | 21.7 / 4.71 | – | 20 s / 4.5 GB | **over** |
+| `static6_pivot` | static 6 + pivoting 6 | 18.5 (18.4–18.5) / 4.30 | – | – | 20 s / 4.5 GB | pass |
+| `static6_spectral` | static 6 + spectral 6 | 21.5 (21.1–21.7) / 4.64 | 20.7 / 4.64 | – | 20 s / 4.5 GB | **over** |
+| `static6_geometry` | static 6 + geometry 6 | 18.0 (17.9–18.3) / 4.01 | – | – | 20 s / 4.5 GB | pass |
+| `svd_eigen6` | SVD / eigen 6 alone (types 2-6, no method crate) | – | 12.1 / 3.00 | – | 20 s / 4.5 GB | pass |
+| `pivot6` | pivoting 6 alone (pulls `static6_wide` for `Perm6`) | – | 12.8 / 4.30 | – | 20 s / 4.5 GB | pass |
+| `static4_statistics` | static 2-4 + statistics 2-4 | 8.6 (8.6–8.7) / 1.91 | – | – | 15 s / 3 GB | pass |
+| `static4_statistics_all` | static 2-4 + statistics 2-6 (the family whole) | 11.9 (11.7–12.0) / 2.79 | – | – | 15 s / 3 GB | pass |
+| `static4_blas` | static 2-4 + blas | 12.4 (12.3–12.5) / 2.88 | – | – | 15 s / 3 GB | pass |
+| `static4_blocks` | static 2-4 + blocks | 16.3 (16.2–16.4) / 3.74 | – | – | 15 s / 3 GB | **over** |
+| `static4_views` | static 2-4 + views | 16.7 (16.5–16.9) / 4.06 | – | – | 15 s / 3 GB | **over** |
+| `static4_norm` | static 2-4 + norm | 18.7 (18.5–19.0) / 4.04 | – | – | 15 s / 3 GB | **over** |
+| `glam_0_4_1_alone` | (reference) glam 0.4.1 alone | 1.3 (1.2–1.3) / 0.56 | – | 2.2 / 0.56 |  |  |
+
+Every crate passes gates 1 and 2 (largest: `types6` 37,463 lines; `nalgebra_dynamic` 3.0 s,
+`types6` 2.7 s / 0.68 GB). **The five declared closures cost about the same as today**, as
+expected since dimension k builds on every dimension below it: `static4_factor` 8.9 s against
+8.7 s, `static4_svd` (today's `static3_svd` content) 6.9 s against 6.9 s, `static4_geometry`
+11.2 s against 10.0 s (it now also holds the 3D transforms' own crate boundary), `core_pivot`
+3.5 s against 2.8 s, `nalgebra_glam` 7.4 s against 6.5 s; the reference (glam alone) differs by
+0.9 s between the two runs, the size of these differences (between-job noise, §6.5). Smaller
+closures appear: static 2-3 + SVD 5.8 s, static 2-3 + 2D / 3D geometry 6.3 s. **Dimension 5**:
+every closure within 20 s / 4.5 GB (9.4-14.8 s, ≤ 3.53 GB). **Dimension 6**: `static6` 17.2 s,
+factor / pivoting / geometry 17.7-18.5 s, ≤ 4.30 GB, pass; **static 6 + SVD / eigen (21.5-21.7 s,
+4.71 GB) and static 6 + spectral (20.7-21.5 s, 4.64 GB) exceed the 20 s / 4.5 GB budget** on two
+runners each. The decomposition itself does not need the dimension-6 methods: SVD / eigen 6 alone
+(types 2-6) costs 12.1 s / 3.00 GB; the overrun is `static6_tall` + `static6_wide` (the methods of
+every dimension-6 shape, 56k lines) on top. Open point for the programme session (§18.6).
+
+### 18.3 The dimension 2 / 3 ↔ 2D / 3D geometry knot: broken
+
+The knot (§2.3) was: the methods of the 2- / 3-column shapes name `Rotation2` / `Rotation3`
+(`div_rotation`), `Rotation3`'s `Div` runs `Matrix3Trait::transpose` and `Rotation3Trait` runs
+`Matrix3Trait`. It is broken **without a path change**:
+
+- `div_rotation` only reads the rotation's field (`r.matrix.m11`...): the shape methods need the
+  rotation TYPE, not its methods. The structs `Rotation2` / `Rotation3` (and `Reflection1..4`
+  with their `ReflectionNColumns` / `ReflectionNRows` traits, whose impls on the shapes of every
+  dimension sit in the shapes' modules) move to `types2` / `types3` (`types1..4`), with their
+  core-trait impls that read fields only (`Mul`, `Default`, `One`, `Index`); their methods
+  (`Rotation3Trait`, `Rotation3AngleTrait`) and every conversion that runs a geometry method
+  (`Into<UnitQuaternion, Rotation3>`...) go to `geometry2` / `geometry3`, in the module of their
+  geometry type (their 0.1.0 path re-exported by the facade, as every moved impl).
+- Three impls must stay with the types and run a method: `Rotation3Div` (`Matrix3Trait::transpose`),
+  `Matrix3FromRotation2` / `Matrix4FromRotation3` (`to_homogeneous`); likewise the five
+  `Matrix{N+1}FromTranslationN` (the translation types join `typesN` so that `nalgebra_glam`
+  converts `Translation4` without `geometry4` → `types5`). Each gets a **type-level kernel** in its
+  types crate that the method and the impl both call through `#[inline(always)]` wrappers: same
+  bodies, **zero step change** (§3.3.3's pattern, proved by `gas_compare.py` in the move PR). The
+  map lists them as `kernel_wrappers` (8 impls).
+- No method changes trait, no supertrait, no public path changes. Consequence: `geometry2`
+  depends on `types2` / `types3` only (no method crate at all), `geometry3` on `static3` and
+  `types4`, `static2` / `static3` on no geometry crate. `static2_geometry` / `static3_geometry`
+  are not needed.
+
+### 18.4 Base families and dimensions 5-6 (§16.2)
+
+A family impl must sit in its trait's module or in one of its type arguments' modules (§1). The
+five families split into two kinds:
+
+- **`statistics` is per shape** (`Matrix3StatisticsTrait`, one inherent trait per shape, no generic
+  trait): it bands like the methods, at no cost. Proposal: **`statistics2` .. `statistics6`**
+  (822, 1,356, 2,445, 5,487, 9,418 lines; marginals ≤ 0.2 s). "static 2-4 + statistics 2-4" then leaves dimensions 5-6 out
+  (static 2-4 + statistics 2-4: **8.6 s / 1.91 GB**, against 11.9 s / 2.79 GB with the family whole).
+- **`blocks`, `views`, `norm`, `blas` are generic traits** (`FixedRows`, `FixedView`,
+  `Norm<Marker, M, T>` anchored on its marker, `MatrixGemm` with 216 impls): their dimension 5-6
+  impls can only sit in the trait's crate or in `types5` / `types6`. `types6` has 6 % of line margin
+  (37,463 lines), so they cannot move there; a `blas4`-style band is impossible without breaking
+  the anchor rule. The families stay whole: "static 2-4 + family" costs **`blas` 12.4 s / 2.88 GB**
+  (passes the ≤ 4 budget), **`blocks` 16.3 s / 3.74 GB, `views` 16.7 s / 4.06 GB, `norm` 18.7 s /
+  4.04 GB** (`blocks` pulls `static6_tall` for the dimension-6 edit kernels, `norm` every method
+  crate): they are dimension 5-6 closures and fit that budget (20 s / 4.5 GB, §19). No cheaper cut
+  exists without moving generic impls into `types6`.
+- **Everyday methods do not need them**: `norm()`, `normalize()`, `dot`, `cross`, `transpose`,
+  `fixed_rows` / `fixed_columns` / `fixed_view` (as methods), `insert_*` / `remove_*`, `kronecker`,
+  `apply_norm`, `lp_norm` are methods of the inherent traits (`Vector3Trait`...), in
+  `static2..static6_*`. The families are the generic forms (`FixedView::fixed_view(m, i, j)` over
+  any shape, the `Norm` markers, `MatrixGemm`) and the per-shape statistics / BLAS: advanced use,
+  documented with their cost.
+
+### 18.5 The move plan
+
+Three PRs, bottom-up, each switching the live map to the proposal for its crates
+(`crates.toml` ← `crates.recut.toml` rows), re-running the generators (router), moving the
+hand-written items with the same placement, and proving: `gas_compare.py` 0 changes, strict path
+proof 9,289 / 0 / 0, `cratemap.py --anchors` 0 findings, gate 1 per crate, `Consumer cost` green.
+
+| PR | content | replaces | size |
+|---|---|---|---|
+| R1 | `core` (declarations + dimension 1), `types2..6`, `static_core`, `static2..5`, `static6_tall` / `_wide`, `geometry2..6`, `transform2` / `3`, `statistics2..6`; the 8 type-level kernels | `core`, `shapes5`, `shapes6`, `static3..5`, `static6_*`, `geometry4`, `geometry6`, `statistics` | ~300k lines (generator-driven: the shape files, `cg`, statistics) |
+| R2 | `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; `SvdRightTrait` split per dimension (2..6, today ≤4 / 5 / 6); `Cholesky2/3UpdateTrait` in `linalg3` / `linalg4` | the 12 `linalg*` crates | ~185k (linalggen-driven) |
+| R3 | release plumbing on the new names: `consumer_cost.toml` (packages, closures of §18.2 with their budgets), `scripts/release.py` order (the map's order: 54 packages), one README per package (description = the one-line content above), facade README tables, `docs/PACKAGES.md`, CHANGELOG 0.1.1 | – | docs / scripts |
+
+`blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse` keep their content; R1 rewrites their
+manifests (new dependency names). R1 may be cut in two (types + methods, then geometry /
+transforms / statistics) if a single PR exceeds the reviewers' or CI's patience; R2 alone is one
+generator switch. NS11b's name-independent parts (no-op features and their CI test, the resumable
+release script, `Consumer cost` enforcing on medians) are unaffected; its READMEs and tables wait
+for R3.
+
+### 18.7 Owner decisions on the re-cut (2026-09-29, validated in the orchestrator session)
+
+The owner validated the orchestrator's four recommendations:
+1. **Dimension-6 decompositions**: the declared closures of the dimension-6 decomposition families
+   are the decomposition crate with its types, **without the dimension-6 method crates**
+   (`Matrix6::svd()` and the products live in `types6` / `linalg_*6`: SVD / eigen 6 alone 12.1 s /
+   3.00 GB). The combined "static 6 + SVD / eigen 6" (~21.5 s / 4.71 GB) and "static 6 + spectral 6"
+   (~21.5 s / 4.64 GB) are documented in the facade README, not gated; the 20 s / 4.5 GB budget
+   stays.
+2. **Names approved**: `nalgebra_transform2`, `nalgebra_transform3` (general homogeneous transforms,
+   projections) and the per-dimension `nalgebra_statistics2` .. `nalgebra_statistics6`, with the
+   rest of §18.1.
+3. **`blocks`, `views`, `norm`** stay whole (generic traits whose dimension 5-6 impls can only sit
+   in their own crate or in `types6`): "static 2-4 + blocks / views / norm" (16.3 / 16.7 / 18.7 s)
+   is documented as advanced use, not a declared closure; the everyday methods (`norm()`,
+   `normalize()`, `dot`, `transpose`, products) are in the types / static crates. `blas` with static
+   2-4 passes (12.4 s).
+4. The `nalgebra_glam` closure at 7.4 s (6.5 s on the live map the same day) is accepted as runner
+   noise (the glam-alone reference moved 0.9 s between the same runs).
+
+The moves start: R1 (types, methods, geometry, transforms, statistics, the 8 kernels) alone, then
+R2 (linalg) and R3 (closures and budgets, release order, READMEs, PACKAGES.md, CHANGELOG) in
+parallel.
+
+### 18.6 Risks and open points
+
+- **Package count**: 52 sub-crates + facade + glam = 54 packages per release (29 today); the
+  release script is resumable (§12.2), each package verified against the registry.
+- **Small crates**: 13 sub-crates under 3,000 lines (`statistics2` 822, `geometry4` 1,675, `static_core` 1,669, `linalg_core` 1,141...), each with a marginal ≤ 0.6 s. Accepted by the owner (§18: Cairo generates per dimension).
+- **The 8 kernel wrappers** are the only code changes besides moves; zero step change is proved by
+  `gas_compare.py` in R1, not by the prototype (which stubs them).
+- **`types6` line margin**: 37,463 / 40,000 (6 %), as `shapes6` today.
+- **Dimension-6 decompositions with the dimension-6 methods** (§18.2): static 6 + SVD / eigen
+  21.5-21.7 s / 4.71 GB and static 6 + spectral 20.7-21.5 s / 4.64 GB exceed §19's 20 s / 4.5 GB;
+  the decompositions alone pass (SVD / eigen 6: 12.1 s / 3.00 GB). The programme session decides
+  between (a) declaring the decomposition closures without the method crates (`linalg_svd_eigen6`,
+  `linalg_spectral6` pulls `static6_wide` anyway: 20.7 s), (b) a dimension-6 budget of 22 s / 5 GB,
+  or (c) a further cut of `static6_tall` / `static6_wide` (no natural seam: the methods of the
+  dimension-6 shapes are one generator's output per shape).
+- **Prototype vs real tree**: the measurements use the pre-split source (`a35e55b`) through the
+  prototype generator, as NS1b did; the proposal places today's items identically (above).
+
 ## 19. Dimension 5-6 closures: a documented budget (owner, 2026-09-29)
 
 The cost of the dimension 5-6 closures is accepted as documented; no further cut for it.

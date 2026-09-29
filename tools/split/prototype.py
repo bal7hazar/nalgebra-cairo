@@ -94,6 +94,8 @@ class Splitter:
                 BAND_SPLIT[gen] = (impl, dict(plan["band_split"][gen]))
             elif "linalg5" in plan["crates"]:
                 BAND_SPLIT[gen] = (impl, {"5": "linalg5", "6": "linalg6"})
+        # the map's `kernel_wrappers` (`mapplan.py`): stubbed like the `Normed` wrappers
+        STUBS.update(plan.get("stubs", []))
         self.edges = edges
         self.order = plan["crates"]
         self.rank = {c: i for i, c in enumerate(self.order)}

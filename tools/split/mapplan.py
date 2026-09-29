@@ -24,11 +24,12 @@ import os
 import re
 import sys
 import tempfile
+import tomllib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import cratemap  # noqa: E402
-from layouts import final as NS1_FINAL  # noqa: E402
+from layouts import band_of_label, final as NS1_FINAL  # noqa: E402
 from plan import Graph  # noqa: E402
 
 # crate-internal kernel traits holding every dimension, split per band by the moves (docs/SPLIT.md
@@ -86,6 +87,54 @@ def place(cm, edges):
     return items
 
 
+def pruned_graph(edges, text):
+    """`plan.py`'s item graph without the edges the moves remove or the analysis over-approximates."""
+    g = Graph(edges)
+    # the edges the moves remove (band-split kernel traits, `Normed` kernel wrappers, the
+    # over-approximated calls of shared linalg files): `plan.py`'s, layout-independent
+    for n in g.nodes:
+        for m in list(g.deps[n]):
+            if NS1_FINAL.ignore_edge(g, n, m):
+                g.deps[n].discard(m)
+    d = tomllib.loads(text)
+    # `[label_bands]`: the dimension of the items whose name does not say it (`UnitQuaternion` is
+    # 3D, `Matrix4CgTrait` the 3D homogeneous coordinates), regexes (full match) on the label
+    label_bands = [(re.compile(k), v) for k, v in d.get("label_bands", {}).items()]
+
+    def band(n):
+        lab = g.label(n).split(":")[0]
+        for rx, b in label_bands:
+            if rx.fullmatch(lab):
+                return b
+        return band_of_label(lab)
+
+    # `kernel_wrappers`: impls whose bodies call a higher crate's inherent trait until the move gives
+    # them a type-level kernel (an `#[inline(always)]` wrapper: no step change, docs/SPLIT.md §3.3)
+    wrappers = set(d.get("kernel_wrappers", []))
+    for n in g.nodes:
+        if g.label(n).split(":")[0] in wrappers:
+            for m in list(g.deps[n]):
+                if g.kind(m) == "inherent":
+                    g.deps[n].discard(m)
+    if d.get("strict_calls"):
+        # (WP 9-NS13) a method-call edge (the item does not name the target) from an item of
+        # dimension b to an item of a LARGER dimension is the over-approximation of `plan.py`
+        # (every trait in scope with a method of that name); the prototype build proves the cut
+        named = collections.defaultdict(set)
+        for n in g.nodes:
+            for mid in g.members[n]:
+                named[n].update(g.find(t) for t in g.info[mid]["ref_ids"])
+        for n in g.nodes:
+            bn = band(n)
+            if bn is None:
+                continue
+            for m in list(g.deps[n]):
+                bm = band(m)
+                if bm is not None and bm > bn and m not in named[n]:
+                    g.deps[n].discard(m)
+    return g
+
+
 def build_plan(edges, map_path, merges):
     text = open(map_path).read()
     rename = {}
@@ -99,13 +148,7 @@ def build_plan(edges, map_path, merges):
     finally:
         os.unlink(tmp)
     items = place(cm, edges)
-    g = Graph(edges)
-    # the edges the moves remove (band-split kernel traits, `Normed` kernel wrappers, the
-    # over-approximated calls of shared linalg files): `plan.py`'s, layout-independent
-    for n in g.nodes:
-        for m in list(g.deps[n]):
-            if NS1_FINAL.ignore_edge(g, n, m):
-                g.deps[n].discard(m)
+    g = pruned_graph(edges, text)
     missing = [nid for n in g.nodes for nid in g.members[n] if nid not in items]
     # a node (a trait + its single impl) is one unit: its members follow its first placed member
     for n in g.nodes:
@@ -125,8 +168,6 @@ def build_plan(edges, map_path, merges):
     order = [c for c in cm.order if lines[c]]
     rank = {c: i for i, c in enumerate(order)}
     upward = sorted((c, d) for c, ds in deps.items() for d in ds if d in rank and rank[d] > rank[c])
-    import tomllib
-
     closures = {}
     for name, members in tomllib.loads(text).get("closures", {}).items():
         out = []
@@ -136,7 +177,8 @@ def build_plan(edges, map_path, merges):
                 out.append(m)
         closures[name] = out
     band = {}
-    for gen, per in BAND_SPLIT.items():
+    # the map's own `[band_split]` table (the per-dimension re-cut, WP 9-NS13), else BAND_SPLIT
+    for gen, per in (tomllib.loads(text).get("band_split") or BAND_SPLIT).items():
         band[gen] = {b: items.get(edges["items"].get(nm)) for b, nm in per.items()}
     return {
         "crates": order,
@@ -147,6 +189,7 @@ def build_plan(edges, map_path, merges):
         "closures": closures,
         "upward": upward,
         "unplaced": [m for m in missing if m not in items],
+        "stubs": sorted(tomllib.loads(text).get("kernel_wrappers", [])),
         "map": text,
     }
 
