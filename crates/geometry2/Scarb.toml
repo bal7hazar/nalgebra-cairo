@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_geometry2"
-description = "The 1D / 2D geometry: UnitComplex, Rotation2 methods, isometries, similarities, points / translations / scales / reflections 1-2 methods, swizzles, Matrix2 / Matrix3 homogeneous (cg)."
+description = "The 1D / 2D geometry: UnitComplex, Rotation2 methods, isometries, similarities, points / translations / scales 1-2 methods, swizzles, Matrix2 / Matrix3 homogeneous (cg)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

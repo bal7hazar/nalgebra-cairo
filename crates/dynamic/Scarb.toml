@@ -22,7 +22,9 @@ experimental-features = ["associated_item_constraints"]
 [features]
 default = ["closures"]
 closures = [
-    "nalgebra_static_core/closures", "nalgebra_static2/closures", "nalgebra_static3/closures", "nalgebra_static4/closures", "nalgebra_static5/closures", "nalgebra_static6_tall/closures", "nalgebra_static6_wide/closures",
+    "nalgebra_static_core/closures", "nalgebra_static2/closures", "nalgebra_static3/closures",
+    "nalgebra_static4/closures", "nalgebra_static5/closures", "nalgebra_static6_tall/closures",
+    "nalgebra_static6_wide/closures",
 ]
 
 [dependencies]

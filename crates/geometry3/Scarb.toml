@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_geometry3"
-description = "The 3D geometry: quaternions, unit quaternions, Rotation3 methods, isometries, similarities, dual quaternions, AbstractRotation, point / translation / scale / reflection 3 methods, Matrix4 homogeneous (cg)."
+description = "The 3D geometry: quaternions, unit quaternions, Rotation3 methods, isometries, similarities, dual quaternions, AbstractRotation, point / translation / scale 3 methods, Matrix4 homogeneous (cg)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

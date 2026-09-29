@@ -2,9 +2,9 @@
 //! (`nalgebra::root::MatrixInfSup`, re-exported by `root`) and its impls, one per static shape
 //! (their public paths are the shapes' modules, `nalgebra::base::matrix3::Matrix3InfSup`).
 //!
-//! WP 9-NS11a: the impls call the shapes' methods (`nalgebra_static3`..`nalgebra_static6_wide`),
-//! so they cannot sit in their type's module (`nalgebra_core`, `nalgebra_shapes5`,
-//! `nalgebra_shapes6`, below the method crates); Cairo finds them in the trait's module, this one
+//! WP 9-NS11a: the impls call the shapes' methods (`nalgebra_static_core`..`nalgebra_static6_wide`
+//! since WP 9-R1), so they cannot sit in their type's module (`nalgebra_core`, `nalgebra_types2`..
+//! `nalgebra_types6`, below the method crates); Cairo finds them in the trait's module, this one
 //! (docs/SPLIT.md §1, §3.2). The module is crate-visible so that it adds no public path: 0.1.0's
 //! surface is exactly kept (`tools/split/public_paths.py --check`).
 

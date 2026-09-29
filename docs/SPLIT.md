@@ -1126,6 +1126,13 @@ generator switch. NS11b's name-independent parts (no-op features and their CI te
 release script, `Consumer cost` enforcing on medians) are unaffected; its READMEs and tables wait
 for R3.
 
+**Progress.** R1 done in one PR (WP 9-R1): the live map is the re-cut for every crate but the
+decompositions (29 re-cut sub-crates, the 10 decomposition crates unchanged, no `linalg_core` yet);
+`gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0; R1 decisions carried into the
+proposal for R2: `GivensRotation` with its methods and traits in `types2`, the `Reflection1..4`
+methods with their structs, `geometry::point::errors` in `core` (`[modules]`), `TransformKernels`
+internal. Next: R2 (decompositions), R3 (closures, release order, READMEs).
+
 ### 18.7 Owner decisions on the re-cut (2026-09-29, validated in the orchestrator session)
 
 The owner validated the orchestrator's four recommendations:

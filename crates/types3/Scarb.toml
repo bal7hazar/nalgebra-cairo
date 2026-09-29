@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_types3"
-description = "The types of dimension 3 (shapes with max(rows, cols) = 3, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point3, Translation3, Perm3, Rotation3, Reflection3."
+description = "The types of dimension 3 (shapes with max(rows, cols) = 3, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point3, Translation3, Perm3, Rotation3, Reflection3 (with its constructors and accessors)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

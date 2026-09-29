@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_core"
-description = "The generic trait declarations (MatrixMul, MatrixTrMul, MatrixIndex, Norm, Normed / Unit, MatrixSolve, PermuteRows, GivensRotate, LuSteps, Householder / balancing, TransformMul), errors, fused kernels, and the dimension-1 types (Matrix1, Vector1, Point1, Translation1, Perm1, Reflection1)."
+description = "The generic trait declarations (MatrixMul, MatrixTrMul, MatrixIndex, Norm, Normed / Unit, MatrixSolve, PermuteRows, GivensRotate, LuSteps, Householder / balancing, TransformMul), errors, fused kernels, and the dimension-1 types (Matrix1, Vector1, Point1, Translation1, Perm1, Reflection1 with its constructors and accessors)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

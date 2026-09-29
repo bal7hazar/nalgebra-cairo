@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_geometry4"
-description = "The 4D geometry: point / translation / scale / reflection 4 methods, Matrix5 homogeneous (cg)."
+description = "The 4D geometry: point / translation / scale 4 methods, Matrix5 homogeneous (cg)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_types2"
-description = "The types of dimension 2 (shapes with max(rows, cols) = 2, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point2, Translation2, Perm2, Rotation2, Reflection2."
+description = "The types of dimension 2 (shapes with max(rows, cols) = 2, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point2, Translation2, Perm2, Rotation2, Reflection2 (with its constructors and accessors), GivensRotation."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

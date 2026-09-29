@@ -19,7 +19,8 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # (WP 8.1d, tools/shapegen/DESIGN.md §2.11): all on by default, so the public API is upstream's; a
 # dependent that does not need them writes `default-features = false` (plus `features = [..]`).
 # `statistics`: base/statistics.cairo; `blas`: base/blas.cairo (WP 9-NS8: their code lives in
-# `nalgebra_statistics` / `nalgebra_blas`, which this package always depends on; the features now
+# `nalgebra_statistics2`..`nalgebra_statistics6` since WP 9-R1 / `nalgebra_blas`, which this package
+# always depends on; the features now
 # gate the facade's re-exports of those crates only, so `default-features = false` still exposes no
 # statistics / BLAS item as in 0.1.0; their removal is decided with the other no-op features,
 # docs/SPLIT.md §12.1); `closures`: the methods of the
@@ -76,7 +77,9 @@ statistics = []
 # kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 blas = []
 closures = [
-    "nalgebra_static_core/closures", "nalgebra_static2/closures", "nalgebra_static3/closures", "nalgebra_static4/closures", "nalgebra_static5/closures", "nalgebra_static6_tall/closures", "nalgebra_static6_wide/closures", "nalgebra_dynamic/closures", "nalgebra_dynamic/closures",
+    "nalgebra_static_core/closures", "nalgebra_static2/closures", "nalgebra_static3/closures",
+    "nalgebra_static4/closures", "nalgebra_static5/closures", "nalgebra_static6_tall/closures",
+    "nalgebra_static6_wide/closures", "nalgebra_dynamic/closures",
 ]
 # kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 dynamic = []

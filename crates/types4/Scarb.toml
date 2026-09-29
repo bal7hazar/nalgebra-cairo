@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_types4"
-description = "The types of dimension 4 (shapes with max(rows, cols) = 4, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point4, Translation4, Perm4, Reflection4."
+description = "The types of dimension 4 (shapes with max(rows, cols) = 4, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point4, Translation4, Perm4, Reflection4 (with its constructors and accessors)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
