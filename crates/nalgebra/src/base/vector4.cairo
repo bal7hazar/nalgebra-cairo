@@ -18,22 +18,25 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Vector4KroneckerMatrix1, Vector4KroneckerRowVector2, Vector4KroneckerRowVector3,
+    Vector4KroneckerRowVector4, Vector4KroneckerRowVector5, Vector4KroneckerRowVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Vector4FixedColumnsVector4, Vector4FixedRowsMatrix1, Vector4FixedRowsVector2,
+    Vector4FixedRowsVector3, Vector4FixedRowsVector4,
+};
 pub use nalgebra_core::base::vector4::*;
+pub use nalgebra_norm::base::norm::{
+    Vector4EuclideanNorm, Vector4LpNorm, Vector4OneNorm, Vector4UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix4x5::Vector4TrMulMatrix4x5;
 pub use nalgebra_shapes5::base::row_vector5::Vector4MulRowVector5;
 pub use nalgebra_shapes6::base::matrix4x6::Vector4TrMulMatrix4x6;
 pub use nalgebra_shapes6::base::row_vector6::Vector4MulRowVector6;
 pub use nalgebra_static4::base::vector4::*;
-pub use crate::base::matrix_kronecker::{
-    Vector4KroneckerMatrix1, Vector4KroneckerRowVector2, Vector4KroneckerRowVector3,
-    Vector4KroneckerRowVector4, Vector4KroneckerRowVector5, Vector4KroneckerRowVector6,
-};
-pub use crate::base::matrix_view::{
-    Vector4FixedColumnsVector4, Vector4FixedRowsMatrix1, Vector4FixedRowsVector2,
-    Vector4FixedRowsVector3, Vector4FixedRowsVector4, Vector4FixedViewMatrix1,
-    Vector4FixedViewVector2, Vector4FixedViewVector3, Vector4FixedViewVector4,
-};
-pub use crate::base::norm::{
-    Vector4EuclideanNorm, Vector4LpNorm, Vector4OneNorm, Vector4UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Vector4FixedViewMatrix1, Vector4FixedViewVector2, Vector4FixedViewVector3,
+    Vector4FixedViewVector4,
 };
 pub use crate::root::Vector4InfSup;

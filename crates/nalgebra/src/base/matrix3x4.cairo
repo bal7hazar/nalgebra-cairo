@@ -8,23 +8,27 @@
 //! `Matrix3x4Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix3x4KroneckerMatrix1, Matrix3x4KroneckerVector2,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix3x4FixedColumnsMatrix3, Matrix3x4FixedColumnsMatrix3x2, Matrix3x4FixedColumnsMatrix3x4,
+    Matrix3x4FixedColumnsVector3, Matrix3x4FixedRowsMatrix2x4, Matrix3x4FixedRowsMatrix3x4,
+    Matrix3x4FixedRowsRowVector4,
+};
 pub use nalgebra_core::base::matrix3x4::*;
+pub use nalgebra_norm::base::norm::{
+    Matrix3x4EuclideanNorm, Matrix3x4LpNorm, Matrix3x4OneNorm, Matrix3x4UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix3x5::Matrix3x4TrMulMatrix3x5;
 pub use nalgebra_shapes5::base::matrix4x5::Matrix3x4MulMatrix4x5;
 pub use nalgebra_shapes6::base::matrix3x6::Matrix3x4TrMulMatrix3x6;
 pub use nalgebra_shapes6::base::matrix4x6::Matrix3x4MulMatrix4x6;
 pub use nalgebra_static4::base::matrix3x4::*;
-pub use crate::base::matrix_kronecker::{Matrix3x4KroneckerMatrix1, Matrix3x4KroneckerVector2};
-pub use crate::base::matrix_view::{
-    Matrix3x4FixedColumnsMatrix3, Matrix3x4FixedColumnsMatrix3x2, Matrix3x4FixedColumnsMatrix3x4,
-    Matrix3x4FixedColumnsVector3, Matrix3x4FixedRowsMatrix2x4, Matrix3x4FixedRowsMatrix3x4,
-    Matrix3x4FixedRowsRowVector4, Matrix3x4FixedViewMatrix1, Matrix3x4FixedViewMatrix2,
-    Matrix3x4FixedViewMatrix2x3, Matrix3x4FixedViewMatrix2x4, Matrix3x4FixedViewMatrix3,
-    Matrix3x4FixedViewMatrix3x2, Matrix3x4FixedViewMatrix3x4, Matrix3x4FixedViewRowVector2,
-    Matrix3x4FixedViewRowVector3, Matrix3x4FixedViewRowVector4, Matrix3x4FixedViewVector2,
-    Matrix3x4FixedViewVector3,
-};
-pub use crate::base::norm::{
-    Matrix3x4EuclideanNorm, Matrix3x4LpNorm, Matrix3x4OneNorm, Matrix3x4UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix3x4FixedViewMatrix1, Matrix3x4FixedViewMatrix2, Matrix3x4FixedViewMatrix2x3,
+    Matrix3x4FixedViewMatrix2x4, Matrix3x4FixedViewMatrix3, Matrix3x4FixedViewMatrix3x2,
+    Matrix3x4FixedViewMatrix3x4, Matrix3x4FixedViewRowVector2, Matrix3x4FixedViewRowVector3,
+    Matrix3x4FixedViewRowVector4, Matrix3x4FixedViewVector2, Matrix3x4FixedViewVector3,
 };
 pub use crate::root::Matrix3x4InfSup;

@@ -8,6 +8,19 @@
 //! are methods of `RowVector6Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    RowVector6KroneckerMatrix1, RowVector6KroneckerVector2, RowVector6KroneckerVector3,
+    RowVector6KroneckerVector4, RowVector6KroneckerVector5, RowVector6KroneckerVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    RowVector6FixedColumnsMatrix1, RowVector6FixedColumnsRowVector2,
+    RowVector6FixedColumnsRowVector3, RowVector6FixedColumnsRowVector4,
+    RowVector6FixedColumnsRowVector5, RowVector6FixedColumnsRowVector6,
+    RowVector6FixedRowsRowVector6,
+};
+pub use nalgebra_norm::base::norm::{
+    RowVector6EuclideanNorm, RowVector6LpNorm, RowVector6OneNorm, RowVector6UniformNorm,
+};
 pub use nalgebra_shapes6::base::row_vector6::{
     Matrix1x6, RowVector6, RowVector6Add, RowVector6AddAssign, RowVector6Bounded,
     RowVector6DivAssignScalar, RowVector6FromArray, RowVector6FromColumnArrays,
@@ -20,19 +33,8 @@ pub use nalgebra_shapes6::base::row_vector6::{
     RowVector6TrMulRowVector4, RowVector6TrMulRowVector5, RowVector6TrMulRowVector6,
 };
 pub use nalgebra_static6_wide::base::row_vector6::*;
-pub use crate::base::matrix_kronecker::{
-    RowVector6KroneckerMatrix1, RowVector6KroneckerVector2, RowVector6KroneckerVector3,
-    RowVector6KroneckerVector4, RowVector6KroneckerVector5, RowVector6KroneckerVector6,
-};
-pub use crate::base::matrix_view::{
-    RowVector6FixedColumnsMatrix1, RowVector6FixedColumnsRowVector2,
-    RowVector6FixedColumnsRowVector3, RowVector6FixedColumnsRowVector4,
-    RowVector6FixedColumnsRowVector5, RowVector6FixedColumnsRowVector6,
-    RowVector6FixedRowsRowVector6, RowVector6FixedViewMatrix1, RowVector6FixedViewRowVector2,
-    RowVector6FixedViewRowVector3, RowVector6FixedViewRowVector4, RowVector6FixedViewRowVector5,
-    RowVector6FixedViewRowVector6,
-};
-pub use crate::base::norm::{
-    RowVector6EuclideanNorm, RowVector6LpNorm, RowVector6OneNorm, RowVector6UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    RowVector6FixedViewMatrix1, RowVector6FixedViewRowVector2, RowVector6FixedViewRowVector3,
+    RowVector6FixedViewRowVector4, RowVector6FixedViewRowVector5, RowVector6FixedViewRowVector6,
 };
 pub use crate::root::RowVector6InfSup;

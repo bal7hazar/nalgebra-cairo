@@ -16,8 +16,19 @@ mod benches_views;
 
 #[cfg(test)]
 mod tests;
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix3KroneckerMatrix1, Matrix3KroneckerMatrix2, Matrix3KroneckerRowVector2,
+    Matrix3KroneckerVector2,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix3FixedColumnsMatrix3, Matrix3FixedColumnsMatrix3x2, Matrix3FixedColumnsVector3,
+    Matrix3FixedRowsMatrix2x3, Matrix3FixedRowsMatrix3, Matrix3FixedRowsRowVector3,
+};
 
 pub use nalgebra_core::base::matrix3::*;
+pub use nalgebra_norm::base::norm::{
+    Matrix3EuclideanNorm, Matrix3LpNorm, Matrix3OneNorm, Matrix3UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix3x5::{Matrix3MulMatrix3x5, Matrix3TrMulMatrix3x5};
 pub use nalgebra_shapes6::base::matrix3x6::{Matrix3MulMatrix3x6, Matrix3TrMulMatrix3x6};
 pub use nalgebra_static3::base::matrix3::*;
@@ -28,18 +39,9 @@ pub use nalgebra_static3::geometry::similarity2::Matrix3FromSimilarity2;
 pub use nalgebra_static3::geometry::translation2::Matrix3FromTranslation2;
 pub use nalgebra_static3::geometry::unit_complex::Matrix3FromUnitComplex;
 pub use nalgebra_static3::geometry::unit_quaternion::Matrix3FromUnitQuaternion;
-pub use crate::base::matrix_kronecker::{
-    Matrix3KroneckerMatrix1, Matrix3KroneckerMatrix2, Matrix3KroneckerRowVector2,
-    Matrix3KroneckerVector2,
-};
-pub use crate::base::matrix_view::{
-    Matrix3FixedColumnsMatrix3, Matrix3FixedColumnsMatrix3x2, Matrix3FixedColumnsVector3,
-    Matrix3FixedRowsMatrix2x3, Matrix3FixedRowsMatrix3, Matrix3FixedRowsRowVector3,
+pub use nalgebra_views::base::matrix_view::{
     Matrix3FixedViewMatrix1, Matrix3FixedViewMatrix2, Matrix3FixedViewMatrix2x3,
     Matrix3FixedViewMatrix3, Matrix3FixedViewMatrix3x2, Matrix3FixedViewRowVector2,
     Matrix3FixedViewRowVector3, Matrix3FixedViewVector2, Matrix3FixedViewVector3,
-};
-pub use crate::base::norm::{
-    Matrix3EuclideanNorm, Matrix3LpNorm, Matrix3OneNorm, Matrix3UniformNorm,
 };
 pub use crate::root::Matrix3InfSup;

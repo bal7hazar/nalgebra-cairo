@@ -8,24 +8,26 @@
 //! `Matrix2x3Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix2x3KroneckerMatrix1, Matrix2x3KroneckerMatrix2, Matrix2x3KroneckerMatrix3x2,
+    Matrix2x3KroneckerRowVector2, Matrix2x3KroneckerVector2, Matrix2x3KroneckerVector3,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix2x3FixedColumnsMatrix2, Matrix2x3FixedColumnsMatrix2x3, Matrix2x3FixedColumnsVector2,
+    Matrix2x3FixedRowsMatrix2x3, Matrix2x3FixedRowsRowVector3,
+};
 pub use nalgebra_core::base::matrix2x3::*;
+pub use nalgebra_norm::base::norm::{
+    Matrix2x3EuclideanNorm, Matrix2x3LpNorm, Matrix2x3OneNorm, Matrix2x3UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix2x5::Matrix2x3TrMulMatrix2x5;
 pub use nalgebra_shapes5::base::matrix3x5::Matrix2x3MulMatrix3x5;
 pub use nalgebra_shapes6::base::matrix2x6::Matrix2x3TrMulMatrix2x6;
 pub use nalgebra_shapes6::base::matrix3x6::Matrix2x3MulMatrix3x6;
 pub use nalgebra_static3::base::matrix2x3::*;
 pub use nalgebra_static3::geometry::rotation3::Matrix2x3MulRotation3;
-pub use crate::base::matrix_kronecker::{
-    Matrix2x3KroneckerMatrix1, Matrix2x3KroneckerMatrix2, Matrix2x3KroneckerMatrix3x2,
-    Matrix2x3KroneckerRowVector2, Matrix2x3KroneckerVector2, Matrix2x3KroneckerVector3,
-};
-pub use crate::base::matrix_view::{
-    Matrix2x3FixedColumnsMatrix2, Matrix2x3FixedColumnsMatrix2x3, Matrix2x3FixedColumnsVector2,
-    Matrix2x3FixedRowsMatrix2x3, Matrix2x3FixedRowsRowVector3, Matrix2x3FixedViewMatrix1,
-    Matrix2x3FixedViewMatrix2, Matrix2x3FixedViewMatrix2x3, Matrix2x3FixedViewRowVector2,
-    Matrix2x3FixedViewRowVector3, Matrix2x3FixedViewVector2,
-};
-pub use crate::base::norm::{
-    Matrix2x3EuclideanNorm, Matrix2x3LpNorm, Matrix2x3OneNorm, Matrix2x3UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix2x3FixedViewMatrix1, Matrix2x3FixedViewMatrix2, Matrix2x3FixedViewMatrix2x3,
+    Matrix2x3FixedViewRowVector2, Matrix2x3FixedViewRowVector3, Matrix2x3FixedViewVector2,
 };
 pub use crate::root::Matrix2x3InfSup;

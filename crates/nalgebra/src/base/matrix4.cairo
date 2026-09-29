@@ -13,8 +13,17 @@ use nalgebra_static4::internal::base::matrix4::Matrix4InternalTrait;
 
 #[cfg(test)]
 mod tests;
+pub use nalgebra_blocks::base::matrix_kronecker::Matrix4KroneckerMatrix1;
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix4FixedColumnsMatrix4, Matrix4FixedColumnsMatrix4x2, Matrix4FixedColumnsMatrix4x3,
+    Matrix4FixedColumnsVector4, Matrix4FixedRowsMatrix2x4, Matrix4FixedRowsMatrix3x4,
+    Matrix4FixedRowsMatrix4, Matrix4FixedRowsRowVector4,
+};
 
 pub use nalgebra_core::base::matrix4::*;
+pub use nalgebra_norm::base::norm::{
+    Matrix4EuclideanNorm, Matrix4LpNorm, Matrix4OneNorm, Matrix4UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix4x5::{Matrix4MulMatrix4x5, Matrix4TrMulMatrix4x5};
 pub use nalgebra_shapes6::base::matrix4x6::{Matrix4MulMatrix4x6, Matrix4TrMulMatrix4x6};
 pub use nalgebra_static3::geometry::isometry3::Matrix4FromIsometry3;
@@ -23,18 +32,12 @@ pub use nalgebra_static3::geometry::similarity3::Matrix4FromSimilarity3;
 pub use nalgebra_static3::geometry::translation3::Matrix4FromTranslation3;
 pub use nalgebra_static3::geometry::unit_quaternion::Matrix4FromUnitQuaternion;
 pub use nalgebra_static4::base::matrix4::*;
-pub use crate::base::matrix_kronecker::Matrix4KroneckerMatrix1;
-pub use crate::base::matrix_view::{
-    Matrix4FixedColumnsMatrix4, Matrix4FixedColumnsMatrix4x2, Matrix4FixedColumnsMatrix4x3,
-    Matrix4FixedColumnsVector4, Matrix4FixedRowsMatrix2x4, Matrix4FixedRowsMatrix3x4,
-    Matrix4FixedRowsMatrix4, Matrix4FixedRowsRowVector4, Matrix4FixedViewMatrix1,
-    Matrix4FixedViewMatrix2, Matrix4FixedViewMatrix2x3, Matrix4FixedViewMatrix2x4,
-    Matrix4FixedViewMatrix3, Matrix4FixedViewMatrix3x2, Matrix4FixedViewMatrix3x4,
-    Matrix4FixedViewMatrix4, Matrix4FixedViewMatrix4x2, Matrix4FixedViewMatrix4x3,
-    Matrix4FixedViewRowVector2, Matrix4FixedViewRowVector3, Matrix4FixedViewRowVector4,
-    Matrix4FixedViewVector2, Matrix4FixedViewVector3, Matrix4FixedViewVector4,
-};
-pub use crate::base::norm::{
-    Matrix4EuclideanNorm, Matrix4LpNorm, Matrix4OneNorm, Matrix4UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix4FixedViewMatrix1, Matrix4FixedViewMatrix2, Matrix4FixedViewMatrix2x3,
+    Matrix4FixedViewMatrix2x4, Matrix4FixedViewMatrix3, Matrix4FixedViewMatrix3x2,
+    Matrix4FixedViewMatrix3x4, Matrix4FixedViewMatrix4, Matrix4FixedViewMatrix4x2,
+    Matrix4FixedViewMatrix4x3, Matrix4FixedViewRowVector2, Matrix4FixedViewRowVector3,
+    Matrix4FixedViewRowVector4, Matrix4FixedViewVector2, Matrix4FixedViewVector3,
+    Matrix4FixedViewVector4,
 };
 pub use crate::root::Matrix4InfSup;

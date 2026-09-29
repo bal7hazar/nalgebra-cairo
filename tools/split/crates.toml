@@ -50,12 +50,12 @@ shapes6 = "nalgebra_shapes6"
 static5 = "nalgebra_static5"
 static6_tall = "nalgebra_static6_tall"
 static6_wide = "nalgebra_static6_wide"
-blocks = "nalgebra"
-views = "nalgebra"
-norm = "nalgebra"
+blocks = "nalgebra_blocks"
+views = "nalgebra_views"
+norm = "nalgebra_norm"
 geometry6 = "nalgebra_geometry6"
-statistics = "nalgebra"
-blas = "nalgebra"
+statistics = "nalgebra_statistics"
+blas = "nalgebra_blas"
 linalg4 = "nalgebra"
 linalg_svd_eigen4 = "nalgebra"
 linalg_pivot4 = "nalgebra"
@@ -95,6 +95,9 @@ names = [
     "Matrix4InternalTrait", "Matrix4KernelsTrait",
     # WP 9-NS7 (`static6_wide`): the kernels of `Lu6`, used by its in-crate benchmarks in `nalgebra`
     "Lu6InternalTrait",
+    # WP 9-NS8 (`blocks`): the padding / cropping helpers of `FixedView` (`views`) and of the
+    # dynamic shapes (`nalgebra`)
+    "PadTo6", "CropFrom6", "ShapeDims",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of

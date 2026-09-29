@@ -8,23 +8,26 @@
 //! are methods of `RowVector4Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    RowVector4KroneckerMatrix1, RowVector4KroneckerVector2, RowVector4KroneckerVector3,
+    RowVector4KroneckerVector4, RowVector4KroneckerVector5, RowVector4KroneckerVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    RowVector4FixedColumnsMatrix1, RowVector4FixedColumnsRowVector2,
+    RowVector4FixedColumnsRowVector3, RowVector4FixedColumnsRowVector4,
+    RowVector4FixedRowsRowVector4,
+};
 pub use nalgebra_core::base::row_vector4::*;
+pub use nalgebra_norm::base::norm::{
+    RowVector4EuclideanNorm, RowVector4LpNorm, RowVector4OneNorm, RowVector4UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix4x5::RowVector4MulMatrix4x5;
 pub use nalgebra_shapes5::base::row_vector5::RowVector4TrMulRowVector5;
 pub use nalgebra_shapes6::base::matrix4x6::RowVector4MulMatrix4x6;
 pub use nalgebra_shapes6::base::row_vector6::RowVector4TrMulRowVector6;
 pub use nalgebra_static4::base::row_vector4::*;
-pub use crate::base::matrix_kronecker::{
-    RowVector4KroneckerMatrix1, RowVector4KroneckerVector2, RowVector4KroneckerVector3,
-    RowVector4KroneckerVector4, RowVector4KroneckerVector5, RowVector4KroneckerVector6,
-};
-pub use crate::base::matrix_view::{
-    RowVector4FixedColumnsMatrix1, RowVector4FixedColumnsRowVector2,
-    RowVector4FixedColumnsRowVector3, RowVector4FixedColumnsRowVector4,
-    RowVector4FixedRowsRowVector4, RowVector4FixedViewMatrix1, RowVector4FixedViewRowVector2,
-    RowVector4FixedViewRowVector3, RowVector4FixedViewRowVector4,
-};
-pub use crate::base::norm::{
-    RowVector4EuclideanNorm, RowVector4LpNorm, RowVector4OneNorm, RowVector4UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    RowVector4FixedViewMatrix1, RowVector4FixedViewRowVector2, RowVector4FixedViewRowVector3,
+    RowVector4FixedViewRowVector4,
 };
 pub use crate::root::RowVector4InfSup;

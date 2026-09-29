@@ -8,6 +8,17 @@
 //! are methods of `Vector5Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Vector5KroneckerMatrix1, Vector5KroneckerRowVector2, Vector5KroneckerRowVector3,
+    Vector5KroneckerRowVector4, Vector5KroneckerRowVector5, Vector5KroneckerRowVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Vector5FixedColumnsVector5, Vector5FixedRowsMatrix1, Vector5FixedRowsVector2,
+    Vector5FixedRowsVector3, Vector5FixedRowsVector4, Vector5FixedRowsVector5,
+};
+pub use nalgebra_norm::base::norm::{
+    Vector5EuclideanNorm, Vector5LpNorm, Vector5OneNorm, Vector5UniformNorm,
+};
 pub use nalgebra_shapes5::base::vector5::{
     Matrix5x1, UnitVector5, Vector5, Vector5Add, Vector5AddAssign, Vector5Bounded,
     Vector5DivAssignScalar, Vector5FromArray, Vector5FromColumnArrays, Vector5IndexLinear,
@@ -20,17 +31,8 @@ pub use nalgebra_shapes5::base::vector5::{
 pub use nalgebra_shapes6::base::matrix5x6::Vector5TrMulMatrix5x6;
 pub use nalgebra_shapes6::base::row_vector6::Vector5MulRowVector6;
 pub use nalgebra_static5::base::vector5::*;
-pub use crate::base::matrix_kronecker::{
-    Vector5KroneckerMatrix1, Vector5KroneckerRowVector2, Vector5KroneckerRowVector3,
-    Vector5KroneckerRowVector4, Vector5KroneckerRowVector5, Vector5KroneckerRowVector6,
-};
-pub use crate::base::matrix_view::{
-    Vector5FixedColumnsVector5, Vector5FixedRowsMatrix1, Vector5FixedRowsVector2,
-    Vector5FixedRowsVector3, Vector5FixedRowsVector4, Vector5FixedRowsVector5,
+pub use nalgebra_views::base::matrix_view::{
     Vector5FixedViewMatrix1, Vector5FixedViewVector2, Vector5FixedViewVector3,
     Vector5FixedViewVector4, Vector5FixedViewVector5,
-};
-pub use crate::base::norm::{
-    Vector5EuclideanNorm, Vector5LpNorm, Vector5OneNorm, Vector5UniformNorm,
 };
 pub use crate::root::Vector5InfSup;

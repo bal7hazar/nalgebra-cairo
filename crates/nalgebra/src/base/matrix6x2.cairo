@@ -8,6 +8,17 @@
 //! `Matrix6x2Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix6x2KroneckerMatrix1, Matrix6x2KroneckerRowVector2, Matrix6x2KroneckerRowVector3,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix6x2FixedColumnsMatrix6x2, Matrix6x2FixedColumnsVector6, Matrix6x2FixedRowsMatrix2,
+    Matrix6x2FixedRowsMatrix3x2, Matrix6x2FixedRowsMatrix4x2, Matrix6x2FixedRowsMatrix5x2,
+    Matrix6x2FixedRowsMatrix6x2, Matrix6x2FixedRowsRowVector2,
+};
+pub use nalgebra_norm::base::norm::{
+    Matrix6x2EuclideanNorm, Matrix6x2LpNorm, Matrix6x2OneNorm, Matrix6x2UniformNorm,
+};
 pub use nalgebra_shapes6::base::matrix6x2::{
     Matrix6x2, Matrix6x2Add, Matrix6x2AddAssign, Matrix6x2Bounded, Matrix6x2DivAssignScalar,
     Matrix6x2FromColumnArrays, Matrix6x2IndexLinear, Matrix6x2IndexPair, Matrix6x2IntoColumnArrays,
@@ -19,19 +30,10 @@ pub use nalgebra_shapes6::base::matrix6x2::{
     Matrix6x2TrMulMatrix6x4, Matrix6x2TrMulMatrix6x5, Matrix6x2TrMulVector6,
 };
 pub use nalgebra_static6_tall::base::matrix6x2::*;
-pub use crate::base::matrix_kronecker::{
-    Matrix6x2KroneckerMatrix1, Matrix6x2KroneckerRowVector2, Matrix6x2KroneckerRowVector3,
-};
-pub use crate::base::matrix_view::{
-    Matrix6x2FixedColumnsMatrix6x2, Matrix6x2FixedColumnsVector6, Matrix6x2FixedRowsMatrix2,
-    Matrix6x2FixedRowsMatrix3x2, Matrix6x2FixedRowsMatrix4x2, Matrix6x2FixedRowsMatrix5x2,
-    Matrix6x2FixedRowsMatrix6x2, Matrix6x2FixedRowsRowVector2, Matrix6x2FixedViewMatrix1,
-    Matrix6x2FixedViewMatrix2, Matrix6x2FixedViewMatrix3x2, Matrix6x2FixedViewMatrix4x2,
-    Matrix6x2FixedViewMatrix5x2, Matrix6x2FixedViewMatrix6x2, Matrix6x2FixedViewRowVector2,
-    Matrix6x2FixedViewVector2, Matrix6x2FixedViewVector3, Matrix6x2FixedViewVector4,
-    Matrix6x2FixedViewVector5, Matrix6x2FixedViewVector6,
-};
-pub use crate::base::norm::{
-    Matrix6x2EuclideanNorm, Matrix6x2LpNorm, Matrix6x2OneNorm, Matrix6x2UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix6x2FixedViewMatrix1, Matrix6x2FixedViewMatrix2, Matrix6x2FixedViewMatrix3x2,
+    Matrix6x2FixedViewMatrix4x2, Matrix6x2FixedViewMatrix5x2, Matrix6x2FixedViewMatrix6x2,
+    Matrix6x2FixedViewRowVector2, Matrix6x2FixedViewVector2, Matrix6x2FixedViewVector3,
+    Matrix6x2FixedViewVector4, Matrix6x2FixedViewVector5, Matrix6x2FixedViewVector6,
 };
 pub use crate::root::Matrix6x2InfSup;

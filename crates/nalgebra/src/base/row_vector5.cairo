@@ -8,6 +8,18 @@
 //! are methods of `RowVector5Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    RowVector5KroneckerMatrix1, RowVector5KroneckerVector2, RowVector5KroneckerVector3,
+    RowVector5KroneckerVector4, RowVector5KroneckerVector5, RowVector5KroneckerVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    RowVector5FixedColumnsMatrix1, RowVector5FixedColumnsRowVector2,
+    RowVector5FixedColumnsRowVector3, RowVector5FixedColumnsRowVector4,
+    RowVector5FixedColumnsRowVector5, RowVector5FixedRowsRowVector5,
+};
+pub use nalgebra_norm::base::norm::{
+    RowVector5EuclideanNorm, RowVector5LpNorm, RowVector5OneNorm, RowVector5UniformNorm,
+};
 pub use nalgebra_shapes5::base::row_vector5::{
     Matrix1x5, RowVector5, RowVector5Add, RowVector5AddAssign, RowVector5Bounded,
     RowVector5DivAssignScalar, RowVector5FromArray, RowVector5FromColumnArrays,
@@ -21,18 +33,8 @@ pub use nalgebra_shapes5::base::row_vector5::{
 pub use nalgebra_shapes6::base::matrix5x6::RowVector5MulMatrix5x6;
 pub use nalgebra_shapes6::base::row_vector6::RowVector5TrMulRowVector6;
 pub use nalgebra_static5::base::row_vector5::*;
-pub use crate::base::matrix_kronecker::{
-    RowVector5KroneckerMatrix1, RowVector5KroneckerVector2, RowVector5KroneckerVector3,
-    RowVector5KroneckerVector4, RowVector5KroneckerVector5, RowVector5KroneckerVector6,
-};
-pub use crate::base::matrix_view::{
-    RowVector5FixedColumnsMatrix1, RowVector5FixedColumnsRowVector2,
-    RowVector5FixedColumnsRowVector3, RowVector5FixedColumnsRowVector4,
-    RowVector5FixedColumnsRowVector5, RowVector5FixedRowsRowVector5, RowVector5FixedViewMatrix1,
-    RowVector5FixedViewRowVector2, RowVector5FixedViewRowVector3, RowVector5FixedViewRowVector4,
-    RowVector5FixedViewRowVector5,
-};
-pub use crate::base::norm::{
-    RowVector5EuclideanNorm, RowVector5LpNorm, RowVector5OneNorm, RowVector5UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    RowVector5FixedViewMatrix1, RowVector5FixedViewRowVector2, RowVector5FixedViewRowVector3,
+    RowVector5FixedViewRowVector4, RowVector5FixedViewRowVector5,
 };
 pub use crate::root::RowVector5InfSup;

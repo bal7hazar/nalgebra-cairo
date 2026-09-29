@@ -8,25 +8,28 @@
 //! are methods of `Matrix5Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
-pub use nalgebra_shapes5::base::matrix5::*;
-pub use nalgebra_shapes6::base::matrix5x6::{Matrix5MulMatrix5x6, Matrix5TrMulMatrix5x6};
-pub use nalgebra_static5::base::matrix5::*;
-pub use crate::base::matrix_kronecker::Matrix5KroneckerMatrix1;
-pub use crate::base::matrix_view::{
+pub use nalgebra_blocks::base::matrix_kronecker::Matrix5KroneckerMatrix1;
+pub use nalgebra_blocks::base::matrix_view::{
     Matrix5FixedColumnsMatrix5, Matrix5FixedColumnsMatrix5x2, Matrix5FixedColumnsMatrix5x3,
     Matrix5FixedColumnsMatrix5x4, Matrix5FixedColumnsVector5, Matrix5FixedRowsMatrix2x5,
     Matrix5FixedRowsMatrix3x5, Matrix5FixedRowsMatrix4x5, Matrix5FixedRowsMatrix5,
-    Matrix5FixedRowsRowVector5, Matrix5FixedViewMatrix1, Matrix5FixedViewMatrix2,
-    Matrix5FixedViewMatrix2x3, Matrix5FixedViewMatrix2x4, Matrix5FixedViewMatrix2x5,
-    Matrix5FixedViewMatrix3, Matrix5FixedViewMatrix3x2, Matrix5FixedViewMatrix3x4,
-    Matrix5FixedViewMatrix3x5, Matrix5FixedViewMatrix4, Matrix5FixedViewMatrix4x2,
-    Matrix5FixedViewMatrix4x3, Matrix5FixedViewMatrix4x5, Matrix5FixedViewMatrix5,
-    Matrix5FixedViewMatrix5x2, Matrix5FixedViewMatrix5x3, Matrix5FixedViewMatrix5x4,
-    Matrix5FixedViewRowVector2, Matrix5FixedViewRowVector3, Matrix5FixedViewRowVector4,
-    Matrix5FixedViewRowVector5, Matrix5FixedViewVector2, Matrix5FixedViewVector3,
-    Matrix5FixedViewVector4, Matrix5FixedViewVector5,
+    Matrix5FixedRowsRowVector5,
 };
-pub use crate::base::norm::{
+pub use nalgebra_norm::base::norm::{
     Matrix5EuclideanNorm, Matrix5LpNorm, Matrix5OneNorm, Matrix5UniformNorm,
+};
+pub use nalgebra_shapes5::base::matrix5::*;
+pub use nalgebra_shapes6::base::matrix5x6::{Matrix5MulMatrix5x6, Matrix5TrMulMatrix5x6};
+pub use nalgebra_static5::base::matrix5::*;
+pub use nalgebra_views::base::matrix_view::{
+    Matrix5FixedViewMatrix1, Matrix5FixedViewMatrix2, Matrix5FixedViewMatrix2x3,
+    Matrix5FixedViewMatrix2x4, Matrix5FixedViewMatrix2x5, Matrix5FixedViewMatrix3,
+    Matrix5FixedViewMatrix3x2, Matrix5FixedViewMatrix3x4, Matrix5FixedViewMatrix3x5,
+    Matrix5FixedViewMatrix4, Matrix5FixedViewMatrix4x2, Matrix5FixedViewMatrix4x3,
+    Matrix5FixedViewMatrix4x5, Matrix5FixedViewMatrix5, Matrix5FixedViewMatrix5x2,
+    Matrix5FixedViewMatrix5x3, Matrix5FixedViewMatrix5x4, Matrix5FixedViewRowVector2,
+    Matrix5FixedViewRowVector3, Matrix5FixedViewRowVector4, Matrix5FixedViewRowVector5,
+    Matrix5FixedViewVector2, Matrix5FixedViewVector3, Matrix5FixedViewVector4,
+    Matrix5FixedViewVector5,
 };
 pub use crate::root::Matrix5InfSup;

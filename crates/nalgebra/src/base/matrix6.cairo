@@ -18,15 +18,20 @@
 //! through the Schur complement needs two 3x3 inversions and four 3x3 products, each rounding
 //! again, and is numerically far worse than a pivoted factorisation.
 
-pub use nalgebra_geometry6::geometry::translation5::Matrix6FromTranslation5;
-pub use nalgebra_shapes6::base::matrix6::*;
-pub use nalgebra_static6_wide::base::matrix6::*;
-pub use crate::base::matrix_kronecker::Matrix6KroneckerMatrix1;
-pub use crate::base::matrix_view::{
+pub use nalgebra_blocks::base::matrix_kronecker::Matrix6KroneckerMatrix1;
+pub use nalgebra_blocks::base::matrix_view::{
     Matrix6FixedColumnsMatrix6, Matrix6FixedColumnsMatrix6x2, Matrix6FixedColumnsMatrix6x3,
     Matrix6FixedColumnsMatrix6x4, Matrix6FixedColumnsMatrix6x5, Matrix6FixedColumnsVector6,
     Matrix6FixedRowsMatrix2x6, Matrix6FixedRowsMatrix3x6, Matrix6FixedRowsMatrix4x6,
     Matrix6FixedRowsMatrix5x6, Matrix6FixedRowsMatrix6, Matrix6FixedRowsRowVector6,
+};
+pub use nalgebra_geometry6::geometry::translation5::Matrix6FromTranslation5;
+pub use nalgebra_norm::base::norm::{
+    Matrix6EuclideanNorm, Matrix6LpNorm, Matrix6OneNorm, Matrix6UniformNorm,
+};
+pub use nalgebra_shapes6::base::matrix6::*;
+pub use nalgebra_static6_wide::base::matrix6::*;
+pub use nalgebra_views::base::matrix_view::{
     Matrix6FixedViewMatrix1, Matrix6FixedViewMatrix2, Matrix6FixedViewMatrix2x3,
     Matrix6FixedViewMatrix2x4, Matrix6FixedViewMatrix2x5, Matrix6FixedViewMatrix2x6,
     Matrix6FixedViewMatrix3, Matrix6FixedViewMatrix3x2, Matrix6FixedViewMatrix3x4,
@@ -39,8 +44,5 @@ pub use crate::base::matrix_view::{
     Matrix6FixedViewRowVector3, Matrix6FixedViewRowVector4, Matrix6FixedViewRowVector5,
     Matrix6FixedViewRowVector6, Matrix6FixedViewVector2, Matrix6FixedViewVector3,
     Matrix6FixedViewVector4, Matrix6FixedViewVector5, Matrix6FixedViewVector6,
-};
-pub use crate::base::norm::{
-    Matrix6EuclideanNorm, Matrix6LpNorm, Matrix6OneNorm, Matrix6UniformNorm,
 };
 pub use crate::root::Matrix6InfSup;

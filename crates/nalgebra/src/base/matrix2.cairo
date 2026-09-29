@@ -13,24 +13,27 @@ use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
 
 #[cfg(test)]
 mod tests;
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix2KroneckerMatrix1, Matrix2KroneckerMatrix2, Matrix2KroneckerMatrix2x3,
+    Matrix2KroneckerMatrix3, Matrix2KroneckerMatrix3x2, Matrix2KroneckerRowVector2,
+    Matrix2KroneckerRowVector3, Matrix2KroneckerVector2, Matrix2KroneckerVector3,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix2FixedColumnsMatrix2, Matrix2FixedColumnsVector2, Matrix2FixedRowsMatrix2,
+    Matrix2FixedRowsRowVector2,
+};
 
 pub use nalgebra_core::base::matrix2::*;
+pub use nalgebra_norm::base::norm::{
+    Matrix2EuclideanNorm, Matrix2LpNorm, Matrix2OneNorm, Matrix2UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix2x5::{Matrix2MulMatrix2x5, Matrix2TrMulMatrix2x5};
 pub use nalgebra_shapes6::base::matrix2x6::{Matrix2MulMatrix2x6, Matrix2TrMulMatrix2x6};
 pub use nalgebra_static3::base::matrix2::*;
 pub use nalgebra_static3::geometry::rotation2::{Matrix2FromRotation2, Matrix2MulRotation2};
 pub use nalgebra_static3::geometry::unit_complex::Matrix2FromUnitComplex;
-pub use crate::base::matrix_kronecker::{
-    Matrix2KroneckerMatrix1, Matrix2KroneckerMatrix2, Matrix2KroneckerMatrix2x3,
-    Matrix2KroneckerMatrix3, Matrix2KroneckerMatrix3x2, Matrix2KroneckerRowVector2,
-    Matrix2KroneckerRowVector3, Matrix2KroneckerVector2, Matrix2KroneckerVector3,
-};
-pub use crate::base::matrix_view::{
-    Matrix2FixedColumnsMatrix2, Matrix2FixedColumnsVector2, Matrix2FixedRowsMatrix2,
-    Matrix2FixedRowsRowVector2, Matrix2FixedViewMatrix1, Matrix2FixedViewMatrix2,
-    Matrix2FixedViewRowVector2, Matrix2FixedViewVector2,
-};
-pub use crate::base::norm::{
-    Matrix2EuclideanNorm, Matrix2LpNorm, Matrix2OneNorm, Matrix2UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix2FixedViewMatrix1, Matrix2FixedViewMatrix2, Matrix2FixedViewRowVector2,
+    Matrix2FixedViewVector2,
 };
 pub use crate::root::Matrix2InfSup;

@@ -26,25 +26,27 @@ mod benches;
 
 #[cfg(test)]
 mod tests;
-
-pub use nalgebra_core::base::vector3::*;
-pub use nalgebra_shapes5::base::matrix3x5::Vector3TrMulMatrix3x5;
-pub use nalgebra_shapes5::base::row_vector5::Vector3MulRowVector5;
-pub use nalgebra_shapes6::base::matrix3x6::Vector3TrMulMatrix3x6;
-pub use nalgebra_shapes6::base::row_vector6::Vector3MulRowVector6;
-pub use nalgebra_static3::base::vector3::*;
-pub use crate::base::matrix_kronecker::{
+pub use nalgebra_blocks::base::matrix_kronecker::{
     Vector3KroneckerMatrix1, Vector3KroneckerMatrix2, Vector3KroneckerMatrix2x3,
     Vector3KroneckerMatrix2x4, Vector3KroneckerMatrix2x5, Vector3KroneckerMatrix2x6,
     Vector3KroneckerRowVector2, Vector3KroneckerRowVector3, Vector3KroneckerRowVector4,
     Vector3KroneckerRowVector5, Vector3KroneckerRowVector6, Vector3KroneckerVector2,
 };
-pub use crate::base::matrix_view::{
+pub use nalgebra_blocks::base::matrix_view::{
     Vector3FixedColumnsVector3, Vector3FixedRowsMatrix1, Vector3FixedRowsVector2,
-    Vector3FixedRowsVector3, Vector3FixedViewMatrix1, Vector3FixedViewVector2,
-    Vector3FixedViewVector3,
+    Vector3FixedRowsVector3,
 };
-pub use crate::base::norm::{
+
+pub use nalgebra_core::base::vector3::*;
+pub use nalgebra_norm::base::norm::{
     Vector3EuclideanNorm, Vector3LpNorm, Vector3OneNorm, Vector3UniformNorm,
+};
+pub use nalgebra_shapes5::base::matrix3x5::Vector3TrMulMatrix3x5;
+pub use nalgebra_shapes5::base::row_vector5::Vector3MulRowVector5;
+pub use nalgebra_shapes6::base::matrix3x6::Vector3TrMulMatrix3x6;
+pub use nalgebra_shapes6::base::row_vector6::Vector3MulRowVector6;
+pub use nalgebra_static3::base::vector3::*;
+pub use nalgebra_views::base::matrix_view::{
+    Vector3FixedViewMatrix1, Vector3FixedViewVector2, Vector3FixedViewVector3,
 };
 pub use crate::root::Vector3InfSup;
