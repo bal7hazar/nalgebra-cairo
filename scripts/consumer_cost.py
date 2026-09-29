@@ -66,6 +66,12 @@ Definitions
                member is a workspace crate by name (`nalgebra_glam`, features from `[crates.NAME]`)
                or a registry crate with its version requirement (`glam@0.4.1`, `fixed@0.4.0`,
                `simba@^0.2`), written as `name = "req"` in the consumer manifest.
+  budget       a closure (or facade) is checked against `closure_seconds` / `closure_gb` unless it
+               declares its own budget: `budget = { seconds = 20, gb = 4.5 }` in the table form of a
+               `[closures]` entry (either key may be omitted: the default applies), or on the command
+               line `--closure NAME=a,b::20s,4.5gb` (members, then `::`, then any of `<n>s`, `<n>gb`).
+               The budget used is shown per closure in the table (`budget` column) and in the JSON
+               (`budget: {seconds, gb}`); a configuration without a budget behaves as before.
 
 Usage
   python3 scripts/consumer_cost.py --lines-only --report-only        # fast proxy, no build
@@ -83,6 +89,7 @@ Config (`consumer_cost.toml` at the workspace root, or `--config PATH`; flags wi
   facades = ["umbrella"]                                    # top-level key: judged on the closure budget
   [closures]  product = ["crate1", "registry_crate@1.2.3"]
               lean = { members = ["crate1"], default_features = false, features = [], report_only = true }
+              big = { members = ["crate1", "crate2"], budget = { seconds = 20, gb = 4.5 } }
   [crates.NAME]   features = ["a"], default_features = false, report_only = true
 
 Exit status: 1 if any gated row fails (unless `--report-only`), 2 on a usage or build error.
@@ -510,6 +517,32 @@ def parse_member(spec):
     return name, (req if at else None)
 
 
+def budget_of(r, gates):
+    """The (seconds, GB) budget of a closure / facade row: its own `budget`, else the closure gates."""
+    b = r.get("budget") or {}
+    return b.get("seconds", gates["closure_seconds"]), b.get("gb", gates["closure_gb"])
+
+
+def parse_budget(text):
+    """`20s,4.5gb` (either part optional) -> {"seconds": 20.0, "gb": 4.5}."""
+    out = {}
+    for tok in (t.strip().lower() for t in text.split(",") if t.strip()):
+        m = re.match(r"^(\d+(?:\.\d+)?)(s|gb)$", tok)
+        if not m:
+            sys.exit(f"error: bad budget `{tok}` (expected `<n>s` or `<n>gb`)")
+        out["seconds" if m.group(2) == "s" else "gb"] = float(m.group(1))
+    return out
+
+
+def budget_config(value):
+    """The `budget` of a `[closures]` table: {seconds, gb} (floats) or None."""
+    if value is None:
+        return None
+    if not isinstance(value, dict) or set(value) - {"seconds", "gb"}:
+        sys.exit("error: a closure `budget` is a table `{ seconds = N, gb = N }`")
+    return {k: float(v) for k, v in value.items()}
+
+
 def judge(r, gates, facade):
     """The failed gates of one result row."""
     fails = []
@@ -522,11 +555,10 @@ def judge(r, gates, facade):
 
     if r.get("closure"):
         if "added_seconds" in r:
-            over(r["added_seconds"], r["added_gb"], gates["closure_seconds"], gates["closure_gb"])
+            over(r["added_seconds"], r["added_gb"], *budget_of(r, gates))
     elif facade:  # gate 3 only: the consumer of the facade is its closure
         if "added_seconds" in r:
-            over(r["added_seconds"], r["added_gb"], gates["closure_seconds"], gates["closure_gb"],
-                 "closure ")
+            over(r["added_seconds"], r["added_gb"], *budget_of(r, gates), "closure ")
     else:
         if r["gated_lines"] > gates["max_lines"]:
             fails.append(f"lines > {gates['max_lines']:,.0f}")
@@ -572,6 +604,20 @@ def self_test():
     assert judge(dict(row, gated_lines=10**6, marginal_seconds=99.0), g, True) == ["closure time > 15 s"]
     assert judge({"closure": True, "added_seconds": 1.0, "added_gb": 3.5}, g, False) == [
         "memory > 3 GB"]
+    assert judge({"closure": True, "added_seconds": 18.0, "added_gb": 4.0,
+                  "budget": {"seconds": 20.0, "gb": 4.5}}, g, False) == []
+    assert judge({"closure": True, "added_seconds": 21.0, "added_gb": 4.0,
+                  "budget": {"seconds": 20.0}}, g, False) == ["time > 20 s", "memory > 3 GB"]
+    assert judge(dict(row, gated_lines=1, added_seconds=16.0, budget={"seconds": 20.0, "gb": 4.5}),
+                 g, True) == []
+    assert parse_budget("20s,4.5gb") == {"seconds": 20.0, "gb": 4.5}
+    assert parse_budget("3GB") == {"gb": 3.0} and parse_budget("") == {}
+    assert budget_config(None) is None and budget_config({"gb": 4}) == {"gb": 4.0}
+    assert split_closure_spec("p=a,b@1::20s,4.5gb") == ("p", ["a", "b@1"], {"seconds": 20.0, "gb": 4.5})
+    assert split_closure_spec("p=a,b") == ("p", ["a", "b"], None)
+    assert budget_label({"closure": True, "budget": {"seconds": 20.0, "gb": 4.5}}, g) == "20 s / 4.5 GB"
+    assert budget_label({"closure": True}, g) == "15 s / 3 GB"
+    assert budget_label({"crate": "x"}, g) == "-"
     assert verdict([], True) == "reported (ok)" and verdict(["x"]) == "FAIL: x"
     assert assign_shards({"a": 10, "b": 6, "c": 5, "d": 1}, 2) == {"a": 1, "b": 2, "c": 2, "d": 1}
     assert assign_shards({"a": 1}, 3) == {"a": 1}
@@ -582,7 +628,10 @@ def self_test():
     assert d == [4.0, 5.0, 4.5] and med == 4.5 and q1 <= med <= q3, (d, q1, med, q3)
     assert paired([1, 2], [3, 1], clamp=True)[0] == [0, 1]
     assert closure_config(["a", "b@1"]) == {"members": ["a", "b@1"], "features": None,
-                                            "default_features": None, "report_only": False}
+                                            "default_features": None, "report_only": False,
+                                            "budget": None}
+    assert closure_config({"members": ["a"], "budget": {"seconds": 20, "gb": 4.5}})["budget"] == {
+        "seconds": 20.0, "gb": 4.5}
     assert closure_config({"members": ["a"], "default_features": False, "report_only": True})[
         "report_only"]
     print("self-test: ok")
@@ -618,8 +667,25 @@ def closure_config(value):
             sys.exit("error: a `[closures]` table needs `members`")
         return {"members": list(value["members"]), "features": value.get("features"),
                 "default_features": value.get("default_features"),
-                "report_only": bool(value.get("report_only", False))}
-    return {"members": list(value), "features": None, "default_features": None, "report_only": False}
+                "report_only": bool(value.get("report_only", False)),
+                "budget": budget_config(value.get("budget"))}
+    return {"members": list(value), "features": None, "default_features": None, "report_only": False,
+            "budget": None}
+
+
+def split_closure_spec(spec):
+    """`NAME=a,b@1::20s,4.5gb` -> (NAME, ["a", "b@1"], budget or None)."""
+    name, _, rest = spec.partition("=")
+    members, sep, budget = rest.partition("::")
+    return name, [m for m in members.split(",") if m], parse_budget(budget) if sep else None
+
+
+def budget_label(r, gates):
+    """The budget of a row as shown in the table: `20 s / 4.5 GB` for closures and facades, else `-`."""
+    if not (r.get("closure") or r.get("facade")):
+        return "-"
+    s, gb = budget_of(r, gates)
+    return f"{s:g} s / {gb:g} GB"
 
 
 def fmt_iqr(value, iqr, spec, show):
@@ -639,20 +705,20 @@ def render(results, gates, metric, rounds, modules=False):
         return fmt_iqr(r.get(key), r.get(iqr_key) if iqr_key else None, spec, show)
 
     lines = ["| crate | version | lines | over baseline s | over baseline GB | marginal s "
-             "| marginal GB | verdict |", "|---|---|---:|---:|---:|---:|---:|---|"]
+             "| marginal GB | budget | verdict |", "|---|---|---:|---:|---:|---:|---:|---|---|"]
     for r in results:
         name = r["crate"] + (" (facade)" if r.get("facade") else "")
         lines.append(f"| {name} | {r['version']} | {r['lines']:,} "
                      f"| {cell(r, 'added_seconds', '.1f', 'added_iqr_seconds')} "
                      f"| {cell(r, 'added_gb', '.2f')} "
                      f"| {cell(r, 'marginal_seconds', '.1f', 'marginal_iqr_seconds')} "
-                     f"| {cell(r, 'marginal_gb', '.2f')} | {r['verdict']} |")
+                     f"| {cell(r, 'marginal_gb', '.2f')} | {budget_label(r, gates)} | {r['verdict']} |")
     lines.append(f"\nLines: physical lines of the library files, test-only code excluded "
                  f"(gate: {metric}, max {gates['max_lines']:,.0f}). Over baseline = consumer of the crate - "
                  f"baseline consumer (no dependency). Marginal = consumer of the crate - consumer of its "
                  f"direct dependencies (gate 2: {gates['max_seconds']:g} s / {gates['max_gb']:g} GB). "
-                 f"Closures and facades (gate 3): over baseline, {gates['closure_seconds']:g} s / "
-                 f"{gates['closure_gb']:g} GB. `reported`: measured, never gated (config `report_only`).")
+                 f"Closures and facades (gate 3): over baseline, against the budget of the row "
+                 f"(default {gates['closure_seconds']:g} s / {gates['closure_gb']:g} GB). `reported`: measured, never gated (config `report_only`).")
     if show:
         lines.append(f"Medians of the per-round differences over {rounds} rounds (interquartile range "
                      f"in parentheses); memory: median of the per-round peak differences.")
@@ -777,8 +843,8 @@ def main():
     crate_cfg = cfg.get("crates", {})
     closures = {} if args.no_closures else {k: closure_config(v) for k, v in cfg.get("closures", {}).items()}
     for spec in args.closure:
-        name, _, members = spec.partition("=")
-        closures[name] = closure_config([m for m in members.split(",") if m])
+        name, members, budget = split_closure_spec(spec)
+        closures[name] = dict(closure_config(members), budget=budget)
     for name, c in closures.items():
         for m in c["members"]:
             crate, req = parse_member(m)
@@ -889,6 +955,8 @@ def main():
             row = {"crate": f"closure:{cname}", "version": "-", "members": c["members"],
                    "lines": sum(lines_of(p["name"])["raw"] for p in workspace if lines_of(p["name"])),
                    "closure": True, "report_only": c["report_only"]}
+            if c["budget"]:
+                row["budget"] = c["budget"]
             if c["default_features"] is not None or c["features"]:
                 row["configuration"] = {"default_features": c["default_features"],
                                         "features": c["features"] or []}
@@ -923,6 +991,8 @@ def main():
 
     failed = False
     for r in results:
+        if r.get("closure") or r.get("facade"):
+            r["budget"] = dict(zip(("seconds", "gb"), budget_of(r, gates)))
         fails = judge(r, gates, r.get("facade", False))
         if r.get("report_only"):
             r["fails"], r["reported_fails"] = [], fails
