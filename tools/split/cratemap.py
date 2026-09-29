@@ -219,6 +219,12 @@ class CrateMap:
         self.rules = [Rule(r, self.crates) for r in d.get("rule", [])]
         self.single = len(set(self.crates.values())) == 1
         self.internal = [re.compile(x) for x in d.get("internal", {}).get("names", [])]
+        # `[modules]`: the crate of an inline module (`"geometry/point.cairo::errors" = "core"`) that a
+        # package below every package hosting its file's items uses (WP 9-R1); default: the lowest
+        self.modules = dict(d.get("modules", {}))
+        for c in self.modules.values():
+            if c not in self.crates:
+                raise SystemExit(f"crates.toml: unknown crate {c!r} in [modules]")
         self._index = None
 
     # --- packages --------------------------------------------------------------------------------
@@ -462,6 +468,8 @@ class CrateMap:
                 # with the lowest
                 test = TEST_ONLY.search(text[it.start:it.end]) is not None
                 host = self.facade_package if test else min(pkgs, key=self.package_rank)
+                if not test and f"{f}::{it.name}" in self.modules:
+                    host = self.crates[self.modules[f"{f}::{it.name}"]]
                 pieces[(host, f)].append((f, text[it.start:it.end]))
         # a whole file keeps its text, except the imports of `[internal]` items (now at `internal::`)
         for (pkg, f), text in list(whole.items()):

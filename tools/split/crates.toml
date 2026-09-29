@@ -157,6 +157,12 @@ names = [
 "Matrix5Cg.*" = 4
 "Matrix6Cg.*" = 5
 
+# [modules]: the crate of an inline module that a package below every package hosting the items of
+# its file uses (default: the lowest of those): the point panic messages (`geometry::point::errors`)
+# name the index errors of `Point1` (`core`) up to `Point6` (WP 9-R1)
+[modules]
+"geometry/point.cairo::errors" = "core"
+
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4) on the R1 names (a crate
 # pulls its dependencies; move R3 re-declares them with the per-closure budgets of §18.2 / §19),
 # measured on a GitHub runner by `.github/workflows/split-measure.yml` (`tools/split/mapplan.py`

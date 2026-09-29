@@ -132,6 +132,12 @@ SvdRightTrait = { "2" = "Svd2", "3" = "Svd3", "4" = "Svd4", "5" = "Svd5", "6" = 
 "Matrix5Cg.*" = 4
 "Matrix6Cg.*" = 5
 
+# [modules]: the crate of an inline module that a package below every package hosting the items of
+# its file uses (default: the lowest of those): the point panic messages (`geometry::point::errors`)
+# name the index errors of `Point1` (`core`) up to `Point6` (WP 9-R1)
+[modules]
+"geometry/point.cairo::errors" = "core"
+
 # [closures]: the declared closures (docs/SPLIT.md §6.2, §19) re-expressed on the new names (a
 # crate pulls its dependencies), then the dimension 5-6 closures of §19 (budget 20 s / 4.5 GB) and
 # the "static 2-4 + base family" closures of §16.2 (measured, not declared)
