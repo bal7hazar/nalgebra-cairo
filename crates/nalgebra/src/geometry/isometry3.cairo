@@ -51,7 +51,6 @@ pub use nalgebra_geometry3::geometry::isometry3::{
     Isometry3MulAssignTranslation3, Isometry3One, Isometry3Trait, Similarity3FromIsometry3,
 };
 
-
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
 use nalgebra_geometry3::internal::geometry::isometry3::Isometry3InternalTrait;

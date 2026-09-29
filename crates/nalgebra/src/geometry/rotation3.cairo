@@ -27,7 +27,6 @@ mod benches;
 #[cfg(test)]
 mod tests;
 
-
 pub use nalgebra_geometry3::geometry::isometry3::Isometry3FromRotation3;
 pub use nalgebra_geometry3::geometry::rotation3::*;
 pub use nalgebra_geometry3::geometry::similarity3::Similarity3FromRotation3;

@@ -43,7 +43,6 @@ mod oracle_lu4;
 mod oracle_lu6;
 pub mod perm1_5;
 
-
 /// Test-only field-wise equality (upstream `PermutationSequence` has no `PartialEq`): the tests
 /// and the benchmarks compare permutations through it.
 #[cfg(test)]

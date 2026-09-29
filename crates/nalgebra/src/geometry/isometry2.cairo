@@ -46,7 +46,6 @@ pub use nalgebra_geometry2::geometry::isometry2::{
     Isometry2MulAssignTranslation2, Isometry2One, Isometry2Trait, Similarity2FromIsometry2,
 };
 
-
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
 use nalgebra_geometry2::internal::geometry::isometry2::Isometry2InternalTrait;

@@ -6,6 +6,9 @@
 //! materialise a diagonal matrix, and are bit-identical to the upper triangle of the generic
 //! `Matrix3` expression they replace.
 
+pub use nalgebra_static3::internal::base::sym_matrix3::*;
+pub use nalgebra_types3::internal::base::sym_matrix3::*;
+
 #[cfg(test)]
 mod tests {
     use crate::base::matrix3::Matrix3Trait;

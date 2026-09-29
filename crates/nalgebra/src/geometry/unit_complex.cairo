@@ -36,7 +36,6 @@ pub use nalgebra_geometry2::geometry::unit_complex::{
     UnitComplexMulAssign, UnitComplexMulAssignRotation2, UnitComplexOne, UnitComplexTrait,
 };
 
-
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
 use nalgebra_geometry2::internal::geometry::unit_complex::UnitComplexAngleInternalTrait;

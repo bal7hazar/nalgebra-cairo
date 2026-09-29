@@ -26,7 +26,6 @@
 #[cfg(test)]
 mod tests;
 
-
 pub use nalgebra_geometry2::geometry::isometry2::Isometry2FromRotation2;
 pub use nalgebra_geometry2::geometry::rotation2::*;
 pub use nalgebra_geometry2::geometry::similarity2::Similarity2FromRotation2;

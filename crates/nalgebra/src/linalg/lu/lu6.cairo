@@ -27,7 +27,6 @@ mod tests;
 #[cfg(test)]
 use nalgebra_static6_wide::internal::linalg::lu::lu6::Lu6InternalTrait;
 
-
 // the test-only `PartialEq` of `Perm6` (`linalg::lu`, not `Perm6`'s module since the split)
 #[cfg(test)]
 use super::Perm6PartialEq;

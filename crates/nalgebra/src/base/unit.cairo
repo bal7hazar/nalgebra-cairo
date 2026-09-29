@@ -24,7 +24,6 @@ mod oracle;
 #[cfg(test)]
 mod tests;
 
-
 pub use nalgebra_core::base::unit::*;
 
 // the crate-private by-value helpers the in-crate tests use (`nalgebra_core::internal`)
@@ -33,7 +32,6 @@ use nalgebra_core::internal::base::unit::UnitInternalTrait;
 pub use nalgebra_static2::base::unit::*;
 pub use nalgebra_static3::base::unit::*;
 pub use nalgebra_static4::base::unit::*;
-
 
 pub use nalgebra_types2::base::vector2::Vector2Normed;
 pub use nalgebra_types3::base::vector3::Vector3Normed;
