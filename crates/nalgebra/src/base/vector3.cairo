@@ -49,4 +49,4 @@ pub use nalgebra_static3::base::vector3::*;
 pub use nalgebra_views::base::matrix_view::{
     Vector3FixedViewMatrix1, Vector3FixedViewVector2, Vector3FixedViewVector3,
 };
-pub use crate::root::Vector3InfSup;
+pub use crate::root::matrix_inf_sup::Vector3InfSup;

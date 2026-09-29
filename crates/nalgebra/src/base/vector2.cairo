@@ -39,4 +39,4 @@ pub use nalgebra_shapes6::base::matrix2x6::Vector2TrMulMatrix2x6;
 pub use nalgebra_shapes6::base::row_vector6::Vector2MulRowVector6;
 pub use nalgebra_static3::base::vector2::*;
 pub use nalgebra_views::base::matrix_view::{Vector2FixedViewMatrix1, Vector2FixedViewVector2};
-pub use crate::root::Vector2InfSup;
+pub use crate::root::matrix_inf_sup::Vector2InfSup;

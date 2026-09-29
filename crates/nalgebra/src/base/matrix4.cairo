@@ -40,4 +40,4 @@ pub use nalgebra_views::base::matrix_view::{
     Matrix4FixedViewRowVector4, Matrix4FixedViewVector2, Matrix4FixedViewVector3,
     Matrix4FixedViewVector4,
 };
-pub use crate::root::Matrix4InfSup;
+pub use crate::root::matrix_inf_sup::Matrix4InfSup;

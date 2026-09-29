@@ -38,4 +38,4 @@ pub use nalgebra_views::base::matrix_view::{
     Matrix3x5FixedViewRowVector2, Matrix3x5FixedViewRowVector3, Matrix3x5FixedViewRowVector4,
     Matrix3x5FixedViewRowVector5, Matrix3x5FixedViewVector2, Matrix3x5FixedViewVector3,
 };
-pub use crate::root::Matrix3x5InfSup;
+pub use crate::root::matrix_inf_sup::Matrix3x5InfSup;

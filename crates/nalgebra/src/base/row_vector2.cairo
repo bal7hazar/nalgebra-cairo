@@ -32,4 +32,4 @@ pub use nalgebra_static3::geometry::rotation2::RowVector2MulRotation2;
 pub use nalgebra_views::base::matrix_view::{
     RowVector2FixedViewMatrix1, RowVector2FixedViewRowVector2,
 };
-pub use crate::root::RowVector2InfSup;
+pub use crate::root::matrix_inf_sup::RowVector2InfSup;
