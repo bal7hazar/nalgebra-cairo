@@ -1126,6 +1126,30 @@ generator switch. NS11b's name-independent parts (no-op features and their CI te
 release script, `Consumer cost` enforcing on medians) are unaffected; its READMEs and tables wait
 for R3.
 
+### 18.7 Owner decisions on the re-cut (2026-09-29, validated in the orchestrator session)
+
+The owner validated the orchestrator's four recommendations:
+1. **Dimension-6 decompositions**: the declared closures of the dimension-6 decomposition families
+   are the decomposition crate with its types, **without the dimension-6 method crates**
+   (`Matrix6::svd()` and the products live in `types6` / `linalg_*6`: SVD / eigen 6 alone 12.1 s /
+   3.00 GB). The combined "static 6 + SVD / eigen 6" (~21.5 s / 4.71 GB) and "static 6 + spectral 6"
+   (~21.5 s / 4.64 GB) are documented in the facade README, not gated; the 20 s / 4.5 GB budget
+   stays.
+2. **Names approved**: `nalgebra_transform2`, `nalgebra_transform3` (general homogeneous transforms,
+   projections) and the per-dimension `nalgebra_statistics2` .. `nalgebra_statistics6`, with the
+   rest of §18.1.
+3. **`blocks`, `views`, `norm`** stay whole (generic traits whose dimension 5-6 impls can only sit
+   in their own crate or in `types6`): "static 2-4 + blocks / views / norm" (16.3 / 16.7 / 18.7 s)
+   is documented as advanced use, not a declared closure; the everyday methods (`norm()`,
+   `normalize()`, `dot`, `transpose`, products) are in the types / static crates. `blas` with static
+   2-4 passes (12.4 s).
+4. The `nalgebra_glam` closure at 7.4 s (6.5 s on the live map the same day) is accepted as runner
+   noise (the glam-alone reference moved 0.9 s between the same runs).
+
+The moves start: R1 (types, methods, geometry, transforms, statistics, the 8 kernels) alone, then
+R2 (linalg) and R3 (closures and budgets, release order, READMEs, PACKAGES.md, CHANGELOG) in
+parallel.
+
 ### 18.6 Risks and open points
 
 - **Package count**: 52 sub-crates + facade + glam = 54 packages per release (29 today); the
