@@ -1011,7 +1011,7 @@ NS1_NAMES = {
 }
 
 
-def check_anchors(cm):
+def check_anchors(cm, placement=True):
     """The move-PR checklist's step 7 (docs/SPLIT.md §15), two checks; the number of findings.
 
     1. Anchors: every impl with type arguments is placed in the module of its trait or of one of
@@ -1038,7 +1038,7 @@ def check_anchors(cm):
             if anchors and (cm.crates[c], m) not in anchors:
                 bad += 1
                 print(f"anchor: {it.label} ({c}, {m}) is in none of {anchors}")
-    for pkg in cm.packages():
+    for pkg in cm.packages() if placement else ():
         d = os.path.join(ROOT, package_dir(pkg))
         if not os.path.exists(os.path.join(d, "src", "lib.cairo")):
             continue
@@ -1196,6 +1196,8 @@ def main():
     ap.add_argument("--split-map", metavar="OUT")
     ap.add_argument("--anchors", action="store_true",
                     help="the anchor and placement checks of a move PR (docs/SPLIT.md §15)")
+    ap.add_argument("--no-placement", action="store_true",
+                    help="--anchors: the anchor check only (a proposed map on a tree not split by it)")
     ap.add_argument("--compare-tree", nargs=2, metavar=("CHECKOUT", "PROTO"),
                     help="a checkout the generators wrote in split mode against prototype.py's output")
     a = ap.parse_args()
@@ -1216,7 +1218,7 @@ def main():
             print(f"  {c:20s} {counts[c]:6d} items")
     if a.anchors:
         sys.path.insert(0, HERE)
-        return 1 if check_anchors(cm) else 0
+        return 1 if check_anchors(cm, placement=not a.no_placement) else 0
     if a.compare_tree:
         return 1 if compare_tree(cm, *a.compare_tree) else 0
     if a.compare_plan:

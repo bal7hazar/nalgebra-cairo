@@ -193,7 +193,7 @@ bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "t
 
 # the point / translation / permutation types of every dimension with the shapes of that dimension
 [[rule]]
-name = "(Point|Translation|Perm)[1-6]"
+name = "(Point|Translation)[1-6]|Perm[1-5]"
 kind = ["struct"]
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
@@ -219,7 +219,7 @@ default = "core"
 
 # `Perm6` and its permutation impls: with `Matrix6` (`is_invertible` runs `Lu6`)
 [[rule]]
-name = "Perm6Trait"
+name = "Perm6|Perm6Trait"
 crate = "static6_wide"
 
 [[rule]]
@@ -357,6 +357,14 @@ kind = ["inherent", "trait"]
 by = "name"
 bands = { "2" = "geometry2", "3" = "geometry3", "4" = "geometry4", "5" = "geometry5", "6" = "geometry6" }
 default = "geometry2"
+
+# conversions between a translation and a vector / point of its dimension: with the types
+[[rule]]
+file = ["geometry/translation*.cairo"]
+name = "Translation\\d(From|Into)(Vector|Point)"
+kind = ["impl"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
 [[rule]]
 file = ["geometry/translation1.cairo", "geometry/scale1.cairo"]
