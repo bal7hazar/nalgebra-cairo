@@ -54,9 +54,12 @@ jobs:
         run: |
           scarb lint --deny-warnings
           scarb lint -p nalgebra --no-default-features --deny-warnings
-      - name: Build (default features, then the lightest `nalgebra`, WP 8.1e / DESIGN D9)
+      - name: Build the published crates (default features, then the lightest `nalgebra`, DESIGN D9)
+        # Only the published crates (their sub-crate dependencies build with them): the ~60 test
+        # packages are built by their own `library` shards and linted above. Building every package
+        # of the growing workspace in this one job got the runner shut down (M9, 2026-09-29).
         run: |
-          scarb build
+          scarb build -p nalgebra -p nalgebra_glam
           scarb build -p nalgebra --no-default-features
 
   # Package granularity rule (docs/PLAN.md M9): the published crates against the size gates (lines,
