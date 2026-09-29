@@ -328,7 +328,8 @@ class CrateMap:
         sys.path.insert(0, HERE)
         from files import files as walk
 
-        for pkg in self.packages():
+        # (`source_packages`: read the library from another map's packages, `--source-map`)
+        for pkg in getattr(self, "source_packages", None) or self.packages():
             d = os.path.join(ROOT, package_dir(pkg))
             if not os.path.exists(os.path.join(d, "src", "lib.cairo")):
                 continue
@@ -1198,6 +1199,10 @@ def main():
                     help="the anchor and placement checks of a move PR (docs/SPLIT.md §15)")
     ap.add_argument("--no-placement", action="store_true",
                     help="--anchors: the anchor check only (a proposed map on a tree not split by it)")
+    ap.add_argument("--source-map", metavar="M",
+                    help="read the library from the packages of map M (the live map) and place it "
+                         "with --map (a proposal): `--map P --source-map tools/split/crates.toml "
+                         "--anchors --no-placement` checks a proposal on today's split tree")
     ap.add_argument("--compare-tree", nargs=2, metavar=("CHECKOUT", "PROTO"),
                     help="a checkout the generators wrote in split mode against prototype.py's output")
     a = ap.parse_args()
@@ -1206,6 +1211,8 @@ def main():
             f.write(split_map_text(a.map or DEFAULT_MAP))
         return 0
     cm = load(a.map)
+    if a.source_map:
+        cm.source_packages = load(a.source_map).packages()
     if a.show:
         print(f"map: {os.path.relpath(cm.path, ROOT)} ({'single-crate' if cm.single else 'split'} mode)")
         for c in cm.order:

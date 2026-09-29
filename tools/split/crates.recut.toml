@@ -191,6 +191,15 @@ kind = ["struct", "trait"]
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
+# the conversions of a rotation / translation into a matrix (`Matrix3FromRotation2`): with the
+# matrix's types (whichever file holds them: the pre-split tree and today's differ); those that run
+# a method get a type-level kernel (`kernel_wrappers` above)
+[[rule]]
+kind = ["impl"]
+name = "Matrix\\dFrom(Rotation|Translation)\\d"
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
 # the point / translation / permutation types of every dimension with the shapes of that dimension
 [[rule]]
 name = "(Point|Translation)[1-6]|Perm[1-5]"
