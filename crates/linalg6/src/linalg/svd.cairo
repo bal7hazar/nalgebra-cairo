@@ -1,0 +1,12 @@
+pub mod kernels;
+pub mod svd1x6;
+pub mod svd2x6;
+pub mod svd3x6;
+pub mod svd4x6;
+pub mod svd5x6;
+pub mod svd6;
+pub mod svd6x1;
+pub mod svd6x2;
+pub mod svd6x3;
+pub mod svd6x4;
+pub mod svd6x5;

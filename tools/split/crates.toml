@@ -60,12 +60,12 @@ linalg4 = "nalgebra_linalg4"
 linalg_svd_eigen4 = "nalgebra_linalg_svd_eigen4"
 linalg_pivot4 = "nalgebra_linalg_pivot4"
 linalg_spectral4 = "nalgebra_linalg_spectral4"
-linalg5 = "nalgebra"
-linalg_pivot5 = "nalgebra"
-linalg_spectral5 = "nalgebra"
-linalg6 = "nalgebra"
-linalg_pivot6 = "nalgebra"
-linalg_spectral6 = "nalgebra"
+linalg5 = "nalgebra_linalg5"
+linalg_pivot5 = "nalgebra_linalg_pivot5"
+linalg_spectral5 = "nalgebra_linalg_spectral5"
+linalg6 = "nalgebra_linalg6"
+linalg_pivot6 = "nalgebra_linalg_pivot6"
+linalg_spectral6 = "nalgebra_linalg_spectral6"
 dynamic = "nalgebra"
 sparse = "nalgebra"
 facade = "nalgebra"
@@ -90,7 +90,7 @@ names = [
     "Rotation3InternalTrait", "Isometry2InternalTrait", "Isometry3InternalTrait",
     "UnitComplexInternalTrait", "UnitComplexAngleInternalTrait",
     # (hand-written, moved by NS4: `geometry::unit_quaternion`'s `Sym4`, named by an in-crate test)
-    "Sym4",
+    "Sym[45]",
     # WP 9-NS5 (`static4`): used by the linalg of `nalgebra` (with the private kernels it calls)
     "Matrix4InternalTrait", "Matrix4KernelsTrait",
     # WP 9-NS7 (`static6_wide`): the kernels of `Lu6`, used by its in-crate benchmarks in `nalgebra`
@@ -108,7 +108,7 @@ names = [
     "SvdRightTrait\\d?", "SINGULAR_PADE",
     # WP 9-NS9 (hand-written, `linalg4`, `linalg_svd_eigen4`): named by the in-crate tests and
     # benchmarks that stay in `nalgebra` (the `LDLᵀ` kernel is crate-private in 0.1.0)
-    "(Lu|Qr)[2-4]InternalTrait", "(Svd|SymmetricEigen)[23]InternalTrait", "Ldlt[2-4]", "Ldlt[2-4]Trait", "Jacobi3",
+    "(Lu|Qr)[2-4]InternalTrait", "(Svd|SymmetricEigen)[23]InternalTrait", "Ldlt[2-46]", "Ldlt[2-46]Trait", "Jacobi3",
     "Jacobi3Trait",
 ]
 

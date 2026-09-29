@@ -1,0 +1,37 @@
+[package]
+name = "nalgebra_linalg5"
+description = "LU / Cholesky / QR / symmetric eigen / SVD of dimension 5."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "linalg", "qr", "svd", "symmetric-eigen"]
+readme = "README.md"
+
+# `eigen`, `svd`, `qr` (as in `nalgebra`, whose features of the same names forward to these):
+# `linalg::symmetric_eigen5`, `linalg::svd*` of the shapes of dimension 5 (`svd` builds on `eigen`)
+# and `linalg::qr*` of dimension 5. On by default; `nalgebra` depends on this package with
+# `default-features = false`, so `nalgebra` without its default features still leaves them out
+# (features unify per compilation unit, docs/SPLIT.md §1).
+[features]
+default = ["eigen", "svd", "qr"]
+eigen = ["nalgebra_linalg_svd_eigen4/eigen"]
+svd = ["eigen", "nalgebra_linalg_svd_eigen4/svd"]
+qr = []
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.0", default-features = false }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

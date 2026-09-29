@@ -27,8 +27,14 @@ dependencies = [
  "nalgebra_geometry4",
  "nalgebra_geometry6",
  "nalgebra_linalg4",
+ "nalgebra_linalg5",
+ "nalgebra_linalg6",
  "nalgebra_linalg_pivot4",
+ "nalgebra_linalg_pivot5",
+ "nalgebra_linalg_pivot6",
  "nalgebra_linalg_spectral4",
+ "nalgebra_linalg_spectral5",
+ "nalgebra_linalg_spectral6",
  "nalgebra_linalg_svd_eigen4",
  "nalgebra_norm",
  "nalgebra_shapes5",
@@ -128,11 +134,62 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_linalg5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg_svd_eigen4",
+ "nalgebra_shapes5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg5",
+ "nalgebra_linalg_svd_eigen4",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static6_wide",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_linalg_pivot4"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_pivot5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_pivot6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static6_wide",
  "simba",
  "snforge_std",
 ]
@@ -147,6 +204,35 @@ dependencies = [
  "nalgebra_shapes5",
  "nalgebra_static3",
  "nalgebra_static4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_spectral5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg4",
+ "nalgebra_linalg_spectral4",
+ "nalgebra_shapes5",
+ "nalgebra_static5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_spectral6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg4",
+ "nalgebra_linalg_spectral4",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static6_wide",
  "simba",
  "snforge_std",
 ]
