@@ -5,6 +5,7 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
+use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
 use simba::scalar::Real;
 use crate::base::matrix2::Matrix2;
 use crate::base::matrix2x5::Matrix2x5;
@@ -13,7 +14,7 @@ use crate::base::matrix5x2::Matrix5x2;
 use crate::base::vector2::Vector2;
 use crate::base::vector5::Vector5;
 use crate::base::{MatrixMul, MatrixTrMul};
-use super::kernels::{SvdComplete5Impl, SvdRightImpl};
+use crate::linalg::svd::kernels::SvdComplete5Impl;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix5x2<T>`:
 /// `u` is 5x2 with orthonormal columns, `v_t` is 2x2 with orthonormal rows, the 2

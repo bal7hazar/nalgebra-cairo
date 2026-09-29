@@ -10,7 +10,7 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::row_vector3::RowVector3;
 use nalgebra_core::base::vector3::Vector3;
 use simba::scalar::Real;
-use super::kernels::SvdRightImpl;
+use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use super::svd3x1::{Svd3x1InternalTrait, Svd3x1Trait};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `RowVector3<T>`:

@@ -18,10 +18,7 @@ use nalgebra_static3::base::matrix2::Matrix2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
 use simba::scalar::{Real, Transcendental};
-
-/// Panic message of the LU solve of a Padé denominator with an exactly zero pivot (upstream
-/// unwraps `LU::solve`).
-const SINGULAR_PADE: felt252 = 'nalgebra: singular Pade denom';
+use crate::internal::linalg::exp::SINGULAR_PADE;
 
 /// `Matrix1::exp`: the scalar exponential. Import `Matrix1ExpTrait` to use it.
 #[generate_trait]

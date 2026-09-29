@@ -12,7 +12,7 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::base::vector4::Vector4;
 use simba::scalar::Real;
-use super::kernels::SvdRightImpl;
+use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use super::svd4x3::{Svd4x3InternalTrait, Svd4x3Trait};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix3x4<T>`:

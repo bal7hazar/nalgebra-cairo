@@ -103,6 +103,9 @@ names = [
     "ColumnMajor", "Balancing", "HouseholderAxis",
     # WP 9-NS9 (`linalg4`): the Householder kernels of the reductions of `linalg_spectral4..6`
     "HouseholderKernelTrait",
+    # WP 9-NS9 (`linalg_svd_eigen4`, `linalg_spectral4`): the SVD filters (`inverted`, `divided`)
+    # and the singular-Padé message of `exp`, used by the dimension-5 / 6 decompositions
+    "SvdRightTrait\\d?", "SINGULAR_PADE",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of

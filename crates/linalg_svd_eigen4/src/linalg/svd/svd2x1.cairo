@@ -11,7 +11,8 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::row_vector2::RowVector2;
 use nalgebra_core::base::vector2::Vector2;
 use simba::scalar::Real;
-use super::kernels::{SvdComplete2Impl, SvdRightImpl};
+use crate::internal::linalg::svd::kernels::SvdRightImpl;
+use crate::linalg::svd::kernels::SvdComplete2Impl;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Vector2<T>`:
 /// `u` is 2x1 with orthonormal columns, `v_t` is 1x1 with orthonormal rows, the 1

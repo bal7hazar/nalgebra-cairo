@@ -4,6 +4,7 @@
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
 use simba::scalar::Real;
 use crate::base::matrix3::Matrix3;
 use crate::base::matrix3x6::Matrix3x6;
@@ -11,7 +12,6 @@ use crate::base::matrix6x3::Matrix6x3;
 use crate::base::vector3::Vector3;
 use crate::base::vector6::Vector6;
 use crate::base::{MatrixMul, MatrixTrMul};
-use super::kernels::SvdRightImpl;
 use super::svd6x3::{Svd6x3InternalTrait, Svd6x3Trait};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix3x6<T>`:

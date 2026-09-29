@@ -14,7 +14,8 @@ use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
 use simba::scalar::Real;
-use super::kernels::{SvdComplete4Impl, SvdRightImpl};
+use crate::internal::linalg::svd::kernels::SvdRightImpl;
+use crate::linalg::svd::kernels::SvdComplete4Impl;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix4x3<T>`:
 /// `u` is 4x3 with orthonormal columns, `v_t` is 3x3 with orthonormal rows, the 3

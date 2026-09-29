@@ -4,12 +4,12 @@
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
 use core::internal::revoke_ap_tracking;
+use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
 use simba::scalar::Real;
 use crate::base::matrix1::Matrix1;
 use crate::base::row_vector5::RowVector5;
 use crate::base::vector5::Vector5;
 use crate::base::{MatrixMul, MatrixTrMul};
-use super::kernels::SvdRightImpl;
 use super::svd5x1::{Svd5x1InternalTrait, Svd5x1Trait};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `RowVector5<T>`:

@@ -9,8 +9,9 @@ use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::vector4::Vector4;
 use simba::scalar::Real;
+use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use crate::internal::linalg::symmetric_eigen4::Sym4;
-use super::kernels::{SvdComplete4Impl, SvdRightImpl};
+use crate::linalg::svd::kernels::SvdComplete4Impl;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix4<T>`:
 /// `u` is 4x4 with orthonormal columns, `v_t` is 4x4 with orthonormal rows, the 4
