@@ -762,3 +762,19 @@ the map stays as it is and **no `geometry6` closure is declared as a gate**. Con
   without worsening a declared closure;
 - `nalgebra_shapes6` has a 9.5 % line margin (36,214 / 40,000): the CI Workspace job enforces gate
   1 on every sub-crate, so a generator change that grows it past the gate fails.
+
+### 16.1 Known exception: `nalgebra_static6_wide` alone (programme session, 2026-09-29)
+
+An empty consumer of `nalgebra_static6_wide` alone costs **16.6 s / 4.15 GB** over the baseline
+(measured at NS7). Cause: the methods of dimension 6 build on every dimension below (core, shapes5,
+shapes6, static3..static6_tall), so the crate pulls everything from `core` up. Same treatment as
+`geometry6`: a facade README row with the measured cost, no closure gate.
+
+### 16.2 After NS11: the dimension 5-6 closures (programme session)
+
+One table of the dimension-5 and dimension-6 closures a user would really take (types + methods of
+one dimension, with and without one decomposition family), measured on the GitHub runner
+(`split-measure.yml`), and for each one above 15 s / 3 GB either the cheapest cut seen or the
+statement that none exists because dimension k builds on every dimension below it. The programme
+session then decides between a documented "dimension 5-6" budget (e.g. 20 s / 4.5 GB) and a further
+cut. Together with §16's `nalgebra_reflections6` measurement.
