@@ -95,7 +95,16 @@ large directly.
   library lines of each published crate (inline tests excluded) and what an empty consumer of it
   adds to a cold build (time, peak memory), against the package granularity rule (40,000 lines,
   5 s / 1 GB, closures 15 s / 3 GB; `consumer_cost.toml`). `--lines-only --report-only` is the fast
-  local proxy; the CI job `Consumer cost` runs it in full, report only until the M9 split lands.
+  local proxy. CI (WP 9-NS11b): six `Consumer cost shard (k)` jobs (`--repeat 5 --interleave
+  --shard k/6`: medians of the per-round differences, balanced shards, new crates included
+  automatically) and the ENFORCING job `Consumer cost` that merges them into one verdict (the
+  required check; `report_only` entries of `consumer_cost.toml`, the facade among them, are shown and
+  never gated; `--report-only-marginals` is the transition switch that gates lines and closures
+  only). A deeper measurement of a few crates: `--package A --package B --no-closures --repeat 9
+  --interleave`.
+- `scripts/facade_features.py` (CI job `Facade features`): consumers of the workspace facade naming
+  its five no-op features (`statistics`, `blas`, `dynamic`, `sparse`, `io`; docs/SPLIT.md §17) build,
+  with and without the default features; `--resolve` is the cheap local form.
 - `.github/PULL_REQUEST_TEMPLATE.md` is the PR format agents must follow.
 - Package split (M9, `docs/SPLIT.md` §7, §11), tools of `tools/split/`:
   - `crates.toml`: the crate map (planned crates -> the package that hosts each one today, and the
@@ -145,3 +154,19 @@ orchestration", the project lead)** on the owner's behalf, under the conditions 
    (the registry token stays in the owner's environment and is never printed).
 
 Not delegated: money, accounts, credentials, and this session's permission settings.
+
+**The release script** `scripts/release.py` (WP 9-NS11b; dry run by default, `--publish` after the
+go): the package set and the publication order come from `scarb metadata` (every package not marked
+`publish = false`, topological order of the path dependencies, then the facade, then the bridges
+such as `nalgebra_glam`); no name is hard-coded. It refuses to start unless the tree is clean, HEAD
+is `origin/main`, every check run of that commit is green with `Consumer cost` among them, every
+published package has the workspace version and that version is not on the registry yet. It
+publishes one package at a time (`scarb publish -p`), waits for each on the registry index and
+compares the index checksum with the local archive before the next one, and is resumable: the state
+file `target/release/state-<version>.json` records the verified packages, so running the same
+command again after a failure at package k skips the packages before k (after checking the index)
+and restarts at k. It does not bump versions nor tag: the version bump is the release PR, the tag
+`v<version>` follows the publication. Release sequence: release PR (version bump in the workspace
+`Scarb.toml` and the intra-workspace requirements, CHANGELOG) merged with CI green → `python3
+scripts/release.py` (dry run: no refusal) → the go → `python3 scripts/release.py
+--publish` → tag.
