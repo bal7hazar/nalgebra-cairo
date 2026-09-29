@@ -2,14 +2,10 @@
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
 use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix_mul::MatrixMul;
-use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::internal::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
+use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
 use nalgebra_static3::base::matrix2::Matrix2Trait;
-use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
 use simba::scalar::Real;
-use crate::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 
 /// Crate-internal kernels of `Svd2<T>` (WP 8.0: the public API is strictly upstream's): the Gram
 /// matrix `MᵀM` as a `SymMatrix2` (the input of the eigen decomposition).

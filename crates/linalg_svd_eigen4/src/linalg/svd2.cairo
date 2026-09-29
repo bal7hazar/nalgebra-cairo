@@ -29,7 +29,7 @@ use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::internal::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
+use nalgebra_core::internal::base::sym_matrix2::SymMatrix2Trait;
 use nalgebra_static3::base::matrix2::Matrix2Trait;
 use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
 use simba::scalar::Real;

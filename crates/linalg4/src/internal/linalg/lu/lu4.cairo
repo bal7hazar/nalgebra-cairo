@@ -3,9 +3,6 @@
 
 use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_core::base::vector4::Vector4;
-use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_core::linalg::lu::Perm4;
-use nalgebra_core::linalg::permutation_sequence::PermuteRows;
 use simba::scalar::Real;
 use crate::linalg::lu::lu4::Lu4;
 
