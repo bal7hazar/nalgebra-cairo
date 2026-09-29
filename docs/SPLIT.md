@@ -900,3 +900,6 @@ The cost of the dimension 5-6 closures is accepted as documented; no further cut
   from `consumer_cost.py`'s JSON: per package its lines (gate 40,000), marginal time and memory
   (gate 5 s / 1 GB), margins in %, and per declared closure its time and memory against its budget
   (NS12, on the new map).
+- **simba-cairo** (programme session): with NS12, `scripts/consumer_cost.py` is copied unchanged
+  into simba-cairo with its `consumer_cost.toml` (closure `simba` + `fixed@0.4.0`) and an enforcing
+  `Consumer cost` CI job; simba's line joins the figures (no simba release needed).
