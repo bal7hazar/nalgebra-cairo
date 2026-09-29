@@ -1,0 +1,48 @@
+[package]
+name = "nalgebra_dynamic"
+description = "DMatrix, DVector, RowDVector, the dynamic forms of the static shapes."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "dynamic", "dmatrix"]
+readme = "README.md"
+# `associated_item_constraints`: the `core::iter::Sum` impls of `DMatrix` / `DVector`
+# (`+Iterator<I>[Item: A]`, DESIGN D10), as in `nalgebra`.
+experimental-features = ["associated_item_constraints"]
+
+# `closures` (as in `nalgebra`, which forwards its own feature of that name here): the methods of
+# the dynamic matrices and of the dynamic forms of the static shapes that take a closure (`map`,
+# `fold`, `apply`, `zip_*`...), and the static crates' own. On by default; `nalgebra` and
+# `nalgebra_sparse` depend on this package with `default-features = false`, so `nalgebra` without
+# its default features still leaves them out (features unify per compilation unit, docs/SPLIT.md
+# §1).
+[features]
+default = ["closures"]
+closures = [
+    "nalgebra_static3/closures", "nalgebra_static4/closures", "nalgebra_static5/closures",
+    "nalgebra_static6_tall/closures", "nalgebra_static6_wide/closures",
+]
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = false }
+nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_static5 = { path = "../static5", version = "0.1.0", default-features = false }
+nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
+nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.0", default-features = false }
+nalgebra_blocks = { path = "../blocks", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

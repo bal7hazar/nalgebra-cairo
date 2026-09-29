@@ -24,6 +24,7 @@ dependencies = [
  "nalgebra_blas",
  "nalgebra_blocks",
  "nalgebra_core",
+ "nalgebra_dynamic",
  "nalgebra_geometry4",
  "nalgebra_geometry6",
  "nalgebra_linalg4",
@@ -39,6 +40,7 @@ dependencies = [
  "nalgebra_norm",
  "nalgebra_shapes5",
  "nalgebra_shapes6",
+ "nalgebra_sparse",
  "nalgebra_static3",
  "nalgebra_static4",
  "nalgebra_static5",
@@ -80,6 +82,24 @@ name = "nalgebra_core"
 version = "0.1.0"
 dependencies = [
  "fixed",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_dynamic"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_blocks",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static3",
+ "nalgebra_static4",
+ "nalgebra_static5",
+ "nalgebra_static6_tall",
+ "nalgebra_static6_wide",
  "simba",
  "snforge_std",
 ]
@@ -450,6 +470,19 @@ dependencies = [
  "fixed",
  "nalgebra",
  "nalgebra_testing",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_sparse"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_dynamic",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
  "simba",
  "snforge_std",
 ]

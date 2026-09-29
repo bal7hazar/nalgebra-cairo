@@ -31,4 +31,4 @@ pub use nalgebra_shapes5::base::row_vector5::{Matrix1MulRowVector5, Matrix1TrMul
 pub use nalgebra_shapes6::base::row_vector6::{Matrix1MulRowVector6, Matrix1TrMulRowVector6};
 pub use nalgebra_static3::base::matrix1::*;
 pub use nalgebra_views::base::matrix_view::Matrix1FixedViewMatrix1;
-pub use crate::root::Matrix1InfSup;
+pub use crate::root::matrix_inf_sup::Matrix1InfSup;

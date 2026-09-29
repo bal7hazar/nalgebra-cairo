@@ -37,4 +37,4 @@ pub use nalgebra_views::base::matrix_view::{
     RowVector6FixedViewMatrix1, RowVector6FixedViewRowVector2, RowVector6FixedViewRowVector3,
     RowVector6FixedViewRowVector4, RowVector6FixedViewRowVector5, RowVector6FixedViewRowVector6,
 };
-pub use crate::root::RowVector6InfSup;
+pub use crate::root::matrix_inf_sup::RowVector6InfSup;

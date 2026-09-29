@@ -66,8 +66,8 @@ linalg_spectral5 = "nalgebra_linalg_spectral5"
 linalg6 = "nalgebra_linalg6"
 linalg_pivot6 = "nalgebra_linalg_pivot6"
 linalg_spectral6 = "nalgebra_linalg_spectral6"
-dynamic = "nalgebra"
-sparse = "nalgebra"
+dynamic = "nalgebra_dynamic"
+sparse = "nalgebra_sparse"
 facade = "nalgebra"
 
 # [internal]: items that 0.1.0 keeps crate-private (`pub(crate)` or private) but that a package ABOVE

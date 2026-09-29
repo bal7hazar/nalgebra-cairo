@@ -32,4 +32,4 @@ pub use nalgebra_views::base::matrix_view::{
     Matrix4x3FixedViewMatrix4x3, Matrix4x3FixedViewRowVector2, Matrix4x3FixedViewRowVector3,
     Matrix4x3FixedViewVector2, Matrix4x3FixedViewVector3, Matrix4x3FixedViewVector4,
 };
-pub use crate::root::Matrix4x3InfSup;
+pub use crate::root::matrix_inf_sup::Matrix4x3InfSup;

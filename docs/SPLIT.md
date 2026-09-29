@@ -594,7 +594,14 @@ dimension-5 / 6 Householder / balancing impls already sat in `shapes5` / `shapes
 `Cholesky6`, `Udu6`, `Ldlt6`, `Matrix6InverseTrait` moved to `linalg6`, `Ldlt6` and `Sym5` under
 `internal`; every linalg feature of the facade now only gates its re-exports and forwards to the
 sub-crates (NS11 decides, §12.1); the facade package is down to 34,322 lines (`dynamic`, `sparse` /
-`io`, root, macros, re-exports).
+`io`, root, macros, re-exports). **NS11a done** (PR #76): `nalgebra_dynamic` (18,189 lines;
+`closures` forwarded by the facade) and `nalgebra_sparse` (3,485, `sparse` + `io`), zero step change,
+0 anchor findings; `nalgebra` is the pure facade (12,942 lines: root, macros, re-exports,
+`LuInvert` / `try_invert_to`), its features `dynamic` / `sparse` / `io` gate its re-exports only
+(§17); `MatrixInfSup` and its 36 impls in the crate-visible `root::matrix_inf_sup` (trait
+re-exported at `root`), so the transient set is 0 and `public_paths.py --check` is strict: 9,289
+paths, nothing more, nothing less; `DMatrix` / `DVector` fields `pub` for `nalgebra_sparse`
+(internal, no stability promise).
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible

@@ -1,8 +1,8 @@
 //! The value kernels of `CsMatrix` (crate-internal: the public forms are its methods and
 //! operators). Columns are sorted and deduplicated on input and output (the module invariant).
 
+use nalgebra_core::base::errors;
 use simba::scalar::Real;
-use crate::base::errors;
 use super::cs_matrix::CsMatrix;
 use super::cs_utils::{gather, transpose_pattern, union_sorted};
 

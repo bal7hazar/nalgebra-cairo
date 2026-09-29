@@ -25,6 +25,8 @@ members = [
     "crates/linalg6",
     "crates/linalg_pivot6",
     "crates/linalg_spectral6",
+    "crates/dynamic",
+    "crates/sparse",
     "crates/nalgebra",
     "crates/nalgebra_glam",
     "crates/testing",

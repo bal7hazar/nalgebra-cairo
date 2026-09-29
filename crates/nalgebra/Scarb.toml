@@ -53,7 +53,12 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # gates only this package's re-exports of its family and forwards to the features of the same name
 # of the sub-crates that hold it, so `default-features = false` exposes and compiles exactly what it
 # did before; their fate is decided in NS11 with the other forward-only features
-# (docs/SPLIT.md §12.1).
+# (docs/SPLIT.md §12.1). WP 9-NS11a: `dynamic` lives in `nalgebra_dynamic`, `sparse` and `io` in
+# `nalgebra_sparse`, which this package always depends on (`nalgebra_dynamic` with
+# `default-features = false`, its `closures` forwarded by `closures`): like `statistics` / `blas`,
+# the three features now gate this package's re-exports only (`dmatrix!` / `dvector!` still need
+# `dynamic`), so `default-features = false` still exposes no dynamic / sparse / io item as in 0.1.0;
+# their removal is decided with the other no-op features (docs/SPLIT.md §12.1, WP 9-NS11b).
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
@@ -64,7 +69,7 @@ statistics = []
 blas = []
 closures = [
     "nalgebra_static3/closures", "nalgebra_static4/closures", "nalgebra_static5/closures",
-    "nalgebra_static6_tall/closures", "nalgebra_static6_wide/closures",
+    "nalgebra_static6_tall/closures", "nalgebra_static6_wide/closures", "nalgebra_dynamic/closures",
 ]
 dynamic = []
 sparse = ["dynamic"]
@@ -126,6 +131,8 @@ nalgebra_linalg_spectral5 = { path = "../linalg_spectral5", version = "0.1.0", d
 nalgebra_linalg6 = { path = "../linalg6", version = "0.1.0", default-features = false }
 nalgebra_linalg_pivot6 = { path = "../linalg_pivot6", version = "0.1.0", default-features = false }
 nalgebra_linalg_spectral6 = { path = "../linalg_spectral6", version = "0.1.0", default-features = false }
+nalgebra_dynamic = { path = "../dynamic", version = "0.1.0", default-features = false }
+nalgebra_sparse = { path = "../sparse", version = "0.1.0" }
 simba.workspace = true
 
 [dev-dependencies]

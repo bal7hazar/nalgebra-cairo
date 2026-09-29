@@ -31,4 +31,4 @@ pub use nalgebra_static3::geometry::rotation3::RowVector3MulRotation3;
 pub use nalgebra_views::base::matrix_view::{
     RowVector3FixedViewMatrix1, RowVector3FixedViewRowVector2, RowVector3FixedViewRowVector3,
 };
-pub use crate::root::RowVector3InfSup;
+pub use crate::root::matrix_inf_sup::RowVector3InfSup;
