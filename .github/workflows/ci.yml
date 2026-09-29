@@ -63,20 +63,65 @@ jobs:
           scarb build -p nalgebra --no-default-features
 
   # Package granularity rule (docs/PLAN.md M9): the published crates against the size gates (lines,
-  # cold-build time and memory an empty consumer adds, typical closures), scripts/consumer_cost.py.
-  # Report only until the split lands (nalgebra and nalgebra_glam fail the gates today): the
-  # orchestrator then drops `--report-only` to make it enforcing.
-  consumer-cost:
-    name: Consumer cost
+  # cold-build time and memory an empty consumer adds, declared closures), scripts/consumer_cost.py,
+  # ENFORCING since WP 9-NS11b. Every consumer is built cold 5 times in interleaved rounds and every
+  # figure is the median of the per-round differences; the crates and closures are spread over
+  # balanced shards (`--shard K/N`, deterministic, new crates included automatically), each with its
+  # own baseline, and the job `Consumer cost` merges the shards into ONE verdict (the required check).
+  # The facade and the closures that contain it are `report_only` in consumer_cost.toml (they fail
+  # gate 3 by construction, docs/SPLIT.md §12.1).
+  consumer-cost-shard:
+    name: Consumer cost shard (${{ matrix.shard }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
-      - name: Measure the published crates and the closures (cold builds, one after the other)
+      - name: Measure the shard's crates and closures (cold builds, interleaved rounds)
         run: |
-          python3 scripts/consumer_cost.py --report-only --modules --json consumer_cost.json | tee consumer_cost.md
-          { echo "### Consumer cost (report only)"; echo; cat consumer_cost.md; } >> "$GITHUB_STEP_SUMMARY"
+          [ -x /usr/bin/time ] || sudo apt-get install -y time > /dev/null
+          echo "runner: $(nproc) vCPU, $(free -g | awk '/Mem:/ {print $2}') GB"
+          python3 scripts/consumer_cost.py --report-only --repeat 5 --interleave \
+            --shard "${{ matrix.shard }}/${{ strategy.job-total }}" \
+            --json "consumer_cost_${{ matrix.shard }}.json" | tee consumer_cost.md
+          { echo "### Consumer cost, shard ${{ matrix.shard }}/${{ strategy.job-total }}"; echo; cat consumer_cost.md; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: consumer-cost-shard-${{ matrix.shard }}
+          path: consumer_cost_${{ matrix.shard }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  consumer-cost:
+    name: Consumer cost
+    needs: consumer-cost-shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Every shard ran
+        if: needs.consumer-cost-shard.result != 'success'
+        run: |
+          echo "::error::a Consumer cost shard did not complete (${{ needs.consumer-cost-shard.result }})"
+          exit 1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: consumer-cost-shard-*
+          path: shards
+      - name: One table, one verdict (enforcing)
+        run: |
+          set +e
+          python3 scripts/consumer_cost.py --merge shards/*/consumer_cost_*.json \
+            --json consumer_cost.json | tee consumer_cost.md
+          status=${PIPESTATUS[0]}
+          set -e
+          { echo "### Consumer cost"; echo; cat consumer_cost.md; } >> "$GITHUB_STEP_SUMMARY"
+          exit $status
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -86,6 +131,18 @@ jobs:
             consumer_cost.md
           if-no-files-found: warn
           retention-days: 30
+
+  # docs/SPLIT.md §17: the facade's no-op features (`statistics`, `blas`, `dynamic`, `sparse`, `io`)
+  # stay declared in 0.1.1; two consumers naming them (with and without the default features) build.
+  facade-features:
+    name: Facade features
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - name: Consumers naming the no-op features build against the workspace facade
+        run: python3 scripts/facade_features.py
 
   # Package split (docs/SPLIT.md §3.4, §12.3): the facade exports exactly the public paths of 0.1.0
   # (tools/split/public_paths_0.1.0.txt + public_paths_added.txt), and a consumer naming every one
