@@ -56,7 +56,10 @@ mod tests {
     use crate::linalg::oracle_symmetric_eigen;
     use crate::linalg::symmetric_eigen3::{Matrix3SymmetricEigenTrait, SymmetricEigen3InternalTrait};
     use crate::testing::black_box;
-    use super::{Jacobi3, Jacobi3Impl, Jacobi3Trait, SymmetricEigen3, SymmetricEigen3Trait};
+    use super::{
+        Jacobi3, Jacobi3Impl, Jacobi3Trait, SymmetricEigen3, SymmetricEigen3PartialEq,
+        SymmetricEigen3Trait,
+    };
 
     // --- the losing candidates of the sweep-count study (kept as evidence) ----------------------
 

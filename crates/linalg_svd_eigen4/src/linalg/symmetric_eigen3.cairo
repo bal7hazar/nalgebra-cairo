@@ -23,9 +23,13 @@
 //! measured over the oracle suite and 2 800 random / degenerate matrices (see `new`). The sweep
 //! count is a constant, so the gas of the decomposition is a constant.
 
+use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix3::Matrix3;
 use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
+use nalgebra_static3::base::matrix3::Matrix3Trait;
+use nalgebra_static3::base::vector3::Vector3Trait;
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 use simba::scalar::Real;
 use crate::internal::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
 

@@ -1,6 +1,11 @@
 //! Internal, no stability promise: the crate-private items of `linalg::qr::qr2` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
+use nalgebra_core::base::matrix2::Matrix2;
+use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
+use nalgebra_core::base::vector2::Vector2;
+use nalgebra_core::internal::base::solve::SolveKernel;
+use nalgebra_static3::base::matrix2::Matrix2Trait;
 use simba::scalar::Real;
 use crate::linalg::qr::qr2::Qr2;
 

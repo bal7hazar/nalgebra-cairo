@@ -10,6 +10,7 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
+use nalgebra_static4::internal::base::matrix4::Matrix4InternalTrait;
 use simba::scalar::Real;
 use crate::internal::linalg::qr::qr4::Qr4InternalTrait;
 

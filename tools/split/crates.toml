@@ -108,7 +108,7 @@ names = [
     "SvdRightTrait\\d?", "SINGULAR_PADE",
     # WP 9-NS9 (hand-written, `linalg4`, `linalg_svd_eigen4`): named by the in-crate tests and
     # benchmarks that stay in `nalgebra` (the `LDLᵀ` kernel is crate-private in 0.1.0)
-    "(Lu|Qr|Svd|SymmetricEigen)[2-4]InternalTrait", "Ldlt[2-4]", "Ldlt[2-4]Trait", "Jacobi3",
+    "(Lu|Qr)[2-4]InternalTrait", "(Svd|SymmetricEigen)[23]InternalTrait", "Ldlt[2-4]", "Ldlt[2-4]Trait", "Jacobi3",
     "Jacobi3Trait",
 ]
 

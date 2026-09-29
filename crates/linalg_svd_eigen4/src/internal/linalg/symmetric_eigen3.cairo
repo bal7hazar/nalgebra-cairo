@@ -7,6 +7,7 @@ use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static3::base::vector3::Vector3Trait;
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 use simba::scalar::Real;
 use crate::linalg::symmetric_eigen3::SymmetricEigen3;
 
@@ -14,8 +15,8 @@ use crate::linalg::symmetric_eigen3::SymmetricEigen3;
 /// accumulated rotation `v` (`s = vᵀ * original * v`). Private: `SymmetricEigen3` is the API.
 #[derive(Copy, Drop)]
 pub struct Jacobi3<T> {
-    s: SymMatrix3<T>,
-    v: Matrix3<T>,
+    pub s: SymMatrix3<T>,
+    pub v: Matrix3<T>,
 }
 
 /// The three plane rotations of one cyclic Jacobi sweep, plus the finishing step.
