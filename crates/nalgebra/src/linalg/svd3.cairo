@@ -32,6 +32,10 @@
 //! (`new_one_sided_jacobi`, `bench_svd3_new__alt_one_sided_jacobi`,
 //! `test_one_sided_jacobi_candidate`).
 
+// the in-crate tests reach the internal items of the module (and the other modules' tests
+// through `crate::linalg::...`) here (WP 9-NS9)
+#[cfg(test)]
+pub(crate) use nalgebra_linalg_svd_eigen4::internal::linalg::svd3::Svd3InternalTrait;
 pub use nalgebra_linalg_svd_eigen4::linalg::svd3::*;
 
 /// Test-only field-wise equality (upstream `Svd3` has no `PartialEq`): the tests and the

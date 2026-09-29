@@ -106,6 +106,10 @@ names = [
     # WP 9-NS9 (`linalg_svd_eigen4`, `linalg_spectral4`): the SVD filters (`inverted`, `divided`)
     # and the singular-Padé message of `exp`, used by the dimension-5 / 6 decompositions
     "SvdRightTrait\\d?", "SINGULAR_PADE",
+    # WP 9-NS9 (hand-written, `linalg4`, `linalg_svd_eigen4`): named by the in-crate tests and
+    # benchmarks that stay in `nalgebra` (the `LDLᵀ` kernel is crate-private in 0.1.0)
+    "(Lu|Qr|Svd|SymmetricEigen)[2-4]InternalTrait", "Ldlt[2-4]", "Ldlt[2-4]Trait", "Jacobi3",
+    "Jacobi3Trait",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of

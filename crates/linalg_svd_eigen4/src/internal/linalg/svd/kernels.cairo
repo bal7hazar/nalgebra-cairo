@@ -7,10 +7,9 @@ use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
 use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
 use simba::scalar::Real;
-use crate::internal::linalg::symmetric_eigen4::Sym4;
-use crate::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
-use crate::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
-use crate::linalg::symmetric_eigen4::SymmetricEigen4InternalTrait;
+use crate::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
+use crate::internal::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
+use crate::internal::linalg::symmetric_eigen4::{Sym4, SymmetricEigen4InternalTrait};
 
 /// The right singular vectors of a matrix with 2..6 columns (crate-internal).
 #[generate_trait]

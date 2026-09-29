@@ -11,6 +11,10 @@
 //! difference here is the choice of the eigenvector row, made on the sign of `(m11 - m22) / 2` so
 //! that no cancellation can occur, and the fixed-point kernels (one rounding per output scalar).
 
+// the in-crate tests reach the internal items of the module (and the other modules' tests
+// through `crate::linalg::...`) here (WP 9-NS9)
+#[cfg(test)]
+pub(crate) use nalgebra_linalg_svd_eigen4::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 pub use nalgebra_linalg_svd_eigen4::linalg::symmetric_eigen2::*;
 
 /// Test-only field-wise equality (upstream `SymmetricEigen2` has no `PartialEq`): the tests and the

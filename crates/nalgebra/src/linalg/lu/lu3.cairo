@@ -19,6 +19,10 @@
 //! measurement and the counter-example. Upstream has no unpivoted variant either, only `LU`
 //! (partial pivoting) and `FullPivLU` (complete pivoting).
 
+// the in-crate tests reach the internal items of the module (and the other modules' tests
+// through `crate::linalg::...`) here (WP 9-NS9)
+#[cfg(test)]
+pub(crate) use nalgebra_linalg4::internal::linalg::lu::lu3::Lu3InternalTrait;
 pub use nalgebra_linalg4::linalg::lu::lu3::*;
 #[cfg(test)]
 use super::Perm3PartialEq;

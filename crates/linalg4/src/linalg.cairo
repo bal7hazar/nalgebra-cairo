@@ -12,7 +12,6 @@ pub mod householder;
 #[cfg(feature: 'hessenberg')]
 pub mod householder_steps;
 pub mod inverse;
-pub mod ldlt;
 pub mod lu;
 #[cfg(feature: 'qr')]
 pub mod qr;

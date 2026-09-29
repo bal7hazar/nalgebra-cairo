@@ -3,6 +3,10 @@
 //! `A = Q * R` with `Q` orthonormal and `R` upper triangular with a non-negative diagonal — the
 //! convention of upstream's unpacked `q()` / `r()`, see the module doc of `linalg::qr`.
 
+// the in-crate tests reach the internal items of the module (and the other modules' tests
+// through `crate::linalg::...`) here (WP 9-NS9)
+#[cfg(test)]
+pub(crate) use nalgebra_linalg4::internal::linalg::qr::qr2::Qr2InternalTrait;
 pub use nalgebra_linalg4::linalg::qr::qr2::*;
 
 /// Test-only field-wise equality (upstream `Qr2` has no `PartialEq`): the tests and the

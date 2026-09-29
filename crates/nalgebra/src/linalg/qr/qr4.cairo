@@ -5,6 +5,10 @@
 //! algorithm is the modified Gram-Schmidt of `qr3`, one column longer; the study of the
 //! alternatives (Householder, classical Gram-Schmidt, completed basis) lives there.
 
+// the in-crate tests reach the internal items of the module (and the other modules' tests
+// through `crate::linalg::...`) here (WP 9-NS9)
+#[cfg(test)]
+pub(crate) use nalgebra_linalg4::internal::linalg::qr::qr4::Qr4InternalTrait;
 pub use nalgebra_linalg4::linalg::qr::qr4::*;
 
 /// Test-only field-wise equality (upstream `Qr4` has no `PartialEq`): the tests and the

@@ -7,7 +7,6 @@ use nalgebra_core::base::matrix2::Matrix2;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
 use simba::scalar::Real;
 
 /// The QR factorisation of a `Matrix2<T>`: `A = Q * R`.
@@ -185,48 +184,6 @@ pub impl Qr2Impl<
         let x11 = R::div(R::mul_add(-self.r.m12, x21, self.q.m11), self.r.m11);
         let x12 = R::div(R::mul_add(-self.r.m12, x22, self.q.m21), self.r.m11);
         Some(Matrix2 { m11: x11, m21: x21, m12: x12, m22: x22 })
-    }
-}
-
-/// Crate-internal kernels of `Qr2<T>` (WP 8.0: the public API is strictly upstream's).
-/// `determinant`
-/// has no upstream counterpart (upstream's `QR::determinant` is commented out); the tests use it to
-/// check the factors.
-#[generate_trait]
-pub(crate) impl Qr2InternalImpl<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of Qr2InternalTrait<T> {
-    /// The determinant: `det(Q) * r11 * r22`. Upstream: `QR::determinant`.
-    ///
-    /// `R` has a non-negative diagonal, so the sign lives entirely in `det(Q) = ±1`, read off
-    /// `Matrix2::determinant(q)` — a single `diff_prod` on an orthonormal matrix, hence `±1`
-    /// within the rounding of the factorisation, and its SIGN is what is used. The sign is applied
-    /// to the FIRST factor (an exact negation) so that the product stays a floor chain, exactly as
-    /// `Lu2::determinant` does.
-    ///
-    /// Exactly zero for a rank-deficient matrix. Panics with the scalar's overflow error if the
-    /// product does not fit.
-    ///
-    /// PREFER `Matrix2::determinant` when the factorisation is not needed for something else: the
-    /// closed form is one exactly-rounded `diff_prod`, where this one multiplies two norms that
-    /// already carry the rounding of the orthogonalisation.
-    fn determinant(self: Qr2<T>) -> T {
-        let d = if self.q.determinant().is_sign_negative() {
-            -self.r.m11
-        } else {
-            self.r.m11
-        };
-        d * self.r.m22
     }
 }
 

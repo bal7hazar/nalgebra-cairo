@@ -37,6 +37,12 @@
 //! `u` and `d`); those follow `Cholesky`'s surface here. `rank_one_update` is not ported either,
 //! for the reason given in `cholesky.cairo`.
 
+// the in-crate tests reach the internal items of the module (and the other modules' tests
+// through `crate::linalg::...`) here (WP 9-NS9)
+#[cfg(test)]
+pub(crate) use nalgebra_linalg4::internal::linalg::ldlt::{
+    Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait,
+};
 use nalgebra_shapes6::base::matrix6::Matrix6;
 use nalgebra_shapes6::base::vector6::Vector6;
 use simba::scalar::Real;
@@ -585,8 +591,6 @@ pub(crate) impl Ldlt6Impl<
         (self.d.x * (self.d.y * self.d.z)) * (self.d.w * (self.d.a * self.d.b))
     }
 }
-
-pub use nalgebra_linalg4::linalg::ldlt::*;
 
 #[cfg(test)]
 mod benches;

@@ -21,7 +21,7 @@ use nalgebra_static3::base::matrix2::Matrix2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
 use simba::scalar::Real;
-use crate::linalg::ldlt::{Ldlt2Trait, Ldlt3Trait, Ldlt4Trait};
+use crate::internal::linalg::ldlt::{Ldlt2Trait, Ldlt3Trait, Ldlt4Trait};
 
 /// The `UDUᵀ` factorisation `p = u * diag(d) * uᵀ` of a symmetric 2x2 matrix: the unit UPPER
 /// triangular `u` (ones on the diagonal, zeros below it) and the diagonal `d`. The fields are
