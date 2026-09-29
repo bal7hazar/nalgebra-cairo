@@ -59,20 +59,31 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # the three features now gate this package's re-exports only (`dmatrix!` / `dvector!` still need
 # `dynamic`), so `default-features = false` still exposes no dynamic / sparse / io item as in 0.1.0;
 # their removal is decided with the other no-op features (docs/SPLIT.md §12.1, WP 9-NS11b).
+# WP 9-NS11b (docs/SPLIT.md §17): `statistics`, `blas`, `dynamic`, `sparse` and `io` are no-ops in
+# 0.1.1 (deprecated, CHANGELOG): they still gate this package's re-exports, but the code they used to
+# leave out lives in sub-crates this package always depends on, so leaving them out saves no compile
+# work; a consumer that wants a light build depends on the sub-crates it uses. The CI job `Facade
+# features` (scripts/facade_features.py) builds consumers naming the five. `closures` and the linalg
+# features stay real: they gate code inside the sub-crates.
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
     "cholesky_update", "full_piv_lu", "col_piv_qr", "lblt", "macros", "hessenberg", "bidiagonal",
     "schur", "exp",
 ]
+# kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 statistics = []
+# kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 blas = []
 closures = [
     "nalgebra_static3/closures", "nalgebra_static4/closures", "nalgebra_static5/closures",
     "nalgebra_static6_tall/closures", "nalgebra_static6_wide/closures", "nalgebra_dynamic/closures",
 ]
+# kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 dynamic = []
+# kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 sparse = ["dynamic"]
+# kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 io = ["sparse"]
 eigen = [
     "nalgebra_linalg_svd_eigen4/eigen", "nalgebra_linalg5/eigen", "nalgebra_linalg6/eigen",
