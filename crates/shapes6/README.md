@@ -11,7 +11,9 @@ port of the Rust `nalgebra` crate on `fixed::Fixed` (Q32.32), built for provable
 - their products (`MatrixMul`, `MatrixTrMul`, with every shape; a product sits in the module of its
   larger operand, so `Matrix2x5 * Matrix5x6` is in `base::matrix5x6`), indexing (`MatrixIndex`),
   solve kernels, permutations (`Perm1`..`Perm5` on these shapes: `PermuteRows`, `PermuteColumns`),
-  Givens rotations (`GivensRotate`), the LU steps of `Matrix6`, the `Normed` impl of `Vector6`;
+  Givens rotations (`GivensRotate`), the LU steps of `Matrix6`, the `Normed` impl of `Vector6`,
+  the impls of the `linalg` building-block traits of `nalgebra_shapes5` (`HouseholderAxis`,
+  `ColumnMajor`, `Balancing`) on these shapes;
 - the reflections `Reflection1`..`Reflection4` applied to these shapes (`Reflection2Columns` on a
   `Matrix2x6`...) and `Matrix6CgTrait` (upstream `base/cg.rs` for `Matrix6`: homogeneous coordinates
   of dimension 5).
