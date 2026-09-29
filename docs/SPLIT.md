@@ -731,3 +731,7 @@ in `crates.toml`, before the release PR).
   `glam` 0.4.0 the glam types differ and `.into()` fails to compile.
 - The `Sym4` entry of `[internal]` also makes `linalg::symmetric_eigen4::Sym4` internal when
   `linalg_svd_eigen4` moves (NS9): intended (both are crate-private helpers).
+- **Router rules added by NS5**: explicit facade name lists also for SUB-CRATE modules that received
+  moved impls (not only facade modules); a trait used only through method calls keeps its import
+  when the piece names its type; a name of a module only a lower package holds resolves to that
+  package. `cratemap.py --anchors` is the anchor + placement check of every move PR.

@@ -119,7 +119,8 @@ large directly.
   --update gas/` for each moved or rewritten package, then `python3 tools/split/gas_compare.py
   --base origin/main --head gas/` (0 changed, 0 missing, 0 added: paste the summary line in the
   PR); (6) `python3 scripts/consumer_cost.py --lines-only --report-only` for the new crates' lines;
-  (7) the anchor check (each moved impl's module is its trait's or one of its argument types')
+  (7) `python3 tools/split/cratemap.py --anchors` (0 findings: each moved impl's module is its
+  trait's or one of its argument types', and hand-written blocks are placed as the map says)
   and the `[internal]` table for former `pub(crate)` items the facade package still needs
   (`docs/SPLIT.md` §15); in-crate tests stay in the package hosting their methods.
 
