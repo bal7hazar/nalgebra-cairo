@@ -8,25 +8,27 @@
 //! are methods of `RowVector3Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    RowVector3KroneckerMatrix1, RowVector3KroneckerMatrix2, RowVector3KroneckerMatrix3x2,
+    RowVector3KroneckerMatrix4x2, RowVector3KroneckerMatrix5x2, RowVector3KroneckerMatrix6x2,
+    RowVector3KroneckerRowVector2, RowVector3KroneckerVector2, RowVector3KroneckerVector3,
+    RowVector3KroneckerVector4, RowVector3KroneckerVector5, RowVector3KroneckerVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    RowVector3FixedColumnsMatrix1, RowVector3FixedColumnsRowVector2,
+    RowVector3FixedColumnsRowVector3, RowVector3FixedRowsRowVector3,
+};
 pub use nalgebra_core::base::row_vector3::*;
+pub use nalgebra_norm::base::norm::{
+    RowVector3EuclideanNorm, RowVector3LpNorm, RowVector3OneNorm, RowVector3UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix3x5::RowVector3MulMatrix3x5;
 pub use nalgebra_shapes5::base::row_vector5::RowVector3TrMulRowVector5;
 pub use nalgebra_shapes6::base::matrix3x6::RowVector3MulMatrix3x6;
 pub use nalgebra_shapes6::base::row_vector6::RowVector3TrMulRowVector6;
 pub use nalgebra_static3::base::row_vector3::*;
 pub use nalgebra_static3::geometry::rotation3::RowVector3MulRotation3;
-pub use crate::base::matrix_kronecker::{
-    RowVector3KroneckerMatrix1, RowVector3KroneckerMatrix2, RowVector3KroneckerMatrix3x2,
-    RowVector3KroneckerMatrix4x2, RowVector3KroneckerMatrix5x2, RowVector3KroneckerMatrix6x2,
-    RowVector3KroneckerRowVector2, RowVector3KroneckerVector2, RowVector3KroneckerVector3,
-    RowVector3KroneckerVector4, RowVector3KroneckerVector5, RowVector3KroneckerVector6,
-};
-pub use crate::base::matrix_view::{
-    RowVector3FixedColumnsMatrix1, RowVector3FixedColumnsRowVector2,
-    RowVector3FixedColumnsRowVector3, RowVector3FixedRowsRowVector3, RowVector3FixedViewMatrix1,
-    RowVector3FixedViewRowVector2, RowVector3FixedViewRowVector3,
-};
-pub use crate::base::norm::{
-    RowVector3EuclideanNorm, RowVector3LpNorm, RowVector3OneNorm, RowVector3UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    RowVector3FixedViewMatrix1, RowVector3FixedViewRowVector2, RowVector3FixedViewRowVector3,
 };
 pub use crate::root::RowVector3InfSup;

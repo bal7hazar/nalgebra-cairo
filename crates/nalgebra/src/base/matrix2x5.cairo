@@ -8,6 +8,17 @@
 //! `Matrix2x5Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix2x5KroneckerMatrix1, Matrix2x5KroneckerVector2, Matrix2x5KroneckerVector3,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix2x5FixedColumnsMatrix2, Matrix2x5FixedColumnsMatrix2x3, Matrix2x5FixedColumnsMatrix2x4,
+    Matrix2x5FixedColumnsMatrix2x5, Matrix2x5FixedColumnsVector2, Matrix2x5FixedRowsMatrix2x5,
+    Matrix2x5FixedRowsRowVector5,
+};
+pub use nalgebra_norm::base::norm::{
+    Matrix2x5EuclideanNorm, Matrix2x5LpNorm, Matrix2x5OneNorm, Matrix2x5UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix2x5::{
     Matrix2x5, Matrix2x5Add, Matrix2x5AddAssign, Matrix2x5Bounded, Matrix2x5DivAssignScalar,
     Matrix2x5FromColumnArrays, Matrix2x5IndexLinear, Matrix2x5IndexPair, Matrix2x5IntoColumnArrays,
@@ -20,18 +31,10 @@ pub use nalgebra_shapes5::base::matrix2x5::{
 pub use nalgebra_shapes6::base::matrix2x6::Matrix2x5TrMulMatrix2x6;
 pub use nalgebra_shapes6::base::matrix5x6::Matrix2x5MulMatrix5x6;
 pub use nalgebra_static5::base::matrix2x5::*;
-pub use crate::base::matrix_kronecker::{
-    Matrix2x5KroneckerMatrix1, Matrix2x5KroneckerVector2, Matrix2x5KroneckerVector3,
-};
-pub use crate::base::matrix_view::{
-    Matrix2x5FixedColumnsMatrix2, Matrix2x5FixedColumnsMatrix2x3, Matrix2x5FixedColumnsMatrix2x4,
-    Matrix2x5FixedColumnsMatrix2x5, Matrix2x5FixedColumnsVector2, Matrix2x5FixedRowsMatrix2x5,
-    Matrix2x5FixedRowsRowVector5, Matrix2x5FixedViewMatrix1, Matrix2x5FixedViewMatrix2,
-    Matrix2x5FixedViewMatrix2x3, Matrix2x5FixedViewMatrix2x4, Matrix2x5FixedViewMatrix2x5,
-    Matrix2x5FixedViewRowVector2, Matrix2x5FixedViewRowVector3, Matrix2x5FixedViewRowVector4,
-    Matrix2x5FixedViewRowVector5, Matrix2x5FixedViewVector2,
-};
-pub use crate::base::norm::{
-    Matrix2x5EuclideanNorm, Matrix2x5LpNorm, Matrix2x5OneNorm, Matrix2x5UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix2x5FixedViewMatrix1, Matrix2x5FixedViewMatrix2, Matrix2x5FixedViewMatrix2x3,
+    Matrix2x5FixedViewMatrix2x4, Matrix2x5FixedViewMatrix2x5, Matrix2x5FixedViewRowVector2,
+    Matrix2x5FixedViewRowVector3, Matrix2x5FixedViewRowVector4, Matrix2x5FixedViewRowVector5,
+    Matrix2x5FixedViewVector2,
 };
 pub use crate::root::Matrix2x5InfSup;

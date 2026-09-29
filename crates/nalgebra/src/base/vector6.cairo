@@ -20,6 +20,18 @@
 //! they cost ONE floor rounding and ONE overflow check, exactly like the 3-term `sum_prod3`
 //! kernels — never two chained `sum_prod3`, which would round twice.
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Vector6KroneckerMatrix1, Vector6KroneckerRowVector2, Vector6KroneckerRowVector3,
+    Vector6KroneckerRowVector4, Vector6KroneckerRowVector5, Vector6KroneckerRowVector6,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Vector6FixedColumnsVector6, Vector6FixedRowsMatrix1, Vector6FixedRowsVector2,
+    Vector6FixedRowsVector3, Vector6FixedRowsVector4, Vector6FixedRowsVector5,
+    Vector6FixedRowsVector6,
+};
+pub use nalgebra_norm::base::norm::{
+    Vector6EuclideanNorm, Vector6LpNorm, Vector6OneNorm, Vector6UniformNorm,
+};
 pub use nalgebra_shapes6::base::vector6::{
     Matrix6x1, UnitVector6, Vector6, Vector6Add, Vector6AddAssign, Vector6Bounded, Vector6DivAssign,
     Vector6FromArray, Vector6FromColumnArrays, Vector6IndexLinear, Vector6IndexPair,
@@ -31,18 +43,8 @@ pub use nalgebra_shapes6::base::vector6::{
     Vector6TrMulVector6,
 };
 pub use nalgebra_static6_tall::base::vector6::*;
-pub use crate::base::matrix_kronecker::{
-    Vector6KroneckerMatrix1, Vector6KroneckerRowVector2, Vector6KroneckerRowVector3,
-    Vector6KroneckerRowVector4, Vector6KroneckerRowVector5, Vector6KroneckerRowVector6,
-};
-pub use crate::base::matrix_view::{
-    Vector6FixedColumnsVector6, Vector6FixedRowsMatrix1, Vector6FixedRowsVector2,
-    Vector6FixedRowsVector3, Vector6FixedRowsVector4, Vector6FixedRowsVector5,
-    Vector6FixedRowsVector6, Vector6FixedViewMatrix1, Vector6FixedViewVector2,
-    Vector6FixedViewVector3, Vector6FixedViewVector4, Vector6FixedViewVector5,
-    Vector6FixedViewVector6,
-};
-pub use crate::base::norm::{
-    Vector6EuclideanNorm, Vector6LpNorm, Vector6OneNorm, Vector6UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Vector6FixedViewMatrix1, Vector6FixedViewVector2, Vector6FixedViewVector3,
+    Vector6FixedViewVector4, Vector6FixedViewVector5, Vector6FixedViewVector6,
 };
 pub use crate::root::Vector6InfSup;

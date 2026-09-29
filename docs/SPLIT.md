@@ -567,7 +567,14 @@ facade package until `static6_tall` moves (NS7). **NS7 done** (PR #71): `nalgebr
 2.5 s / 0.52 GB; with `Lu6` and `Perm6`) (CI `Consumer cost`, GitHub runner; NS1b: 2.4 / 1.7 /
 2.7 s), zero step change, path proof green (transient set 1,081 → 1,069: the 12 `Perm6`
 permutation impls left with `Perm6`); `closures` in each, forwarded by the facade; the dimension-6
-edit kernels and `Lu6InternalTrait` under `internal`.
+edit kernels and `Lu6InternalTrait` under `internal`. **NS8 done** (PR #73): `nalgebra_blocks`
+(21,328 lines, marginal 0.5 s / 0.32 GB), `nalgebra_views` (23,233, 0.7 s / 0.33 GB), `nalgebra_norm`
+(3,744, 0.6 s / 0.10 GB), `nalgebra_statistics` (18,359, 0.9 s / 0.22 GB), `nalgebra_blas` (12,105,
+2.4 s / 0.34 GB) (CI `Consumer cost`, GitHub runner; NS1b: 1.2 / 0.6 / 0.9 / 1.4 / 2.9 s), zero step
+change, path proof green (transient set
+1,069 → 36: only the `MatrixInfSup` impls of `root` remain, until NS11); `PadTo6` / `CropFrom6` /
+`ShapeDims` under `nalgebra_blocks::internal`; the facade features `statistics` / `blas` now gate its
+re-exports of the two crates only (their removal: NS11, §12.1).
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible

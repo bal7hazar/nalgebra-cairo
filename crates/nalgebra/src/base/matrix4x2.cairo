@@ -8,24 +8,26 @@
 //! `Matrix4x2Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::{
+    Matrix4x2KroneckerMatrix1, Matrix4x2KroneckerRowVector2, Matrix4x2KroneckerRowVector3,
+};
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix4x2FixedColumnsMatrix4x2, Matrix4x2FixedColumnsVector4, Matrix4x2FixedRowsMatrix2,
+    Matrix4x2FixedRowsMatrix3x2, Matrix4x2FixedRowsMatrix4x2, Matrix4x2FixedRowsRowVector2,
+};
 pub use nalgebra_core::base::matrix4x2::*;
+pub use nalgebra_norm::base::norm::{
+    Matrix4x2EuclideanNorm, Matrix4x2LpNorm, Matrix4x2OneNorm, Matrix4x2UniformNorm,
+};
 pub use nalgebra_shapes5::base::matrix2x5::Matrix4x2MulMatrix2x5;
 pub use nalgebra_shapes5::base::matrix4x5::Matrix4x2TrMulMatrix4x5;
 pub use nalgebra_shapes6::base::matrix2x6::Matrix4x2MulMatrix2x6;
 pub use nalgebra_shapes6::base::matrix4x6::Matrix4x2TrMulMatrix4x6;
 pub use nalgebra_static3::geometry::rotation2::Matrix4x2MulRotation2;
 pub use nalgebra_static4::base::matrix4x2::*;
-pub use crate::base::matrix_kronecker::{
-    Matrix4x2KroneckerMatrix1, Matrix4x2KroneckerRowVector2, Matrix4x2KroneckerRowVector3,
-};
-pub use crate::base::matrix_view::{
-    Matrix4x2FixedColumnsMatrix4x2, Matrix4x2FixedColumnsVector4, Matrix4x2FixedRowsMatrix2,
-    Matrix4x2FixedRowsMatrix3x2, Matrix4x2FixedRowsMatrix4x2, Matrix4x2FixedRowsRowVector2,
+pub use nalgebra_views::base::matrix_view::{
     Matrix4x2FixedViewMatrix1, Matrix4x2FixedViewMatrix2, Matrix4x2FixedViewMatrix3x2,
     Matrix4x2FixedViewMatrix4x2, Matrix4x2FixedViewRowVector2, Matrix4x2FixedViewVector2,
     Matrix4x2FixedViewVector3, Matrix4x2FixedViewVector4,
-};
-pub use crate::base::norm::{
-    Matrix4x2EuclideanNorm, Matrix4x2LpNorm, Matrix4x2OneNorm, Matrix4x2UniformNorm,
 };
 pub use crate::root::Matrix4x2InfSup;

@@ -8,11 +8,7 @@
 //! import; the other operations are methods of `Matrix1Trait`, the products with every conformable
 //! shape `MatrixMul::mul_mat` (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
-pub use nalgebra_core::base::matrix1::*;
-pub use nalgebra_shapes5::base::row_vector5::{Matrix1MulRowVector5, Matrix1TrMulRowVector5};
-pub use nalgebra_shapes6::base::row_vector6::{Matrix1MulRowVector6, Matrix1TrMulRowVector6};
-pub use nalgebra_static3::base::matrix1::*;
-pub use crate::base::matrix_kronecker::{
+pub use nalgebra_blocks::base::matrix_kronecker::{
     Matrix1KroneckerMatrix1, Matrix1KroneckerMatrix2, Matrix1KroneckerMatrix2x3,
     Matrix1KroneckerMatrix2x4, Matrix1KroneckerMatrix2x5, Matrix1KroneckerMatrix2x6,
     Matrix1KroneckerMatrix3, Matrix1KroneckerMatrix3x2, Matrix1KroneckerMatrix3x4,
@@ -26,10 +22,13 @@ pub use crate::base::matrix_kronecker::{
     Matrix1KroneckerRowVector6, Matrix1KroneckerVector2, Matrix1KroneckerVector3,
     Matrix1KroneckerVector4, Matrix1KroneckerVector5, Matrix1KroneckerVector6,
 };
-pub use crate::base::matrix_view::{
-    Matrix1FixedColumnsMatrix1, Matrix1FixedRowsMatrix1, Matrix1FixedViewMatrix1,
-};
-pub use crate::base::norm::{
+pub use nalgebra_blocks::base::matrix_view::{Matrix1FixedColumnsMatrix1, Matrix1FixedRowsMatrix1};
+pub use nalgebra_core::base::matrix1::*;
+pub use nalgebra_norm::base::norm::{
     Matrix1EuclideanNorm, Matrix1LpNorm, Matrix1OneNorm, Matrix1UniformNorm,
 };
+pub use nalgebra_shapes5::base::row_vector5::{Matrix1MulRowVector5, Matrix1TrMulRowVector5};
+pub use nalgebra_shapes6::base::row_vector6::{Matrix1MulRowVector6, Matrix1TrMulRowVector6};
+pub use nalgebra_static3::base::matrix1::*;
+pub use nalgebra_views::base::matrix_view::Matrix1FixedViewMatrix1;
 pub use crate::root::Matrix1InfSup;

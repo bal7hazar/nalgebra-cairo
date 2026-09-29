@@ -8,6 +8,16 @@
 //! `Matrix6x5Trait`, the products with every conformable shape `MatrixMul::mul_mat` (`self * rhs`)
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+pub use nalgebra_blocks::base::matrix_kronecker::Matrix6x5KroneckerMatrix1;
+pub use nalgebra_blocks::base::matrix_view::{
+    Matrix6x5FixedColumnsMatrix6x2, Matrix6x5FixedColumnsMatrix6x3, Matrix6x5FixedColumnsMatrix6x4,
+    Matrix6x5FixedColumnsMatrix6x5, Matrix6x5FixedColumnsVector6, Matrix6x5FixedRowsMatrix2x5,
+    Matrix6x5FixedRowsMatrix3x5, Matrix6x5FixedRowsMatrix4x5, Matrix6x5FixedRowsMatrix5,
+    Matrix6x5FixedRowsMatrix6x5, Matrix6x5FixedRowsRowVector5,
+};
+pub use nalgebra_norm::base::norm::{
+    Matrix6x5EuclideanNorm, Matrix6x5LpNorm, Matrix6x5OneNorm, Matrix6x5UniformNorm,
+};
 pub use nalgebra_shapes6::base::matrix6x5::{
     Matrix6x5, Matrix6x5Add, Matrix6x5AddAssign, Matrix6x5Bounded, Matrix6x5DivAssignScalar,
     Matrix6x5FromColumnArrays, Matrix6x5IndexLinear, Matrix6x5IndexPair, Matrix6x5IntoColumnArrays,
@@ -19,24 +29,16 @@ pub use nalgebra_shapes6::base::matrix6x5::{
     Matrix6x5TrMulMatrix6x5, Matrix6x5TrMulVector6,
 };
 pub use nalgebra_static6_tall::base::matrix6x5::*;
-pub use crate::base::matrix_kronecker::Matrix6x5KroneckerMatrix1;
-pub use crate::base::matrix_view::{
-    Matrix6x5FixedColumnsMatrix6x2, Matrix6x5FixedColumnsMatrix6x3, Matrix6x5FixedColumnsMatrix6x4,
-    Matrix6x5FixedColumnsMatrix6x5, Matrix6x5FixedColumnsVector6, Matrix6x5FixedRowsMatrix2x5,
-    Matrix6x5FixedRowsMatrix3x5, Matrix6x5FixedRowsMatrix4x5, Matrix6x5FixedRowsMatrix5,
-    Matrix6x5FixedRowsMatrix6x5, Matrix6x5FixedRowsRowVector5, Matrix6x5FixedViewMatrix1,
-    Matrix6x5FixedViewMatrix2, Matrix6x5FixedViewMatrix2x3, Matrix6x5FixedViewMatrix2x4,
-    Matrix6x5FixedViewMatrix2x5, Matrix6x5FixedViewMatrix3, Matrix6x5FixedViewMatrix3x2,
-    Matrix6x5FixedViewMatrix3x4, Matrix6x5FixedViewMatrix3x5, Matrix6x5FixedViewMatrix4,
-    Matrix6x5FixedViewMatrix4x2, Matrix6x5FixedViewMatrix4x3, Matrix6x5FixedViewMatrix4x5,
-    Matrix6x5FixedViewMatrix5, Matrix6x5FixedViewMatrix5x2, Matrix6x5FixedViewMatrix5x3,
-    Matrix6x5FixedViewMatrix5x4, Matrix6x5FixedViewMatrix6x2, Matrix6x5FixedViewMatrix6x3,
-    Matrix6x5FixedViewMatrix6x4, Matrix6x5FixedViewMatrix6x5, Matrix6x5FixedViewRowVector2,
-    Matrix6x5FixedViewRowVector3, Matrix6x5FixedViewRowVector4, Matrix6x5FixedViewRowVector5,
-    Matrix6x5FixedViewVector2, Matrix6x5FixedViewVector3, Matrix6x5FixedViewVector4,
-    Matrix6x5FixedViewVector5, Matrix6x5FixedViewVector6,
-};
-pub use crate::base::norm::{
-    Matrix6x5EuclideanNorm, Matrix6x5LpNorm, Matrix6x5OneNorm, Matrix6x5UniformNorm,
+pub use nalgebra_views::base::matrix_view::{
+    Matrix6x5FixedViewMatrix1, Matrix6x5FixedViewMatrix2, Matrix6x5FixedViewMatrix2x3,
+    Matrix6x5FixedViewMatrix2x4, Matrix6x5FixedViewMatrix2x5, Matrix6x5FixedViewMatrix3,
+    Matrix6x5FixedViewMatrix3x2, Matrix6x5FixedViewMatrix3x4, Matrix6x5FixedViewMatrix3x5,
+    Matrix6x5FixedViewMatrix4, Matrix6x5FixedViewMatrix4x2, Matrix6x5FixedViewMatrix4x3,
+    Matrix6x5FixedViewMatrix4x5, Matrix6x5FixedViewMatrix5, Matrix6x5FixedViewMatrix5x2,
+    Matrix6x5FixedViewMatrix5x3, Matrix6x5FixedViewMatrix5x4, Matrix6x5FixedViewMatrix6x2,
+    Matrix6x5FixedViewMatrix6x3, Matrix6x5FixedViewMatrix6x4, Matrix6x5FixedViewMatrix6x5,
+    Matrix6x5FixedViewRowVector2, Matrix6x5FixedViewRowVector3, Matrix6x5FixedViewRowVector4,
+    Matrix6x5FixedViewRowVector5, Matrix6x5FixedViewVector2, Matrix6x5FixedViewVector3,
+    Matrix6x5FixedViewVector4, Matrix6x5FixedViewVector5, Matrix6x5FixedViewVector6,
 };
 pub use crate::root::Matrix6x5InfSup;

@@ -696,8 +696,12 @@ class CrateMap:
 
     def _internal_uses(self, text, f, pkg, placed, idx):
         """`text` (module file `f` of package `pkg`) with every private `use` statement that names an
-        `[internal]` item rewritten to its `internal::` path; the other statements untouched."""
-        if not self.internal:
+        `[internal]` item rewritten to its `internal::` path, and, in a sub-crate, every relative
+        one (`use super::matrix1::Matrix1;`) that names an item another package defines rewritten
+        to that package (a generated file moved whole out of the facade package, WP 9-NS8:
+        `base::statistics`); the other statements untouched."""
+        sub = pkg != self.facade_package
+        if not self.internal and not sub:
             return text
         masked = cc.mask(text)
         names = set(IDENT.findall(masked))
@@ -711,9 +715,13 @@ class CrateMap:
                 it = idx.get(full.split(" as ")[0].split("::")[-1].strip())
                 if it is not None and self.is_internal(it, self.crate_of(it, idx)):
                     hit = True
+            new = None
+            if not hit and sub and m.group(1).strip().split("::")[0].strip("{ ") in ("crate", "super", "self"):
+                new = self._rewrite_use(stmt.strip(), f, f, pkg, names, placed, idx)
+                hit = new is not None and re.search(r"\bnalgebra\w*::", new) is not None
             if not hit:
                 continue
-            new = self._rewrite_use(stmt.strip(), f, f, pkg, names, placed, idx)
+            new = new or self._rewrite_use(stmt.strip(), f, f, pkg, names, placed, idx)
             lead = stmt[: len(stmt) - len(stmt.lstrip())]
             out.append(text[last:m.start()] + lead + (new or ""))
             last = m.end()

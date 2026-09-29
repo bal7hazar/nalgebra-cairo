@@ -18,7 +18,11 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # Families that cost compile memory to every dependent and that nothing else in the crate uses
 # (WP 8.1d, tools/shapegen/DESIGN.md §2.11): all on by default, so the public API is upstream's; a
 # dependent that does not need them writes `default-features = false` (plus `features = [..]`).
-# `statistics`: base/statistics.cairo; `blas`: base/blas.cairo; `closures`: the methods of the
+# `statistics`: base/statistics.cairo; `blas`: base/blas.cairo (WP 9-NS8: their code lives in
+# `nalgebra_statistics` / `nalgebra_blas`, which this package always depends on; the features now
+# gate the facade's re-exports of those crates only, so `default-features = false` still exposes no
+# statistics / BLAS item as in 0.1.0; their removal is decided with the other no-op features,
+# docs/SPLIT.md §12.1); `closures`: the methods of the
 # shapes that take a closure (`map`, `fold`, `apply`, `zip_*`...). `dynamic` (WP 8.5-P13, DESIGN
 # D5): `DMatrix` / `DVector` / `RowDVector`, the partially dynamic aliases, the edition forms
 # of the static shapes that return them and the vector convolutions (base/dynamic*.cairo).
@@ -76,7 +80,12 @@ nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
 nalgebra_static5 = { path = "../static5", version = "0.1.0", default-features = false }
 nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
 nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.0", default-features = false }
+nalgebra_blocks = { path = "../blocks", version = "0.1.0" }
+nalgebra_views = { path = "../views", version = "0.1.0" }
+nalgebra_norm = { path = "../norm", version = "0.1.0" }
 nalgebra_geometry6 = { path = "../geometry6", version = "0.1.0" }
+nalgebra_statistics = { path = "../statistics", version = "0.1.0" }
+nalgebra_blas = { path = "../blas", version = "0.1.0" }
 simba.workspace = true
 
 [dev-dependencies]

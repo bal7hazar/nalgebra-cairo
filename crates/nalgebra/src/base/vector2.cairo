@@ -18,13 +18,7 @@
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
 
-pub use nalgebra_core::base::vector2::*;
-pub use nalgebra_shapes5::base::matrix2x5::Vector2TrMulMatrix2x5;
-pub use nalgebra_shapes5::base::row_vector5::Vector2MulRowVector5;
-pub use nalgebra_shapes6::base::matrix2x6::Vector2TrMulMatrix2x6;
-pub use nalgebra_shapes6::base::row_vector6::Vector2MulRowVector6;
-pub use nalgebra_static3::base::vector2::*;
-pub use crate::base::matrix_kronecker::{
+pub use nalgebra_blocks::base::matrix_kronecker::{
     Vector2KroneckerMatrix1, Vector2KroneckerMatrix2, Vector2KroneckerMatrix2x3,
     Vector2KroneckerMatrix2x4, Vector2KroneckerMatrix2x5, Vector2KroneckerMatrix2x6,
     Vector2KroneckerMatrix3, Vector2KroneckerMatrix3x2, Vector2KroneckerMatrix3x4,
@@ -32,11 +26,17 @@ pub use crate::base::matrix_kronecker::{
     Vector2KroneckerRowVector3, Vector2KroneckerRowVector4, Vector2KroneckerRowVector5,
     Vector2KroneckerRowVector6, Vector2KroneckerVector2, Vector2KroneckerVector3,
 };
-pub use crate::base::matrix_view::{
+pub use nalgebra_blocks::base::matrix_view::{
     Vector2FixedColumnsVector2, Vector2FixedRowsMatrix1, Vector2FixedRowsVector2,
-    Vector2FixedViewMatrix1, Vector2FixedViewVector2,
 };
-pub use crate::base::norm::{
+pub use nalgebra_core::base::vector2::*;
+pub use nalgebra_norm::base::norm::{
     Vector2EuclideanNorm, Vector2LpNorm, Vector2OneNorm, Vector2UniformNorm,
 };
+pub use nalgebra_shapes5::base::matrix2x5::Vector2TrMulMatrix2x5;
+pub use nalgebra_shapes5::base::row_vector5::Vector2MulRowVector5;
+pub use nalgebra_shapes6::base::matrix2x6::Vector2TrMulMatrix2x6;
+pub use nalgebra_shapes6::base::row_vector6::Vector2MulRowVector6;
+pub use nalgebra_static3::base::vector2::*;
+pub use nalgebra_views::base::matrix_view::{Vector2FixedViewMatrix1, Vector2FixedViewVector2};
 pub use crate::root::Vector2InfSup;

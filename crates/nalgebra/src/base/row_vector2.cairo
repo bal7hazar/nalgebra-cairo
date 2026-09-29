@@ -8,14 +8,7 @@
 //! are methods of `RowVector2Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
-pub use nalgebra_core::base::row_vector2::*;
-pub use nalgebra_shapes5::base::matrix2x5::RowVector2MulMatrix2x5;
-pub use nalgebra_shapes5::base::row_vector5::RowVector2TrMulRowVector5;
-pub use nalgebra_shapes6::base::matrix2x6::RowVector2MulMatrix2x6;
-pub use nalgebra_shapes6::base::row_vector6::RowVector2TrMulRowVector6;
-pub use nalgebra_static3::base::row_vector2::*;
-pub use nalgebra_static3::geometry::rotation2::RowVector2MulRotation2;
-pub use crate::base::matrix_kronecker::{
+pub use nalgebra_blocks::base::matrix_kronecker::{
     RowVector2KroneckerMatrix1, RowVector2KroneckerMatrix2, RowVector2KroneckerMatrix2x3,
     RowVector2KroneckerMatrix3, RowVector2KroneckerMatrix3x2, RowVector2KroneckerMatrix4x2,
     RowVector2KroneckerMatrix4x3, RowVector2KroneckerMatrix5x2, RowVector2KroneckerMatrix5x3,
@@ -23,11 +16,20 @@ pub use crate::base::matrix_kronecker::{
     RowVector2KroneckerRowVector3, RowVector2KroneckerVector2, RowVector2KroneckerVector3,
     RowVector2KroneckerVector4, RowVector2KroneckerVector5, RowVector2KroneckerVector6,
 };
-pub use crate::base::matrix_view::{
+pub use nalgebra_blocks::base::matrix_view::{
     RowVector2FixedColumnsMatrix1, RowVector2FixedColumnsRowVector2, RowVector2FixedRowsRowVector2,
-    RowVector2FixedViewMatrix1, RowVector2FixedViewRowVector2,
 };
-pub use crate::base::norm::{
+pub use nalgebra_core::base::row_vector2::*;
+pub use nalgebra_norm::base::norm::{
     RowVector2EuclideanNorm, RowVector2LpNorm, RowVector2OneNorm, RowVector2UniformNorm,
+};
+pub use nalgebra_shapes5::base::matrix2x5::RowVector2MulMatrix2x5;
+pub use nalgebra_shapes5::base::row_vector5::RowVector2TrMulRowVector5;
+pub use nalgebra_shapes6::base::matrix2x6::RowVector2MulMatrix2x6;
+pub use nalgebra_shapes6::base::row_vector6::RowVector2TrMulRowVector6;
+pub use nalgebra_static3::base::row_vector2::*;
+pub use nalgebra_static3::geometry::rotation2::RowVector2MulRotation2;
+pub use nalgebra_views::base::matrix_view::{
+    RowVector2FixedViewMatrix1, RowVector2FixedViewRowVector2,
 };
 pub use crate::root::RowVector2InfSup;

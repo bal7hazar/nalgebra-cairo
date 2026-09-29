@@ -1,0 +1,26 @@
+[package]
+name = "nalgebra_statistics"
+description = "base::statistics (sums, means, variances, min / max over rows and columns)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "statistics"]
+readme = "README.md"
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

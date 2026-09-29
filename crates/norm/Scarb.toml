@@ -1,0 +1,31 @@
+[package]
+name = "nalgebra_norm"
+description = "The norm markers (EuclideanNorm, LpNorm, OneNorm, UniformNorm) and every Norm impl."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "norm"]
+readme = "README.md"
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
+nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = false }
+nalgebra_static5 = { path = "../static5", version = "0.1.0", default-features = false }
+nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
+nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

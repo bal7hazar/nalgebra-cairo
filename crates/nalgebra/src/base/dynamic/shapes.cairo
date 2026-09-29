@@ -9,6 +9,7 @@
 //! type selects upstream's const generic `D`, one impl per (shape, D) pair, on the `Matrix6`
 //! canvas of `FixedResize`).
 
+use nalgebra_blocks::internal::base::matrix_view::{CropFrom6, PadTo6};
 use simba::scalar::Real;
 use super::dmatrix::{DMatrix, DMatrixTrait};
 use super::dvector::{DVector, DVectorTrait};
@@ -40,7 +41,6 @@ use super::super::matrix6x2::{Matrix6x2, Matrix6x2Trait};
 use super::super::matrix6x3::{Matrix6x3, Matrix6x3Trait};
 use super::super::matrix6x4::{Matrix6x4, Matrix6x4Trait};
 use super::super::matrix6x5::{Matrix6x5, Matrix6x5Trait};
-use super::super::matrix_view::{CropFrom6, PadTo6};
 use super::super::row_vector2::{RowVector2, RowVector2Trait};
 use super::super::row_vector3::{RowVector3, RowVector3Trait};
 use super::super::row_vector4::{RowVector4, RowVector4Trait};
