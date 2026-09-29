@@ -5394,3 +5394,576 @@ impl Matrix5LuSteps<
         Self::gauss_step(ref matrix, diag, i);
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
+use crate::internal::linalg::balancing::Balancing;
+use crate::internal::linalg::householder_steps::ColumnMajor;
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/balancing.cairo
+// crate-map: from linalg/householder_steps.cairo
+/// `balance_parlett_reinsch` / `unbalance` on `Matrix5` (see the free functions).
+impl Matrix5Balancing<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Balancing<Matrix5<T>, Vector5<T>> {
+    fn balance_parlett_reinsch(ref matrix: Matrix5<T>) -> Vector5<T> {
+        let mut a00 = matrix.m11;
+        let mut a10 = matrix.m21;
+        let mut a20 = matrix.m31;
+        let mut a30 = matrix.m41;
+        let mut a40 = matrix.m51;
+        let mut a01 = matrix.m12;
+        let mut a11 = matrix.m22;
+        let mut a21 = matrix.m32;
+        let mut a31 = matrix.m42;
+        let mut a41 = matrix.m52;
+        let mut a02 = matrix.m13;
+        let mut a12 = matrix.m23;
+        let mut a22 = matrix.m33;
+        let mut a32 = matrix.m43;
+        let mut a42 = matrix.m53;
+        let mut a03 = matrix.m14;
+        let mut a13 = matrix.m24;
+        let mut a23 = matrix.m34;
+        let mut a33 = matrix.m44;
+        let mut a43 = matrix.m54;
+        let mut a04 = matrix.m15;
+        let mut a14 = matrix.m25;
+        let mut a24 = matrix.m35;
+        let mut a34 = matrix.m45;
+        let mut a44 = matrix.m55;
+        let mut d0 = R::one();
+        let mut d1 = R::one();
+        let mut d2 = R::one();
+        let mut d3 = R::one();
+        let mut d4 = R::one();
+        let two = R::from_int(2);
+        let half = R::from_ratio(1, 2);
+        let tol = R::from_ratio(95, 100);
+        let mut converged = false;
+        while !converged {
+            converged = true;
+            {
+                let c0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a00, a00), a10, a10,
+                                ),
+                                a20,
+                                a20,
+                            ),
+                            a30,
+                            a30,
+                        ),
+                        a40,
+                        a40,
+                    ),
+                );
+                let r0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a00, a00), a01, a01,
+                                ),
+                                a02,
+                                a02,
+                            ),
+                            a03,
+                            a03,
+                        ),
+                        a04,
+                        a04,
+                    ),
+                );
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
+                    let mut f = R::one();
+                    let mut finv = R::one();
+                    while n_col < n_row * half {
+                        n_col = n_col * two;
+                        n_row = n_row * half;
+                        f = f * two;
+                        finv = finv * half;
+                    }
+                    while n_col >= n_row * two {
+                        n_col = n_col * half;
+                        n_row = n_row * two;
+                        f = f * half;
+                        finv = finv * two;
+                    }
+                    if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {
+                        converged = false;
+                        d0 = d0 * f;
+                        a00 = a00 * f;
+                        a10 = a10 * f;
+                        a20 = a20 * f;
+                        a30 = a30 * f;
+                        a40 = a40 * f;
+                        a00 = a00 * finv;
+                        a01 = a01 * finv;
+                        a02 = a02 * finv;
+                        a03 = a03 * finv;
+                        a04 = a04 * finv;
+                    }
+                }
+            }
+            {
+                let c0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a01, a01), a11, a11,
+                                ),
+                                a21,
+                                a21,
+                            ),
+                            a31,
+                            a31,
+                        ),
+                        a41,
+                        a41,
+                    ),
+                );
+                let r0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a10, a10), a11, a11,
+                                ),
+                                a12,
+                                a12,
+                            ),
+                            a13,
+                            a13,
+                        ),
+                        a14,
+                        a14,
+                    ),
+                );
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
+                    let mut f = R::one();
+                    let mut finv = R::one();
+                    while n_col < n_row * half {
+                        n_col = n_col * two;
+                        n_row = n_row * half;
+                        f = f * two;
+                        finv = finv * half;
+                    }
+                    while n_col >= n_row * two {
+                        n_col = n_col * half;
+                        n_row = n_row * two;
+                        f = f * half;
+                        finv = finv * two;
+                    }
+                    if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {
+                        converged = false;
+                        d1 = d1 * f;
+                        a01 = a01 * f;
+                        a11 = a11 * f;
+                        a21 = a21 * f;
+                        a31 = a31 * f;
+                        a41 = a41 * f;
+                        a10 = a10 * finv;
+                        a11 = a11 * finv;
+                        a12 = a12 * finv;
+                        a13 = a13 * finv;
+                        a14 = a14 * finv;
+                    }
+                }
+            }
+            {
+                let c0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a02, a02), a12, a12,
+                                ),
+                                a22,
+                                a22,
+                            ),
+                            a32,
+                            a32,
+                        ),
+                        a42,
+                        a42,
+                    ),
+                );
+                let r0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a20, a20), a21, a21,
+                                ),
+                                a22,
+                                a22,
+                            ),
+                            a23,
+                            a23,
+                        ),
+                        a24,
+                        a24,
+                    ),
+                );
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
+                    let mut f = R::one();
+                    let mut finv = R::one();
+                    while n_col < n_row * half {
+                        n_col = n_col * two;
+                        n_row = n_row * half;
+                        f = f * two;
+                        finv = finv * half;
+                    }
+                    while n_col >= n_row * two {
+                        n_col = n_col * half;
+                        n_row = n_row * two;
+                        f = f * half;
+                        finv = finv * two;
+                    }
+                    if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {
+                        converged = false;
+                        d2 = d2 * f;
+                        a02 = a02 * f;
+                        a12 = a12 * f;
+                        a22 = a22 * f;
+                        a32 = a32 * f;
+                        a42 = a42 * f;
+                        a20 = a20 * finv;
+                        a21 = a21 * finv;
+                        a22 = a22 * finv;
+                        a23 = a23 * finv;
+                        a24 = a24 * finv;
+                    }
+                }
+            }
+            {
+                let c0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a03, a03), a13, a13,
+                                ),
+                                a23,
+                                a23,
+                            ),
+                            a33,
+                            a33,
+                        ),
+                        a43,
+                        a43,
+                    ),
+                );
+                let r0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a30, a30), a31, a31,
+                                ),
+                                a32,
+                                a32,
+                            ),
+                            a33,
+                            a33,
+                        ),
+                        a34,
+                        a34,
+                    ),
+                );
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
+                    let mut f = R::one();
+                    let mut finv = R::one();
+                    while n_col < n_row * half {
+                        n_col = n_col * two;
+                        n_row = n_row * half;
+                        f = f * two;
+                        finv = finv * half;
+                    }
+                    while n_col >= n_row * two {
+                        n_col = n_col * half;
+                        n_row = n_row * two;
+                        f = f * half;
+                        finv = finv * two;
+                    }
+                    if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {
+                        converged = false;
+                        d3 = d3 * f;
+                        a03 = a03 * f;
+                        a13 = a13 * f;
+                        a23 = a23 * f;
+                        a33 = a33 * f;
+                        a43 = a43 * f;
+                        a30 = a30 * finv;
+                        a31 = a31 * finv;
+                        a32 = a32 * finv;
+                        a33 = a33 * finv;
+                        a34 = a34 * finv;
+                    }
+                }
+            }
+            {
+                let c0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a04, a04), a14, a14,
+                                ),
+                                a24,
+                                a24,
+                            ),
+                            a34,
+                            a34,
+                        ),
+                        a44,
+                        a44,
+                    ),
+                );
+                let r0 = R::wide_sqrt(
+                    R::wide_add_prod(
+                        R::wide_add_prod(
+                            R::wide_add_prod(
+                                R::wide_add_prod(
+                                    R::wide_add_prod(R::wide_zero(), a40, a40), a41, a41,
+                                ),
+                                a42,
+                                a42,
+                            ),
+                            a43,
+                            a43,
+                        ),
+                        a44,
+                        a44,
+                    ),
+                );
+                if c0 != R::zero() && r0 != R::zero() {
+                    let big = if c0 > r0 {
+                        c0
+                    } else {
+                        r0
+                    };
+                    let (mut n_col, mut n_row) = (R::div(c0, big), R::div(r0, big));
+                    let s = R::sum_prod2(n_col, n_col, n_row, n_row);
+                    let mut f = R::one();
+                    let mut finv = R::one();
+                    while n_col < n_row * half {
+                        n_col = n_col * two;
+                        n_row = n_row * half;
+                        f = f * two;
+                        finv = finv * half;
+                    }
+                    while n_col >= n_row * two {
+                        n_col = n_col * half;
+                        n_row = n_row * two;
+                        f = f * half;
+                        finv = finv * two;
+                    }
+                    if R::sum_prod2(n_col, n_col, n_row, n_row) < tol * s {
+                        converged = false;
+                        d4 = d4 * f;
+                        a04 = a04 * f;
+                        a14 = a14 * f;
+                        a24 = a24 * f;
+                        a34 = a34 * f;
+                        a44 = a44 * f;
+                        a40 = a40 * finv;
+                        a41 = a41 * finv;
+                        a42 = a42 * finv;
+                        a43 = a43 * finv;
+                        a44 = a44 * finv;
+                    }
+                }
+            }
+        }
+        matrix =
+            Matrix5 {
+                m11: a00,
+                m21: a10,
+                m31: a20,
+                m41: a30,
+                m51: a40,
+                m12: a01,
+                m22: a11,
+                m32: a21,
+                m42: a31,
+                m52: a41,
+                m13: a02,
+                m23: a12,
+                m33: a22,
+                m43: a32,
+                m53: a42,
+                m14: a03,
+                m24: a13,
+                m34: a23,
+                m44: a33,
+                m54: a43,
+                m15: a04,
+                m25: a14,
+                m35: a24,
+                m45: a34,
+                m55: a44,
+            };
+        Vector5 { x: d0, y: d1, z: d2, w: d3, a: d4 }
+    }
+
+    fn unbalance(ref m: Matrix5<T>, d: Vector5<T>) {
+        let dinv0 = R::recip(d.x);
+        let dinv1 = R::recip(d.y);
+        let dinv2 = R::recip(d.z);
+        let dinv3 = R::recip(d.w);
+        let dinv4 = R::recip(d.a);
+        m =
+            Matrix5 {
+                m11: m.m11 * (d.x * dinv0),
+                m21: m.m21 * (d.y * dinv0),
+                m31: m.m31 * (d.z * dinv0),
+                m41: m.m41 * (d.w * dinv0),
+                m51: m.m51 * (d.a * dinv0),
+                m12: m.m12 * (d.x * dinv1),
+                m22: m.m22 * (d.y * dinv1),
+                m32: m.m32 * (d.z * dinv1),
+                m42: m.m42 * (d.w * dinv1),
+                m52: m.m52 * (d.a * dinv1),
+                m13: m.m13 * (d.x * dinv2),
+                m23: m.m23 * (d.y * dinv2),
+                m33: m.m33 * (d.z * dinv2),
+                m43: m.m43 * (d.w * dinv2),
+                m53: m.m53 * (d.a * dinv2),
+                m14: m.m14 * (d.x * dinv3),
+                m24: m.m24 * (d.y * dinv3),
+                m34: m.m34 * (d.z * dinv3),
+                m44: m.m44 * (d.w * dinv3),
+                m54: m.m54 * (d.a * dinv3),
+                m15: m.m15 * (d.x * dinv4),
+                m25: m.m25 * (d.y * dinv4),
+                m35: m.m35 * (d.z * dinv4),
+                m45: m.m45 * (d.w * dinv4),
+                m55: m.m55 * (d.a * dinv4),
+            };
+    }
+}
+
+impl Matrix5ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix5<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        5
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        5
+    }
+
+    fn to_column_major(self: Matrix5<T>) -> Array<T> {
+        array![
+            self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
+            self.m42, self.m52, self.m13, self.m23, self.m33, self.m43, self.m53, self.m14,
+            self.m24, self.m34, self.m44, self.m54, self.m15, self.m25, self.m35, self.m45,
+            self.m55,
+        ]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix5<T> {
+        let boxed: @Box<[T; 25]> = data.try_into().expect(SLICE_LENGTH);
+        let [
+            v0,
+            v1,
+            v2,
+            v3,
+            v4,
+            v5,
+            v6,
+            v7,
+            v8,
+            v9,
+            v10,
+            v11,
+            v12,
+            v13,
+            v14,
+            v15,
+            v16,
+            v17,
+            v18,
+            v19,
+            v20,
+            v21,
+            v22,
+            v23,
+            v24,
+        ] =
+            boxed
+            .unbox();
+        Matrix5 {
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m51: v4,
+            m12: v5,
+            m22: v6,
+            m32: v7,
+            m42: v8,
+            m52: v9,
+            m13: v10,
+            m23: v11,
+            m33: v12,
+            m43: v13,
+            m53: v14,
+            m14: v15,
+            m24: v16,
+            m34: v17,
+            m44: v18,
+            m54: v19,
+            m15: v20,
+            m25: v21,
+            m35: v22,
+            m45: v23,
+            m55: v24,
+        }
+    }
+}
+// crate-map: end

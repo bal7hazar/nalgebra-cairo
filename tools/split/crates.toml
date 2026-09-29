@@ -56,10 +56,10 @@ norm = "nalgebra_norm"
 geometry6 = "nalgebra_geometry6"
 statistics = "nalgebra_statistics"
 blas = "nalgebra_blas"
-linalg4 = "nalgebra"
-linalg_svd_eigen4 = "nalgebra"
-linalg_pivot4 = "nalgebra"
-linalg_spectral4 = "nalgebra"
+linalg4 = "nalgebra_linalg4"
+linalg_svd_eigen4 = "nalgebra_linalg_svd_eigen4"
+linalg_pivot4 = "nalgebra_linalg_pivot4"
+linalg_spectral4 = "nalgebra_linalg_spectral4"
 linalg5 = "nalgebra"
 linalg_pivot5 = "nalgebra"
 linalg_spectral5 = "nalgebra"
@@ -98,6 +98,9 @@ names = [
     # WP 9-NS8 (`blocks`): the padding / cropping helpers of `FixedView` (`views`) and of the
     # dynamic shapes (`nalgebra`)
     "PadTo6", "CropFrom6", "ShapeDims",
+    # WP 9-NS9 (`shapes5`): the traits of the public Householder / balancing building blocks,
+    # declared low so that every impl sits with its type (see the rule above)
+    "ColumnMajor", "Balancing", "HouseholderAxis",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of
@@ -159,6 +162,25 @@ crate = "static6_wide"
 trait = ["PermuteRows", "PermuteColumns"]
 args_any = ["Perm6"]
 crate = "static6_wide"
+
+# the crate-private traits of the public generic building blocks `reflection_axis_mut`
+# (`HouseholderAxis`), `clear_column_unchecked` / `clear_row_unchecked` / `assemble_q`
+# (`ColumnMajor`) and `balance_parlett_reinsch` / `unbalance` (`Balancing`): a caller resolves the
+# impl at the call site, so each impl must sit in its trait's module or its type's module (Cairo's
+# lookup, docs/SPLIT.md §1). The dimension-5 / 6 impls cannot sit with the trait in `linalg4` /
+# `linalg_spectral4` (those would pull `shapes6`), so the declarations go down to `shapes5`
+# (`internal`, with the impls up to dimension 5: `static4`, below `linalg4`, already pulls it) and
+# the dimension-6 impls to their type's module in `shapes6`; the public functions stay with their
+# family (WP 9-NS9, the anchor fix of docs/SPLIT.md §15)
+[[rule]]
+name = "ColumnMajor|Balancing|HouseholderAxis"
+crate = "shapes5"
+
+[[rule]]
+trait = ["ColumnMajor", "Balancing", "HouseholderAxis"]
+by = "args"
+bands = { "5" = "shapes5", "6" = "shapes6" }
+default = "shapes5"
 
 # solve / permutation families: declarations low, impls with the types of their largest shape
 [[rule]]

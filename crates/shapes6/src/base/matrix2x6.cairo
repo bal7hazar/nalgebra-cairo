@@ -1963,7 +1963,9 @@ pub impl Perm2PermuteRowsMatrix2x6<T, +Copy<T>, +Drop<T>> of PermuteRows<Perm2, 
             };
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_geometry4::geometry::reflection2::{Reflection2, Reflection2Columns, Reflection2Trait};
+use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection2.cairo
@@ -2069,6 +2071,47 @@ pub impl Reflection2ColumnsMatrix2x6<
                 m16: R::sum_prod2(f6, a.x, sign, m.m16),
                 m26: R::sum_prod2(f6, a.y, sign, m.m26),
             };
+    }
+}
+// crate-map: end
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
+impl Matrix2x6ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix2x6<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        2
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        6
+    }
+
+    fn to_column_major(self: Matrix2x6<T>) -> Array<T> {
+        array![
+            self.m11, self.m21, self.m12, self.m22, self.m13, self.m23, self.m14, self.m24,
+            self.m15, self.m25, self.m16, self.m26,
+        ]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix2x6<T> {
+        let boxed: @Box<[T; 12]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11] = boxed.unbox();
+        Matrix2x6 {
+            m11: v0,
+            m21: v1,
+            m12: v2,
+            m22: v3,
+            m13: v4,
+            m23: v5,
+            m14: v6,
+            m24: v7,
+            m15: v8,
+            m25: v9,
+            m16: v10,
+            m26: v11,
+        }
     }
 }
 // crate-map: end

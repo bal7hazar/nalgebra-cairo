@@ -13,7 +13,7 @@ use crate::base::vector5::Vector5;
 use crate::base::vector6::Vector6;
 use crate::base::{MatrixMul, MatrixTrMul};
 use crate::linalg::symmetric_eigen5::Sym5;
-use super::kernels::{SvdComplete6Impl, SvdRightImpl};
+use super::kernels::{SvdComplete6Impl, SvdRightImpl, SvdRightImpl5};
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix6x5<T>`:
 /// `u` is 6x5 with orthonormal columns, `v_t` is 5x5 with orthonormal rows, the 5
@@ -1510,13 +1510,13 @@ pub(crate) impl Svd6x5InternalImpl<
     /// The right singular vectors (the columns of `v`, ascending eigenvalue order of `MᵀM`).
     #[inline(always)]
     fn right(m: Matrix6x5<T>) -> Matrix5<T> {
-        SvdRightImpl::<T>::right5(Self::gram(Self::normalised(m)))
+        SvdRightImpl5::<T>::right5(Self::gram(Self::normalised(m)))
     }
 
     /// `right`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`.
     #[inline(always)]
     fn try_right(m: Matrix6x5<T>, eps: T) -> Option<Matrix5<T>> {
-        SvdRightImpl::<T>::try_right5(Self::gram(Self::normalised(m)), eps)
+        SvdRightImpl5::<T>::try_right5(Self::gram(Self::normalised(m)), eps)
     }
 
     /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`

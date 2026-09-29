@@ -1163,3 +1163,49 @@ pub impl Perm3PermuteColumnsMatrix5x3<
             };
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
+use crate::internal::linalg::householder_steps::ColumnMajor;
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
+impl Matrix5x3ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix5x3<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        5
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        3
+    }
+
+    fn to_column_major(self: Matrix5x3<T>) -> Array<T> {
+        array![
+            self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
+            self.m42, self.m52, self.m13, self.m23, self.m33, self.m43, self.m53,
+        ]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix5x3<T> {
+        let boxed: @Box<[T; 15]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14] = boxed.unbox();
+        Matrix5x3 {
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m51: v4,
+            m12: v5,
+            m22: v6,
+            m32: v7,
+            m42: v8,
+            m52: v9,
+            m13: v10,
+            m23: v11,
+            m33: v12,
+            m43: v13,
+            m53: v14,
+        }
+    }
+}
+// crate-map: end

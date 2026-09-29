@@ -1941,7 +1941,9 @@ pub impl Perm4PermuteColumnsMatrix6x4<
             };
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
 use nalgebra_geometry4::geometry::reflection4::{Reflection4, Reflection4Rows, Reflection4Trait};
+use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
 
 // crate-map: generated items (tools/split/cratemap.py) [split]
 // crate-map: from geometry/reflection4.cairo
@@ -2110,6 +2112,87 @@ pub impl Reflection4RowsMatrix6x4<
                 m64: R::sum_prod2(f6, a.w, sign, m.m64),
             };
         work = Vector6 { x: s1, y: s2, z: s3, w: s4, a: s5, b: s6 };
+    }
+}
+// crate-map: end
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
+impl Matrix6x4ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix6x4<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        6
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        4
+    }
+
+    fn to_column_major(self: Matrix6x4<T>) -> Array<T> {
+        array![
+            self.m11, self.m21, self.m31, self.m41, self.m51, self.m61, self.m12, self.m22,
+            self.m32, self.m42, self.m52, self.m62, self.m13, self.m23, self.m33, self.m43,
+            self.m53, self.m63, self.m14, self.m24, self.m34, self.m44, self.m54, self.m64,
+        ]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix6x4<T> {
+        let boxed: @Box<[T; 24]> = data.try_into().expect(SLICE_LENGTH);
+        let [
+            v0,
+            v1,
+            v2,
+            v3,
+            v4,
+            v5,
+            v6,
+            v7,
+            v8,
+            v9,
+            v10,
+            v11,
+            v12,
+            v13,
+            v14,
+            v15,
+            v16,
+            v17,
+            v18,
+            v19,
+            v20,
+            v21,
+            v22,
+            v23,
+        ] =
+            boxed
+            .unbox();
+        Matrix6x4 {
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m51: v4,
+            m61: v5,
+            m12: v6,
+            m22: v7,
+            m32: v8,
+            m42: v9,
+            m52: v10,
+            m62: v11,
+            m13: v12,
+            m23: v13,
+            m33: v14,
+            m43: v15,
+            m53: v16,
+            m63: v17,
+            m14: v18,
+            m24: v19,
+            m34: v20,
+            m44: v21,
+            m54: v22,
+            m64: v23,
+        }
     }
 }
 // crate-map: end

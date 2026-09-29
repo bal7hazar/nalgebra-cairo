@@ -926,3 +926,44 @@ pub impl Perm2PermuteColumnsMatrix5x2<
             };
     }
 }
+use nalgebra_core::base::errors::SLICE_LENGTH;
+use crate::internal::linalg::householder_steps::ColumnMajor;
+
+// crate-map: generated items (tools/split/cratemap.py) [linalggen]
+// crate-map: from linalg/householder_steps.cairo
+impl Matrix5x2ColumnMajor<T, +Copy<T>, +Drop<T>> of ColumnMajor<Matrix5x2<T>, T> {
+    #[inline(always)]
+    fn nrows() -> usize {
+        5
+    }
+
+    #[inline(always)]
+    fn ncols() -> usize {
+        2
+    }
+
+    fn to_column_major(self: Matrix5x2<T>) -> Array<T> {
+        array![
+            self.m11, self.m21, self.m31, self.m41, self.m51, self.m12, self.m22, self.m32,
+            self.m42, self.m52,
+        ]
+    }
+
+    fn from_column_major(data: Span<T>) -> Matrix5x2<T> {
+        let boxed: @Box<[T; 10]> = data.try_into().expect(SLICE_LENGTH);
+        let [v0, v1, v2, v3, v4, v5, v6, v7, v8, v9] = boxed.unbox();
+        Matrix5x2 {
+            m11: v0,
+            m21: v1,
+            m31: v2,
+            m41: v3,
+            m51: v4,
+            m12: v5,
+            m22: v6,
+            m32: v7,
+            m42: v8,
+            m52: v9,
+        }
+    }
+}
+// crate-map: end
