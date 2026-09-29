@@ -584,7 +584,17 @@ features forwarded to the sub-crates (none a no-op yet); `SvdRightTrait` split p
 fixes: `ColumnMajor` / `Balancing` / `HouseholderAxis` declared in `nalgebra_shapes5::internal`
 with their impls on their type's band (`shapes5` 25,438 lines, `shapes6` 37,645), `LuInvert` /
 `try_invert_to` held by the facade (`Matrix6LuInvert` runs `Lu6`: in `linalg4` it would pull
-dimension 6 into `static4_factor`; replaces §15's "stay together in `linalg4`").
+dimension 6 into `static4_factor`; replaces §15's "stay together in `linalg4`"). **NS10 done** (PR #75):
+`nalgebra_linalg5` (14,457 lines, marginal 2.3 s / 0.52 GB), `nalgebra_linalg_pivot5` (13,527, 0.8 s /
+0.25 GB), `nalgebra_linalg_spectral5` (13,291, 0.9 s / 0.30 GB), `nalgebra_linalg6` (26,099, 4.1 s /
+0.96 GB), `nalgebra_linalg_pivot6` (24,672, 1.6 s / 0.37 GB), `nalgebra_linalg_spectral6` (23,841,
+1.9 s / 0.54 GB) (CI `Consumer cost`, GitHub runner, one round; NS1b: 1.0 / 0.7 / 0.6 / 2.1 / 1.6 /
+1.9 s), zero step change, path proof green (transient set 36, unchanged), 0 anchor findings (the
+dimension-5 / 6 Householder / balancing impls already sat in `shapes5` / `shapes6`); the hand-written
+`Cholesky6`, `Udu6`, `Ldlt6`, `Matrix6InverseTrait` moved to `linalg6`, `Ldlt6` and `Sym5` under
+`internal`; every linalg feature of the facade now only gates its re-exports and forwards to the
+sub-crates (NS11 decides, §12.1); the facade package is down to 34,322 lines (`dynamic`, `sparse` /
+`io`, root, macros, re-exports).
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible
