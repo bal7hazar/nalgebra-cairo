@@ -849,3 +849,35 @@ Remaining lots: NS11a (dynamic, sparse, pure facade, strict path proof) → NS11
 facade tables, no-op features with the CI compatibility test, CHANGELOG 0.1.1, resumable release
 script, `Consumer cost` enforcing on medians, `linalg6` decision) → NS12 (the end-of-split
 measurement table on the GitHub runner) → release go.
+
+## 18. Re-cut: a number in a crate name means exactly that dimension (owner, 2026-09-29)
+
+Owner decision, relayed by the programme session: the 27-crate map is replaced; nothing is
+published, so the names can still change. The rule, the gates, zero break and zero step change are
+unchanged. Target naming (prefix `nalgebra_`):
+- shared: `core` (generic trait declarations, errors, dimension 1 folded in: no crate for 1x1),
+  `static_core`, `linalg_core` (shared kernels and traits: Householder, Givens, LU steps,
+  balancing, …);
+- types: `types2` .. `types6` (dimension of a rectangular shape = max(rows, columns));
+- methods: `static2` .. `static5`, `static6_tall`, `static6_wide` (the two suffixes are the one
+  documented exception: the dimension-6 methods exceed the 40,000-line gate in one crate);
+- geometry: `geometry2` .. `geometry6`;
+- decompositions: `linalg2` .. `linalg6`, `linalg_pivot2` .. `6`, `linalg_spectral2` .. `6`,
+  `linalg_svd_eigen2` .. `6` (removes the asymmetry where `linalg5` / `linalg6` held SVD / eigen,
+  and cuts the borderline `linalg6`);
+- unchanged: `blocks`, `views`, `norm`, `statistics`, `blas`, `dynamic`, `sparse`, the facade
+  `nalgebra`, `nalgebra_glam`.
+
+Lots: **NS13** (plan first, no code moved): the new map, lines / dependencies / marginals per crate,
+acyclicity, the declared closures re-measured; settle the knot between the methods of dimensions
+2 / 3 and the 2D / 3D geometry (`div_rotation` names `Rotation2` / `Rotation3`): break it (rotation
+types in `typesN`, methods in `geometryN`, or the offending methods moved) or, if impossible without
+a path change, keep them together under a name that says so (`static2_geometry`,
+`static3_geometry`); say where the dimension 5-6 impls of the base families could live so that
+"static 2-4 + family" does not pull dimensions 5-6 (§16.2). The programme session shows the map to
+the owner, then approves. **Moves** in two or three large PRs (the tooling proves placement), each
+with `gas_compare` (0 changes), strict path proof (9,289 / 0 / 0), the anchor check and gate 1.
+NS11b keeps only what does not depend on names (no-op features and their CI test, the resumable
+release script, `Consumer cost` enforcing on medians, a CHANGELOG skeleton); the READMEs, facade
+tables and NS12's table follow the new map. Release stays 0.1.1, non-breaking, on the programme
+session's written go.
