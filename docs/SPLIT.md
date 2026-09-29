@@ -741,3 +741,19 @@ in `crates.toml`, before the release PR).
   moved impls (not only facade modules); a trait used only through method calls keeps its import
   when the piece names its type; a name of a module only a lower package holds resolves to that
   package. `cratemap.py --anchors` is the anchor + placement check of every move PR.
+
+## 16. Known exception: `nalgebra_geometry6` alone (programme session, 2026-09-29)
+
+An empty consumer of `nalgebra_geometry6` alone costs **12.1 s / 3.10 GB** over the baseline
+(measured at NS6), just above the 3 GB closure budget. Cause: `nalgebra_shapes6`'s 16 dimension-6
+reflection impls (`Reflection2Columns` on `Matrix2x6`, …) need `nalgebra_geometry4`'s traits, so
+`shapes6` depends on `geometry4`, and `geometry6` pulls both. Moving those impls to `geometry4`
+would pull `shapes6` into the declared closure "static 1-4 + geometry" (11 s), the common case, so
+the map stays as it is and **no `geometry6` closure is declared as a gate**. Conditions:
+- the facade README's table has the row "`Point5` / `Point6`, scales and reflections of dimension
+  5-6 → `nalgebra_geometry6` (pulls `shapes6` and `geometry4`: about 12 s / 3.1 GB)";
+- at the end of the split (after NS11), measure a small `nalgebra_reflections6` crate (the 16
+  impls, depending on `shapes6` and `geometry4`) and adopt it only if it makes the cut cheap
+  without worsening a declared closure;
+- `nalgebra_shapes6` has a 9.5 % line margin (36,214 / 40,000): the CI Workspace job enforces gate
+  1 on every sub-crate, so a generator change that grows it past the gate fails.

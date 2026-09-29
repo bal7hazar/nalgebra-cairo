@@ -30,8 +30,22 @@ jobs:
           python3 scripts/api_parity.py --check
           python3 tools/shapegen/shapegen.py --check
           python3 tools/linalggen/generate.py --check
-      - name: Library lines of the published crates (proxy of the package size gate, report only)
-        run: python3 scripts/consumer_cost.py --lines-only --report-only
+      - name: Library lines of the published crates (gate 1, enforced on the sub-crates)
+        # The facade `nalgebra` is judged on gate 3 only (docs/SPLIT.md §12) and still hosts the
+        # families not moved yet; every other published crate must stay at or under 40,000 lines,
+        # so a generator change that grows `nalgebra_shapes6` (9.5 % margin) fails here.
+        run: |
+          python3 scripts/consumer_cost.py --lines-only --report-only --json lines.json
+          python3 - <<'PY'
+          import json, sys
+          data = json.load(open("lines.json"))
+          limit = data["gates"]["max_lines"]
+          over = [(r["crate"], r["lines"]) for r in data["results"]
+                  if r["crate"] != "nalgebra" and r["lines"] > limit]
+          for crate, lines in over:
+              print(f"::error::{crate}: {lines} library lines > {limit} (gate 1)")
+          sys.exit(1 if over else 0)
+          PY
       - name: Consumer cost script (self-test, consumer manifests of the dry run; no build)
         run: |
           python3 scripts/consumer_cost.py --self-test
