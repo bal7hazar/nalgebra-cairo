@@ -1,0 +1,11 @@
+pub mod col_piv_qr1x6;
+pub mod col_piv_qr2x6;
+pub mod col_piv_qr3x6;
+pub mod col_piv_qr4x6;
+pub mod col_piv_qr5x6;
+pub mod col_piv_qr6;
+pub mod col_piv_qr6x1;
+pub mod col_piv_qr6x2;
+pub mod col_piv_qr6x3;
+pub mod col_piv_qr6x4;
+pub mod col_piv_qr6x5;

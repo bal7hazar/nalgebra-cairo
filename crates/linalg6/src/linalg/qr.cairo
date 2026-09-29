@@ -1,0 +1,12 @@
+pub mod kernels;
+pub mod qr1x6;
+pub mod qr2x6;
+pub mod qr3x6;
+pub mod qr4x6;
+pub mod qr5x6;
+pub mod qr6;
+pub mod qr6x1;
+pub mod qr6x2;
+pub mod qr6x3;
+pub mod qr6x4;
+pub mod qr6x5;
