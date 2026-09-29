@@ -785,3 +785,13 @@ one dimension, with and without one decomposition family), measured on the GitHu
 statement that none exists because dimension k builds on every dimension below it. The programme
 session then decides between a documented "dimension 5-6" budget (e.g. 20 s / 4.5 GB) and a further
 cut. Together with §16's `nalgebra_reflections6` measurement.
+
+Also in that table (programme session, after NS8): `blocks`, `views`, `norm`, `statistics` and
+`blas` each cost 12-15 s / 3.2-4.3 GB alone because they pull `shapes5` and `shapes6`. For each of
+the five families, measure the closure "static 1-4 + the family" and the cheapest cut that keeps
+dimensions 5-6 out of it (a band `<family>4` + `<family>6`, or the dimension 5-6 impls moved to the
+existing `shapes5` / `shapes6` or `static5` / `static6_*` crates, which adds no package); and list
+which everyday methods of dimensions ≤ 4 (`norm()`, `normalize()`, `dot`, `transpose`,
+`fixed_rows`, …) live in `core` / `static3` / `static4` and therefore do not need those five
+crates. If the common methods are already in the light closures, the five families are advanced
+use and a documented cost is enough; the programme session decides with the table after NS11.
