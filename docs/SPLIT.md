@@ -745,7 +745,10 @@ in `crates.toml`, before the release PR).
   (§12.6's explicit lists). Nothing may be missing, nothing else extra.
 - **`LuSteps` by band**: the `LuSteps` impls go to the type's module of each band
   (`{4 = core, 5 = shapes5, 6 = shapes6}`), so external callers of `gauss_step` / `try_invert_to`
-  keep resolving them; `LuInvert` and `try_invert_to` stay together in `linalg4`. Every move PR
+  keep resolving them; `LuInvert` and `try_invert_to` stay together **in the facade** (NS9: the anchor
+  rule plus `Matrix6LuInvert → Lu6` would otherwise pull dimension 6 into `static4_factor`; a user of
+  `linalg4` alone has `LuN::try_inverse_to`). The Householder / balancing traits live in
+  `nalgebra_shapes5::internal::linalg`, their dimension-6 impls in `nalgebra_shapes6` (NS9). Every move PR
   runs the anchor check (each impl's placed module is its trait's or one of its argument types'
   module) and fixes what it flags (`ColumnMajor`, `Balancing`, `HouseholderAxis` at NS9 / NS10).
 - **Router rules added by NS4**: in-crate test modules always stay in the facade package (the
