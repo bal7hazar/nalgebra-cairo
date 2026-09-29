@@ -17,6 +17,7 @@
 pub mod convolution;
 pub mod dmatrix;
 pub mod dvector;
+mod kernels;
 pub mod row_dvector;
 pub mod shapes;
 

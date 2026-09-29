@@ -8,8 +8,8 @@
 //! 6 870 gas straight-line, 14 240 with 4-chunks, 15 670 with one `pop_front` per term; of 16
 //! terms, 21 430 with 4-chunks, 19 950 with 8-chunks, 35 370 with `pop_front`, 58 370 indexed.
 
+use nalgebra_core::base::errors;
 use simba::scalar::Real;
-use super::super::errors;
 
 /// The loops on column-major spans. Methods of a generic impl (AGENTS: no generic free
 /// functions), instantiated per scalar.

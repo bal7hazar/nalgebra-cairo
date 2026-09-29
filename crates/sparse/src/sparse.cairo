@@ -14,6 +14,7 @@
 //! factorization; the symbolic analysis keeps upstream's elimination tree with `Felt252Dict`
 //! work arrays. Every sum of products is ONE exact accumulation floored once (`Real::Wide`).
 
+mod cs_kernels;
 pub mod cs_matrix;
 pub mod cs_matrix_cholesky;
 pub mod cs_matrix_ops;

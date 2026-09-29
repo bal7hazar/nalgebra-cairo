@@ -1,0 +1,27 @@
+[package]
+name = "nalgebra_sparse"
+description = "sparse (legacy CsMatrix, CsCholesky) and io (Matrix Market)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "sparse", "io", "matrix-market"]
+readme = "README.md"
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_dynamic = { path = "../dynamic", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
