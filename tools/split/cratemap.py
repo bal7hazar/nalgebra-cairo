@@ -595,6 +595,16 @@ class CrateMap:
         moved = {n for n in names if here + n not in expected and n in expected_names()}
         if not moved:
             return glob
+        # a child module the facade module declares itself (`pub mod lu6;` of `linalg::lu`, which
+        # re-exports the sub-crate's `lu6`): not named again (WP 9-NS7)
+        fac = os.path.join(package_dir(self.facade_package), "src", mod)
+        if fac in bodies:
+            ftext = bodies[fac]
+        elif os.path.exists(os.path.join(ROOT, fac)):
+            ftext = open(os.path.join(ROOT, fac), encoding="utf-8").read()
+        else:
+            ftext = ""
+        moved |= set(re.findall(r"^\s*(?:pub\s+)?mod\s+(\w+)\s*;", cc.mask(ftext), re.M))
         return f"pub use {pkg}::{path}::{{{', '.join(sorted(names - moved))}}};"
 
     @staticmethod

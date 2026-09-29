@@ -1,0 +1,35 @@
+[package]
+name = "nalgebra_static6_wide"
+description = "Methods of the shapes with 6 columns (Matrix6, Matrix2x6..Matrix5x6, RowVector6); Lu6, Perm6 (Matrix6::is_invertible runs Lu6)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "linalg"]
+readme = "README.md"
+
+# `closures` (as in `nalgebra`, which forwards its own feature of that name here): the methods of
+# the shapes that take a closure (`map`, `fold`, `apply`, `zip_*`...). On by default; `nalgebra`
+# depends on this package with `default-features = false`, so `nalgebra` without its default
+# features still leaves them out (features unify per compilation unit, docs/SPLIT.md §1).
+[features]
+default = ["closures"]
+closures = []
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
+nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

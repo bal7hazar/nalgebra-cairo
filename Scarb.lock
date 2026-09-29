@@ -28,6 +28,9 @@ dependencies = [
  "nalgebra_shapes6",
  "nalgebra_static3",
  "nalgebra_static4",
+ "nalgebra_static5",
+ "nalgebra_static6_tall",
+ "nalgebra_static6_wide",
  "simba",
  "snforge_std",
 ]
@@ -284,6 +287,48 @@ dependencies = [
  "nalgebra_core",
  "nalgebra_shapes5",
  "nalgebra_static3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_static5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static3",
+ "nalgebra_static4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_static6_tall"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static3",
+ "nalgebra_static4",
+ "nalgebra_static5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_static6_wide"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_shapes5",
+ "nalgebra_shapes6",
+ "nalgebra_static6_tall",
  "simba",
  "snforge_std",
 ]

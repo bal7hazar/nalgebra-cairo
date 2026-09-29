@@ -47,9 +47,9 @@ shapes5 = "nalgebra_shapes5"
 static4 = "nalgebra_static4"
 geometry4 = "nalgebra_geometry4"
 shapes6 = "nalgebra_shapes6"
-static5 = "nalgebra"
-static6_tall = "nalgebra"
-static6_wide = "nalgebra"
+static5 = "nalgebra_static5"
+static6_tall = "nalgebra_static6_tall"
+static6_wide = "nalgebra_static6_wide"
 blocks = "nalgebra"
 views = "nalgebra"
 norm = "nalgebra"
@@ -93,6 +93,8 @@ names = [
     "Sym4",
     # WP 9-NS5 (`static4`): used by the linalg of `nalgebra` (with the private kernels it calls)
     "Matrix4InternalTrait", "Matrix4KernelsTrait",
+    # WP 9-NS7 (`static6_wide`): the kernels of `Lu6`, used by its in-crate benchmarks in `nalgebra`
+    "Lu6InternalTrait",
 ]
 
 # [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of

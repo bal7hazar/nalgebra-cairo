@@ -562,7 +562,12 @@ dimension-5 files anchored in dimension-6 modules, until NS6); closure static 1�
 (transient set 752 → 1,081: 106 dimension-≤5 impls left with the dimension-6 modules, 435 family
 impls of the dimension-6 shapes now wait in their trait's module, `matrix_view`, `matrix_kronecker`,
 `norm`, `root`, `lu`, until NS7 / NS8 / NS11); the dimension-6 edit kernels are `pub(crate)` in the
-facade package until `static6_tall` moves (NS7).
+facade package until `static6_tall` moves (NS7). **NS7 done** (PR #71): `nalgebra_static5` (26,820 lines, marginal
+2.8 s / 0.48 GB), `nalgebra_static6_tall` (24,452, 2.0 s / 0.40 GB), `nalgebra_static6_wide` (31,497,
+2.5 s / 0.52 GB; with `Lu6` and `Perm6`) (CI `Consumer cost`, GitHub runner; NS1b: 2.4 / 1.7 /
+2.7 s), zero step change, path proof green (transient set 1,081 → 1,069: the 12 `Perm6`
+permutation impls left with `Perm6`); `closures` in each, forwarded by the facade; the dimension-6
+edit kernels and `Lu6InternalTrait` under `internal`.
 
 Release (no publication without the programme session's written go): one shared version,
 **0.1.1** (a non-breaking patch: paths, API and numeric results unchanged; the only visible
