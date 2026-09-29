@@ -47,7 +47,13 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # dimension-5 / 6 code this package hosts and its re-exports, and forwards to the feature of the same
 # name of the sub-crate that holds its part up to 4x4 (`hessenberg` to both `nalgebra_linalg4`,
 # `householder_steps`, and `nalgebra_linalg_spectral4`), so `default-features = false` still leaves
-# them out.
+# them out. WP 9-NS10: the dimension-5 / 6 decompositions live in `nalgebra_linalg5`,
+# `nalgebra_linalg_pivot5`, `nalgebra_linalg_spectral5`, `nalgebra_linalg6`, `nalgebra_linalg_pivot6`
+# and `nalgebra_linalg_spectral6` (same scheme, `default-features = false`): each linalg feature now
+# gates only this package's re-exports of its family and forwards to the features of the same name
+# of the sub-crates that hold it, so `default-features = false` exposes and compiles exactly what it
+# did before; their fate is decided in NS11 with the other forward-only features
+# (docs/SPLIT.md §12.1).
 [features]
 default = [
     "statistics", "blas", "closures", "dynamic", "sparse", "io", "eigen", "svd", "qr",
