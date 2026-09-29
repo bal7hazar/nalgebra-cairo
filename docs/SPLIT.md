@@ -1189,3 +1189,106 @@ The cost of the dimension 5-6 closures is accepted as documented; no further cut
 - **simba-cairo** (programme session): with NS12, `scripts/consumer_cost.py` is copied unchanged
   into simba-cairo with its `consumer_cost.toml` (closure `simba` + `fixed@0.4.0`) and an enforcing
   `Consumer cost` CI job; simba's line joins the figures (no simba release needed).
+
+## 20. Resume point (2026-09-29, orchestrator session stopped on the weekly quota)
+
+The state at the stop, for a fresh session. Nothing runs in the background after this commit.
+
+**Merged and published.**
+- Published: `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 (2026-09-26, M8 done, parity 99.9 %);
+  `simba` 0.2.0 on `fixed` 0.4.0; `glam_core` 0.4.1 upstream. Nothing of M9 is published.
+- On main (M9): the 27-crate split behind the facade (NS3-NS11a, #66-#76), strict path proof
+  9,289, zero step change; NS11b (#77): no-op facade features and their CI test,
+  `scripts/release.py`, `Consumer cost` enforcing on medians (lines and closures; marginals
+  report-only until the re-cut, `--report-only-marginals` in `ci.yml`); NS12a (#78): per-closure
+  budgets, `scripts/packages_table.py`, the PACKAGES.md artifact; NS13 (#79): the re-cut plan (§18,
+  `tools/split/crates.recut.toml`, 54 packages). simba-cairo#3: its `Consumer cost` gate.
+- Codex review: none — the owner's review rule (2026-09-29) had not yet reached this session, for
+  #69-#79 and simba-cairo#3 (all merged on 2026-09-29).
+
+**R1 (WP 9-R1): in flight.** PR #80, branch `feat/wp-9-r1`, worktree
+`~/orchestrator/nalgebra-cairo/wt/wp-9-r1`, unit `nalgebra-wp-9-r1` (Opus 5.5), brief
+`~/orchestrator/nalgebra-cairo/briefs/wp-9-r1.md`. **State at the stop:** the agent finished (unit
+ended with success at 20:20 UTC); PR #80 is green on head `d03e3a8` (78 / 78 checks, CI run
+36623801109), mergeable, **not merged: it waits for its Codex review**, which the quota stop did not
+allow to start. Its report is archived at `~/orchestrator/nalgebra-cairo/reports/wp-9-r1.md`.
+Content: the live map is the re-cut for every crate but the decompositions (29 re-cut sub-crates, the
+10 decomposition crates unchanged, no `linalg_core` yet); the agent reports `gas_compare` 0 / 0 / 0,
+strict path proof 9,289 / 0 / 0, anchors 0; its decisions for R2 are in its §18.5 "Progress"
+paragraph (`GivensRotation` in `types2`, `Reflection1..4` methods with their structs,
+`geometry::point::errors` in `core`, `TransformKernels` internal). To finish it:
+1. Unit ended without `REPORT.md`, or work left: resume it, never start it again
+   (`scripts/agent.sh <wt> claude claude-opus-5-5 <brief> <log> --resume "<what to do>"`, the
+   systemd recipe of ORCHESTRATOR.md, capacity rule below).
+2. Before any merge, archive `REPORT.md` to `~/orchestrator/nalgebra-cairo/reports/wp-9-r1.md`
+   (`gh pr merge --delete-branch` deletes the worktree).
+3. With every check green, the Codex review:
+   `nexus review --project nalgebra-cairo --task 9-R1 --repository nalgebra-cairo --branch feat/wp-9-r1`
+   then `nexus wait <printed handle> --timeout 1800` and `nexus report <handle>` (verdict rules in
+   the `nexus-agents` skill; a confirmed `blocker` / `major` goes back to the R1 agent by
+   `--resume`, then a new review on the new head).
+4. Check the proofs in the CI logs yourself (Gas snapshot 0 changes, Path proof 9,289 / 0 / 0,
+   anchors 0), then `gh pr merge 80 --squash --delete-branch` with the verdict in the merge body.
+
+R1's report also leaves (reports/wp-9-r1.md, "Deviations" and "Escalations"):
+- `scripts/api_parity.py`: `TransformMul`, `TransformDiv`, `TransformSetCategory` added to
+  `CROSS_FILE_TRAITS` (outside its allowlist; needed because the traits are declared in `core` and
+  implemented in `transform2` / `transform3`). Confirmed by the orchestrator: keep.
+- `nalgebra_dynamic` still fails gate 2 on the medians (marginal 6.4 s / 0.89 GB): it must be cut
+  (the gate is not relaxed, §17) before `--report-only-marginals` is dropped; one small lot after R2.
+- `Perm1Trait` .. `Perm5Trait` stay with their types until R2 moves them to `linalg2..5`.
+- The READMEs of `dynamic`, `sparse` and the `linalg*` crates still name `shapes5` / `shapes6`, and a
+  module split over several packages carries its lowest part's doc: both for R3. `ci.yml`'s comment
+  on `nalgebra_shapes6`'s 9.5 % margin is stale (now `nalgebra_types6`, about 6 %).
+- Facade build 43.8 s / 9.92 GB over the baseline (36.9 s / 10.03 GB on main the same day; report
+  only): measure again after R2. Declared closures all pass (`static4_geometry` 10.8 s,
+  `static4_factor` 8.1 s, `nalgebra_glam` 7.8 s); every new crate's marginal ≤ 2.7 s / 0.68 GB.
+
+**Next lots (briefs to write, modelled on `briefs/wp-9-r1.md` + `_move_common.md` + `_env.md`).**
+- **R2** (WP 9-R2, `~/orchestrator/nalgebra-cairo/briefs/wp-9-r2.md`, Opus 5.5): the decompositions
+  of §18.5: `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`,
+  `linalg_spectral2..6` from `crates.recut.toml` (with R1's decisions carried in); `SvdRightTrait`
+  split per dimension (2..6; today ≤ 4 / 5 / 6); `Cholesky2/3UpdateTrait` in `linalg3` / `linalg4`;
+  the `tools/linalggen` switch. Same proofs as R1, plus every re-cut crate's marginal ≤ 5 s / 1 GB
+  on the medians (supersedes §17's `linalg6` decision: over the gate, cut; the gate is not relaxed).
+- **R3** (WP 9-R3, `~/orchestrator/nalgebra-cairo/briefs/wp-9-r3.md`, Sonnet 5.5): the release
+  plumbing of §18.5 on the 54 names: `consumer_cost.toml` (packages; the closures of §18.2 with
+  their budgets, 15 s / 3 GB up to dimension 4 and 20 s / 4.5 GB with dimension 5 or 6; the
+  dimension-6 decomposition closures without the dimension-6 method crates, §18.7.1;
+  `facades = ["nalgebra"]`); `scripts/release.py` order checked on 54 packages; one README per
+  package; the facade README tables (feature table of §17, "Dimensions 5 and 6" section of §19 with
+  the combined static 6 + SVD / eigen 6 and static 6 + spectral 6 figures, `blocks` / `views` /
+  `norm` as advanced use of §18.7.3); `docs/PACKAGES.md` from `packages_table.py`; CHANGELOG 0.1.1
+  (crate list, figures, glam ≥ 0.4.1). R3 branches from main after R1, writes the non-linalg parts
+  first, rebases on R2 for the linalg rows and merges after R2.
+- **Then** (NS12 on the final map): cut `nalgebra_dynamic` under gate 2 (above), then drop
+  `--report-only-marginals` from the `Consumer cost` job;
+  repoint `.github/workflows/split-measure.yml` to the 54 names; the end-of-split table of §17
+  (dimension 5-6 closures, base families, cheapest cuts, everyday methods) for the owner.
+- **Release** only on the PM's written go: 0.1.1 non-breaking, 54 packages,
+  `python3 scripts/release.py` (dry run) then `--publish` (refuses unless main's CI is green,
+  resumable, verifies each package against the index; the registry token is in the environment,
+  never printed).
+
+**Agent plan.** R1 alone (above); then R2 and R3 in parallel. Implementers are launched with
+`scripts/agent.sh` as systemd user units (recipe in ORCHESTRATOR.md), on Opus 5.5 or Sonnet 5.5,
+never Fable; reviews and audits go through `nexus`.
+
+**Rules a fresh session must know.**
+- Capacity (owner): before every launch read `~/orchestrator/capacity.json`: less than 5 minutes
+  old, `can_launch` true, `free_slots` ≥ 1, `oom_kills_30min` = 0; at most 4 nalgebra agents, each
+  unit `MemoryMax=14G`; back to 2 after any OOM; heavy builds through
+  `~/orchestrator/heavy-build.lock`; read `nexus resources` too (the launcher and `nexus` do not
+  count each other's agents).
+- Codex review of every PR before its merge (owner, 2026-09-29), started when the checks are
+  green; a merge without it says `Codex review: none — <reason>` (Codex unavailable, or a doc-only
+  or trivial own change covered by the checks).
+- Never merge on red CI. Every move keeps: zero step change (`gas_compare.py`), strict path proof
+  9,289 / 0 / 0, `cratemap.py --anchors` 0 findings, 40,000 lines per sub-crate, closures within
+  their budgets.
+- Cross-repository decisions and releases go through the PM session ("Angry Birds Cairo
+  orchestration").
+
+**Open decisions.** None with the owner: §18.7 and §19 settled the re-cut and its budgets. The
+orchestrator chooses where `nalgebra_dynamic` is cut (its report-only marginal, above) when it
+writes that lot's brief; the names of any new crate go to the PM before the move.
