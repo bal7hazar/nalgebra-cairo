@@ -51,7 +51,7 @@ on:
         type: string
         default: ""
       source:
-        description: Git ref whose crates/nalgebra holds the whole library (empty = this ref; after the moves, the pre-split a35e55b)
+        description: Git ref whose crates/nalgebra holds the whole library (empty = this ref; after the moves, the full SHA of the pre-split a35e55b)
         type: string
         default: ""
 

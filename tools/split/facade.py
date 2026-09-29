@@ -12,7 +12,13 @@
    0.1.0 user writes. `scarb build -p path_proof` succeeding is the proof that the facade keeps
    the paths.
 
-    python3 tools/split/facade.py EDGES.json PROTO_DIR
+    python3 tools/split/facade.py EDGES.json PROTO_DIR [--explicit PLAN.json]
+
+`--explicit` (WP 9-NS13): every facade module re-exports the 0.1.0 names of its module by NAME
+(`pub use nalgebra_<crate>::<module>::<name>;`, the crate and module the plan gives the item),
+never by glob: the facade then exports exactly the frozen 0.1.0 surface
+(`public_paths_0.1.0.txt`), as the router's explicit lists do in the real tree (docs/SPLIT.md
+§12.6), and `public_paths.py`'s consumer of the 9,289 paths can be built against the prototype.
 """
 import collections
 import json
@@ -78,9 +84,54 @@ def pub_uses(mod):
     return out
 
 
+def explicit_lines(edges, plan, moved, mod, children, uses):
+    """`pub use` lines naming every 0.1.0 public name of module `mod` at its planned crate and
+    module (None if a name cannot be located: the caller keeps the globs); names given by the
+    module's own `pub use` lists and its child modules are left out."""
+    frozen = os.path.join(HERE, "public_paths_0.1.0.txt")
+    prefix = "nalgebra::" + (mod.replace("/", "::") + "::" if mod else "")
+    names = set()
+    for line in open(frozen):
+        line = line.strip()
+        if line.startswith(prefix) and "::" not in line[len(prefix):]:
+            names.add(line[len(prefix):])
+    given = set(children)
+    for stmt in uses:
+        tree = stmt.split("pub use", 1)[1].rsplit(";", 1)[0]
+        for full in expand_use(tree):
+            given.add(full.split(" as ")[-1].split("::")[-1].strip())
+    where = {}
+    f = (mod or "lib") + ".cairo"
+    for k, it in enumerate(edges["files"].get(f, {}).get("items", [])):
+        nid = f"{f}#{k}"
+        c = plan["items"].get(nid)
+        target = moved.get(nid, [c, f])[1]
+        for nm in (it["name"], it["gen"]):
+            if nm and c:
+                where.setdefault(nm, (c, target))
+    out = []
+    for nm in sorted(names - given):
+        if nm not in where:
+            return None
+        c, target = where[nm]
+        path = target[: -len(".cairo")].replace("/", "::")
+        if c == "facade":
+            if target == f:
+                continue  # defined in this very module of the facade
+            out.append(f"pub use crate::{path}::{nm};")
+        else:
+            out.append(f"pub use nalgebra_{c}::{path}::{nm};")
+    return out
+
+
 def main():
-    edges = json.load(open(sys.argv[1]))
-    proto = os.path.abspath(sys.argv[2])
+    args = [a for a in sys.argv[1:] if a != "--explicit"]
+    plan = None
+    if "--explicit" in sys.argv:
+        plan = json.load(open(sys.argv[sys.argv.index("--explicit") + 1]))
+        args.remove(sys.argv[sys.argv.index("--explicit") + 1])
+    edges = json.load(open(args[0]))
+    proto = os.path.abspath(args[1])
     crates_dir = os.path.join(proto, "crates")
     subs = sorted(c for c in os.listdir(crates_dir) if c not in ("facade", "path_proof"))
     mods = public_modules()
@@ -92,6 +143,16 @@ def main():
         if os.path.exists(p):
             own[m] = open(p).read()
     own_dirs = {m: os.path.join(fsrc, m) for m in OWN if os.path.isdir(os.path.join(fsrc, m))}
+    # `--explicit`: the items the plan gives the facade outside its own modules (`LuInvert`...)
+    hosted = {}
+    if plan is not None:
+        for root, _dirs, files in os.walk(fsrc):
+            for f in files:
+                rel = os.path.relpath(os.path.join(root, f), fsrc)
+                text = open(os.path.join(root, f)).read()
+                if rel.split("/")[0] not in OWN and rel != "lib.cairo" and \
+                        re.search(r"^(pub )?(impl|trait|fn|struct|const) ", text, re.M):
+                    hosted[rel[: -len(".cairo")]] = text
     for root, dirs, files in os.walk(fsrc, topdown=False):
         for f in files:
             full = os.path.join(root, f)
@@ -113,8 +174,18 @@ def main():
             continue  # an inline module: re-exported by its parent (or the facade's own file)
         path = os.path.join(fsrc, (mod or "lib") + ".cairo")
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        explicit = None
+        if plan is not None and mod not in OWN:
+            explicit = explicit_lines(edges, plan, moved, mod, children, pub_uses(mod))
         if mod in OWN:
             body = own.get(mod, "")
+        elif explicit is not None:
+            body = hosted.get(mod, "")
+            names = {x.rsplit("::", 1)[1].rstrip(";") for x in explicit}
+            # a private import of a name the module now re-exports would clash with it
+            body = "\n".join(line for line in body.split("\n")
+                             if not (line.startswith("use ") and line.rstrip(";").rsplit("::", 1)[-1] in names))
+            body += "\n" + "\n".join(explicit) + "\n"
         else:
             hosts = [c for c in subs
                      if os.path.exists(os.path.join(crates_dir, c, "src", mod + ".cairo"))] if mod else []
@@ -126,7 +197,8 @@ def main():
             body = "\n".join(lines) + "\n"
         decls = []
         # public impls the split moves to the module of their anchor type keep their 0.1.0 path
-        body += "\n".join(sorted(moved_by_origin.get(mod, []))) + "\n"
+        if explicit is None:
+            body += "\n".join(sorted(moved_by_origin.get(mod, []))) + "\n"
         for ch in children:
             if mod in OWN:
                 break
