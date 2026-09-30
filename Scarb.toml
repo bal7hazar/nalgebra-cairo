@@ -119,7 +119,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024_07"
 cairo-version = "2.19.4"
 authors = ["bal7hazar"]

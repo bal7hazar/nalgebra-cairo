@@ -33,7 +33,7 @@ outside `src/`, one README per package).
 | R2 ✅ | Re-cut move 2: `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`, `SvdRightTrait` per dimension, `Perm*Trait` to `linalg2..5` | R1 |
 | R3 ✅ | Release plumbing on the final names (phase 2 after NS12b): closures with the §18.2 / §19 budgets, release order, one README per package, facade README ("Dimensions 5 and 6"), `docs/PACKAGES.md`, CHANGELOG 0.1.1 | phase 1: R1; phase 2: R2 and NS12b |
 | NS12b ✅ | `nalgebra_dynamic` cut under gate 2: plan measured on the runner (phase 1 done: the fixed-size edition to `nalgebra_blocks`, no new package; `dynamic`'s `closures` no longer forwarded), then the move after R2, `--report-only-marginals` dropped, `split-measure.yml` repointed or retired | phase 1: R1; phase 2: R2 |
-| 0.1.1 | Release of every package (`scripts/release.py`, dry run first), on the project manager's written go | R3, NS12b |
+| 0.1.1 | Release of every package (`scripts/release.py`, dry run first), on the project manager's written go; then `docs/PACKAGES.md` regenerated from the release commit's CI run (deferred from the release PR's review: its version column reads 0.1.0 because run 36767869070 measured the tree before the version bump, whose code is identical) | R3, NS12b |
 
 Gates, precisely (programme session, 2026-09-28): gate 2 (5 s / 1 GB) is a crate's **marginal** cost,
 cost(empty consumer of the crate) − cost(empty consumer of its direct dependencies together); gate 3

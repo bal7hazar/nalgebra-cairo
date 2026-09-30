@@ -14,7 +14,7 @@ readme = "README.md"
 experimental-features = ["associated_item_constraints"]
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_core = { path = "../core", version = "0.1.1" }
 simba.workspace = true
 
 [dev-dependencies]

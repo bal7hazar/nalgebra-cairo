@@ -19,9 +19,9 @@ default = ["qr"]
 qr = []
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_types2 = { path = "../types2", version = "0.1.0" }
-nalgebra_static2 = { path = "../static2", version = "0.1.0", default-features = false }
+nalgebra_core = { path = "../core", version = "0.1.1" }
+nalgebra_types2 = { path = "../types2", version = "0.1.1" }
+nalgebra_static2 = { path = "../static2", version = "0.1.1", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

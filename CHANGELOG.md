@@ -5,11 +5,7 @@ release that changes results is scheduled so that consumers regenerate their gol
 package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates since 0.1.1, and
 `nalgebra_glam`) is versioned together.
 
-## 0.1.1 (unreleased)
-
-<!-- WP 9-NS11b: skeleton. The crate list and every figure marked TODO are filled in by the release
-PR once the re-cut of the package split (owner decision, 2026-09-29) has landed; the costs come from
-the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). -->
+## 0.1.1 (2026-09-30)
 
 - **The package split** (docs/PLAN.md M9, docs/SPLIT.md): the library is cut into sub-crates
   `nalgebra_*` behind the `nalgebra` facade, published together at one version in dependency order

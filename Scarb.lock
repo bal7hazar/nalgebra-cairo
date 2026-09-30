@@ -18,7 +18,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_blas",
@@ -79,7 +79,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_blas"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -94,7 +94,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_blocks"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -110,7 +110,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "simba",
@@ -119,7 +119,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_dynamic"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_geometry2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -153,7 +153,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_geometry3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -168,7 +168,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_geometry4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -182,7 +182,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_geometry5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -197,7 +197,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_geometry6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -212,7 +212,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_glam"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "glam_core",
@@ -229,7 +229,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -241,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -255,7 +255,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -271,7 +271,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -285,7 +285,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -301,7 +301,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -312,7 +312,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_pivot2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -323,7 +323,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_pivot3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -335,7 +335,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_pivot4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -348,7 +348,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_pivot5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -362,7 +362,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_pivot6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -378,7 +378,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_spectral2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -393,7 +393,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_spectral3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -408,7 +408,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_spectral4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -424,7 +424,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_spectral5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -440,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_spectral6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -457,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_svd_eigen2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -470,7 +470,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_svd_eigen3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -485,7 +485,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_svd_eigen4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -501,7 +501,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_svd_eigen5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -519,7 +519,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_linalg_svd_eigen6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -539,7 +539,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_norm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -561,7 +561,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_blas"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -572,7 +572,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_blocks"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -583,7 +583,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_cg"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -594,7 +594,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_componentwise"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_construction"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -616,7 +616,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -627,7 +627,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_edition"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -638,7 +638,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_functional"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -649,7 +649,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_gemm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -660,7 +660,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_gemm_large"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -671,7 +671,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_inplace"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -682,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_norms"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -693,7 +693,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_stats"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -704,7 +704,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_structure"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -715,7 +715,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_shapes_tests_views"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -726,7 +726,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_sparse"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -742,7 +742,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -754,7 +754,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -768,7 +768,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -784,7 +784,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -802,7 +802,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static6_tall"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -821,7 +821,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static6_wide"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -837,7 +837,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_static_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_statistics2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -860,7 +860,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_statistics3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -872,7 +872,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_statistics4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -885,7 +885,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_statistics5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -899,7 +899,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_statistics6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -914,14 +914,14 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_testing"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "snforge_std",
 ]
 
 [[package]]
 name = "nalgebra_tests_base"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -933,7 +933,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_dynamic"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -945,7 +945,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -957,7 +957,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry_dual"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -969,7 +969,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry_ext"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -981,7 +981,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry_poses"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -993,7 +993,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry_projections"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1005,7 +1005,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry_scale"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1017,7 +1017,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_geometry_transform"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1029,7 +1029,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1041,7 +1041,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_bidiagonal"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1053,7 +1053,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_bidiagonal_tall"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1065,7 +1065,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_bidiagonal_wide"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1077,7 +1077,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_cholesky_update"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1089,7 +1089,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_eigen"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1101,7 +1101,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_exp"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1113,7 +1113,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_factor"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1125,7 +1125,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_hessenberg"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1137,7 +1137,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_lblt"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1149,7 +1149,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_lu"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1161,7 +1161,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_lu_tall"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1173,7 +1173,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_lu_wide"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1185,7 +1185,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_qr"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1197,7 +1197,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_qr_tall"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1209,7 +1209,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_pivot_qr_wide"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1221,7 +1221,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_qr"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1233,7 +1233,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_qr6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1245,7 +1245,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_qr_tall"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1257,7 +1257,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_schur"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1269,7 +1269,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_schur56"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1281,7 +1281,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_solve"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1293,7 +1293,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_solve_rhs"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1305,7 +1305,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1317,7 +1317,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1329,7 +1329,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1341,7 +1341,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_tall"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1353,7 +1353,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_tall5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1365,7 +1365,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_tall6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1377,7 +1377,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_tall6b"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1389,7 +1389,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_wide"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1401,7 +1401,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_wide5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1413,7 +1413,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_wide6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1425,7 +1425,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_linalg_svd_wide6b"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1437,7 +1437,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_root"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1449,7 +1449,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_sparse"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1461,7 +1461,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_tests_utils"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra",
@@ -1471,7 +1471,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_transform2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1487,7 +1487,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_transform3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1502,7 +1502,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_types2"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1512,7 +1512,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_types3"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1523,7 +1523,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_types4"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1535,7 +1535,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_types5"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1548,7 +1548,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_types6"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_core",
@@ -1562,7 +1562,7 @@ dependencies = [
 
 [[package]]
 name = "nalgebra_views"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "fixed",
  "nalgebra_blocks",
