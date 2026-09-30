@@ -82,7 +82,10 @@ impl Perm6PartialEq of PartialEq<Perm6> {
             && lhs.p5 == rhs.p5
     }
 }
+pub use nalgebra_linalg2::linalg::lu::{Perm2Impl, Perm2Trait};
+pub use nalgebra_linalg3::linalg::lu::{Perm3Impl, Perm3Trait};
+pub use nalgebra_linalg4::linalg::lu::{Perm4Impl, Perm4Trait};
 pub use nalgebra_static6_wide::linalg::lu::{Perm6, Perm6Impl, Perm6Trait};
-pub use nalgebra_types2::linalg::lu::{Perm2, Perm2Impl, Perm2Trait};
-pub use nalgebra_types3::linalg::lu::{Perm3, Perm3Impl, Perm3Trait};
-pub use nalgebra_types4::linalg::lu::{Perm4, Perm4Impl, Perm4Trait};
+pub use nalgebra_types2::linalg::lu::Perm2;
+pub use nalgebra_types3::linalg::lu::Perm3;
+pub use nalgebra_types4::linalg::lu::Perm4;

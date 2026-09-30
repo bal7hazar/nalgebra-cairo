@@ -9,4 +9,5 @@
 //! type selects upstream's const generic `D`, one impl per (shape, D) pair, on the `Matrix6`
 //! canvas of `FixedResize`).
 
+pub use nalgebra_blocks::base::dynamic::shapes::*;
 pub use nalgebra_dynamic::base::dynamic::shapes::*;

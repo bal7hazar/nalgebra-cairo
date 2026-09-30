@@ -79,6 +79,9 @@ systemd-run --user --collect --unit=nalgebra-$wp --description="$title" \
   -E PATH="$HOME/orchestrator/shims:$HOME/.venvs/nalgebra/bin:$PATH" -E HOME="$HOME" \
   -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 \
   --working-directory="$wt" scripts/agent.sh "$wt" claude "$model" "$wt/docs/briefs/$wp.md" "$log"
+# the drop-in ~/.config/systemd/user/nalgebra-.service.d/50-agent-limits.conf (MemoryMax=20G, Nice,
+# OOMScoreAdjust) wins over -p MemoryMax: set the cap on the running unit
+systemctl --user set-property --runtime nalgebra-$wp MemoryMax=14G
 ```
 
 - The shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`;
@@ -132,8 +135,8 @@ systemd-run --user --collect --unit=nalgebra-$wp --description="$title" \
   automatically) and the ENFORCING job `Consumer cost` that merges them into one verdict (the
   required check; `report_only` entries of `consumer_cost.toml`, the facade among them, are shown and
   never gated; `--report-only-marginals` is the transition switch that gates lines and closures
-  only: ON in `ci.yml` until `nalgebra_dynamic` is cut under gate 2, owner decision 2026-09-29 and
-  `docs/SPLIT.md` §20; `--merge` accepts it too, to re-judge downloaded shard files). A deeper
+  only: OFF in `ci.yml` since WP 9-NS12b cut `nalgebra_dynamic` under gate 2, so the marginals are
+  gated; `--merge` accepts it too, to re-judge downloaded shard files). A deeper
   measurement of a few crates: `--package A --package B --no-closures --repeat 9 --interleave`.
 - `scripts/facade_features.py` (CI job `Facade features`): consumers of the workspace facade naming
   its five no-op features (`statistics`, `blas`, `dynamic`, `sparse`, `io`; docs/SPLIT.md §17) build,

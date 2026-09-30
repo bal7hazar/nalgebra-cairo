@@ -1132,6 +1132,22 @@ decompositions (29 re-cut sub-crates, the 10 decomposition crates unchanged, no 
 proposal for R2: `GivensRotation` with its methods and traits in `types2`, the `Reflection1..4`
 methods with their structs, `geometry::point::errors` in `core` (`[modules]`), `TransformKernels`
 internal. Next: R2 (decompositions), R3 (closures, release order, READMEs).
+R2 done in one PR (WP 9-R2): the live map is the approved re-cut for every crate (the two maps
+differ by their header only); the 10 decomposition crates became 21 (`linalg_core`, `linalg2..6`,
+`linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; the 10 directories continue with
+their dimension's content, 11 are new); `SvdRightTrait` split per dimension (`SvdRightTrait2..6` in
+`linalg_svd_eigen2..6`, the shared filters in `linalg_core`), `Perm1Trait`..`Perm5Trait` in
+`linalg2..5` (`Perm1Trait` by a new rule, dimension 1 folded into 2), `Cholesky2/3UpdateTrait` in
+`linalg3` / `linalg4`; `gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0. Next:
+R3.
+NS12b done in one PR (WP 9-NS12b): `nalgebra_dynamic` cut under gate 2 with no new package (54 as
+above): the fixed-size edition of the static shapes (`InsertFixedColumns` / `InsertFixedRows` /
+`RemoveFixedColumns` / `RemoveFixedRows`, their 360 impls, the private `Canvas6Edit` kernels; the
+module `base::dynamic::shapes` split over two packages) moved to `blocks`, whose `Matrix6` canvas it
+runs on, and `dynamic` no longer depends on `blocks`; `dynamic`'s `closures` no longer forwards to
+the static method crates (decision D1: the forwarding charged their closure methods, about 3.5 s, to
+its marginal); `--report-only-marginals` dropped from `ci.yml`, gate 2 enforced; `gas_compare`
+0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0.
 
 ### 18.7 Owner decisions on the re-cut (2026-09-29, validated in the orchestrator session)
 
@@ -1317,7 +1333,7 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
   "committed brief"; the `nalgebra` row of `OPERATIONS.md` §4 still names
   `~/orchestrator/nalgebra-cairo/briefs/`, the project manager's file).
 
-**Next, in order.**
+**Next, in order** (as planned at 15:40 UTC; the order is superseded by the 16:45 update below).
 - **R2** (`docs/briefs/wp-9-r2.md`, Opus 5.5) and **R3** (`docs/briefs/wp-9-r3.md`, the `sonnet`
   alias) launched together once this PR is on `main`, each as a `nalgebra-wp-9-r<n>` unit. R3 has two
   phases so that its files never overlap R2's: phase 1 now (non-decomposition READMEs, the facade
@@ -1326,6 +1342,51 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
 - Then the `nalgebra_dynamic` cut under gate 2 (its new crate names to the project manager before the
   move), `--report-only-marginals` dropped, `split-measure.yml` repointed or retired; then the
   release 0.1.1 on the project manager's written go.
+
+**Update 16:45 UTC.**
+- Objective 1 merged (#81, squash `91a9d22`, 16:13 UTC) after a second Codex review: the first
+  (`slingfall/review-9-docs-align`) found that `scripts/agent.sh`'s framing reserved the shared files
+  the R2 / R3 briefs allow (fixed: a brief's allowlist may grant them) and a count of 12 instead of 10
+  linalg crates in §18.5; `slingfall/review-9-docs-align-2` PASS on `03f6a7f`.
+- **R2** running since 16:15 UTC: unit `nalgebra-wp-9-r2`, `claude-opus-5-5` (read from its
+  transcript), `MemoryMax` 14G (set on the running unit: the `nalgebra-` drop-in's 20G wins over
+  `-p`, recipe in `docs/ORCHESTRATOR.md`).
+- **R3 phase 1** done (unit `nalgebra-wp-9-r3`, `claude-sonnet-5-5`, 16:15-16:37 UTC): draft PR #82,
+  78 / 78 checks green; 32 package READMEs, the facade README (packages, dimensions 5 and 6, blocks /
+  views / norms, features), CHANGELOG 0.1.1's package list; scope checked (READMEs, root `README.md`,
+  `CHANGELOG.md` only).
+- **Order changed**: the cut of `nalgebra_dynamic` changes the package set (names, count, release
+  order, `docs/PACKAGES.md`, CHANGELOG), so R3's phase 2 waits for it: R2 → **WP 9-NS12b** (the cut;
+  its plan, measured on the GitHub runner with no local build, runs now beside R2; its move after R2
+  and the project manager's approval of the names) → R3 phase 2 → release. Brief
+  `docs/briefs/wp-9-ns12b.md`; R3's brief updated to match. What would reverse it: a cut that adds no
+  package (then R3 phase 2 may run right after R2).
+
+**Update 17:50 UTC: the cut of `nalgebra_dynamic` decided (WP 9-NS12b phase 1).**
+- Phase 1 ran 17:11-17:44 UTC (unit `nalgebra-wp-9-ns12b`, `claude-opus-5-5`), measurements on the
+  GitHub runner only (`split-measure.yml`, runs 36750325732, 36750334830, 36750397413, 36750354897,
+  36752262531; report archived as `reports/wp-9-ns12b-phase1.md`).
+- **The gap** between the prototype (2.9 s / 0.47 GB) and the CI (6.4 s / 0.89 GB) is, by inference,
+  `nalgebra_dynamic`'s `closures` feature: it forwards to the 7 static method crates, whose closure
+  methods the CI's marginal then charges to `dynamic` (its direct-dependencies consumer has them off).
+  Controls: `nalgebra_norm` (the same 7 static method crates with `default-features = false`, no
+  forwarding; unlike `dynamic`, no `nalgebra_blocks`) measures 0.7 s both ways; every other crate
+  agrees within ±0.7 s. No `closures`-gated body of `dynamic` calls a static closure method.
+- **Attribution** of `dynamic`'s own 2.9 s: `DMatrix` / `DVector` / `RowDVector` 0.9 s, convolution
+  0.1 s, the per-shape dynamic forms 1.8 s, the fixed-size edition (8,021 lines) 0.4 s.
+- **Decided (orchestrator): cut A + D1 (ii).** The fixed-size edition (4 traits, 360 impls,
+  `Canvas6Edit`) moves to `nalgebra_blocks`, which already holds its `Matrix6` canvas;
+  `nalgebra_dynamic` drops its `nalgebra_blocks` dependency and its `closures` forwarding. No new
+  package (the list stays at §18.1's 54). Runner: `dynamic` 2.1 s (1.9-2.3) / 0.33 GB, `blocks` 1.3 s
+  (1.2-1.5) / 0.44 GB; static 2-4 + blocks 17.0 → 17.4 s (advanced use, not a declared closure).
+  Reversed if the phase-2 CI shows `dynamic` above 4 s after D1: then cut B (the fixed-size edition in
+  its own package, a new name for the project manager).
+- The order R2 → NS12b → R3 phase 2 stays although the cut adds no package: both lots edit
+  `nalgebra_blocks` / `nalgebra_dynamic` (R3's READMEs and module docs, NS12b's module files and
+  manifests), `.github/workflows/ci.yml` and the figures of `docs/PACKAGES.md`.
+- Not chosen: fixing `scripts/consumer_cost.py` to build the direct-dependencies consumer with the
+  dependency features the crate's defaults enable (a change of the shared script's measure, relayed to
+  the project manager for the sibling tracks instead).
 
 **Capacity at the start** (15:09 UTC): `~/orchestrator/capacity.json` `can_launch` true, `free_slots`
 4, `oom_kills_30min` 0; `nexus resources`: vps 0 / 2 jobs, 26.6 GB free; `nexus accounts`: claude:b7r

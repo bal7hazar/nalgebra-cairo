@@ -22,8 +22,8 @@
 // the in-crate tests reach the internal items of the module (and the other modules' tests
 // through `crate::linalg::...`) here (WP 9-NS9)
 #[cfg(test)]
-pub(crate) use nalgebra_linalg4::internal::linalg::lu::lu2::Lu2InternalTrait;
-pub use nalgebra_linalg4::linalg::lu::lu2::*;
+pub(crate) use nalgebra_linalg2::internal::linalg::lu::lu2::Lu2InternalTrait;
+pub use nalgebra_linalg2::linalg::lu::lu2::*;
 #[cfg(test)]
 use super::Perm2PartialEq;
 

@@ -30,16 +30,27 @@ dependencies = [
  "nalgebra_geometry4",
  "nalgebra_geometry5",
  "nalgebra_geometry6",
+ "nalgebra_linalg2",
+ "nalgebra_linalg3",
  "nalgebra_linalg4",
  "nalgebra_linalg5",
  "nalgebra_linalg6",
+ "nalgebra_linalg_core",
+ "nalgebra_linalg_pivot2",
+ "nalgebra_linalg_pivot3",
  "nalgebra_linalg_pivot4",
  "nalgebra_linalg_pivot5",
  "nalgebra_linalg_pivot6",
+ "nalgebra_linalg_spectral2",
+ "nalgebra_linalg_spectral3",
  "nalgebra_linalg_spectral4",
  "nalgebra_linalg_spectral5",
  "nalgebra_linalg_spectral6",
+ "nalgebra_linalg_svd_eigen2",
+ "nalgebra_linalg_svd_eigen3",
  "nalgebra_linalg_svd_eigen4",
+ "nalgebra_linalg_svd_eigen5",
+ "nalgebra_linalg_svd_eigen6",
  "nalgebra_norm",
  "nalgebra_sparse",
  "nalgebra_static2",
@@ -111,7 +122,6 @@ name = "nalgebra_dynamic"
 version = "0.1.0"
 dependencies = [
  "fixed",
- "nalgebra_blocks",
  "nalgebra_core",
  "nalgebra_static2",
  "nalgebra_static3",
@@ -218,13 +228,39 @@ dependencies = [
 ]
 
 [[package]]
-name = "nalgebra_linalg4"
+name = "nalgebra_linalg2"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
  "nalgebra_static2",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg2",
  "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg4"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg2",
+ "nalgebra_linalg3",
  "nalgebra_static4",
  "nalgebra_types2",
  "nalgebra_types3",
@@ -239,7 +275,6 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_linalg_svd_eigen4",
  "nalgebra_types2",
  "nalgebra_types3",
  "nalgebra_types4",
@@ -254,14 +289,46 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_linalg5",
- "nalgebra_linalg_svd_eigen4",
  "nalgebra_static6_wide",
  "nalgebra_types2",
  "nalgebra_types3",
  "nalgebra_types4",
  "nalgebra_types5",
  "nalgebra_types6",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_core"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_pivot2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_pivot3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
  "simba",
  "snforge_std",
 ]
@@ -310,16 +377,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_linalg_spectral2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg2",
+ "nalgebra_linalg_core",
+ "nalgebra_static2",
+ "nalgebra_static_core",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_spectral3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg3",
+ "nalgebra_linalg_core",
+ "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_linalg_spectral4"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
  "nalgebra_linalg4",
- "nalgebra_static2",
- "nalgebra_static3",
+ "nalgebra_linalg_core",
  "nalgebra_static4",
- "nalgebra_static_core",
  "nalgebra_types2",
  "nalgebra_types3",
  "nalgebra_types4",
@@ -333,8 +428,7 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_linalg4",
- "nalgebra_linalg_spectral4",
+ "nalgebra_linalg_core",
  "nalgebra_static5",
  "nalgebra_types2",
  "nalgebra_types3",
@@ -350,8 +444,7 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_linalg4",
- "nalgebra_linalg_spectral4",
+ "nalgebra_linalg_core",
  "nalgebra_static6_wide",
  "nalgebra_types2",
  "nalgebra_types3",
@@ -363,16 +456,83 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_linalg_svd_eigen2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg_core",
+ "nalgebra_static2",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_svd_eigen3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg_core",
+ "nalgebra_linalg_svd_eigen2",
+ "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_linalg_svd_eigen4"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_static2",
- "nalgebra_static3",
+ "nalgebra_linalg_core",
+ "nalgebra_linalg_svd_eigen2",
+ "nalgebra_linalg_svd_eigen3",
  "nalgebra_types2",
  "nalgebra_types3",
  "nalgebra_types4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_svd_eigen5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg_core",
+ "nalgebra_linalg_svd_eigen2",
+ "nalgebra_linalg_svd_eigen3",
+ "nalgebra_linalg_svd_eigen4",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_linalg_svd_eigen6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_linalg_core",
+ "nalgebra_linalg_svd_eigen2",
+ "nalgebra_linalg_svd_eigen3",
+ "nalgebra_linalg_svd_eigen4",
+ "nalgebra_linalg_svd_eigen5",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]

@@ -1,4 +1,4 @@
-# WP 9-R3 — Release plumbing on the 54 names (two phases)
+# WP 9-R3 — Release plumbing on the final package names (two phases)
 
 Branch: `feat/wp-9-r3`, already checked out in this worktree, cut from `main` after R1 (#80). ONE
 pull request, opened as a draft at the end of phase 1. Model: Sonnet (documents and configuration,
@@ -14,8 +14,9 @@ WP 9-R2 (the decomposition crates, `crates/linalg*`) runs at the same time. So t
 never edit the same file, this lot has two phases:
 - **Phase 1, now**: only the files of §3.1. At its end: push, open the PR as a draft, write
   `REPORT.md` (section "Phase 1"), end your turn.
-- **Phase 2**: the orchestrator resumes you after R2 is merged, with R2's merge commit; only then
-  the files of §3.2.
+- **Phase 2**: the orchestrator resumes you after R2 and WP 9-NS12b (the cut of `nalgebra_dynamic`:
+  no new package, the list stays at §18.1's 54, but `nalgebra_blocks` and `nalgebra_dynamic` change
+  content) are merged, with the merge commit; only then the files of §3.2.
 
 ## 1. Read first
 
@@ -72,12 +73,17 @@ never edit the same file, this lot has two phases:
 4. Push, `gh pr create --draft` following the template, `gh pr checks --watch` until green,
    `REPORT.md` with a "Phase 1" section, end your turn.
 
-### Phase 2 (when resumed with R2's merge commit)
+### Phase 2 (when resumed after R2 and WP 9-NS12b)
 
 1. `git fetch origin && git merge origin/main` (no rebase, no force push); resolve conflicts in your
    own files only.
 2. The READMEs of the 21 decomposition packages (`linalg_core`, `linalg2` .. `6`,
-   `linalg_svd_eigen2` .. `6`, `linalg_pivot2` .. `6`, `linalg_spectral2` .. `6`), same style.
+   `linalg_svd_eigen2` .. `6`, `linalg_pivot2` .. `6`, `linalg_spectral2` .. `6`), same style; the
+   phase-1 files updated after R2 (the closure sentences of the READMEs) and for NS12b's cut (the
+   READMEs of `nalgebra_blocks`, which now holds the fixed-size edition, and of `nalgebra_dynamic`,
+   which no longer pulls `nalgebra_blocks` nor forwards `closures`; the CHANGELOG lines of both; the
+   facade README's "static 2-4 + blocks / views" figures from NS12b's report and its `dynamic` row
+   from the final run).
 3. The module docs (`//!` lines only, no code) of the modules split over several packages: each
    package's part says what that package holds of the module, instead of its lowest part's doc (R1
    Deviation 8, and the same after R2).
@@ -90,8 +96,8 @@ never edit the same file, this lot has two phases:
    (`glam_core@0.4.1`) is `report_only` as the reference; `facades = ["nalgebra"]` and
    `[crates.nalgebra] report_only = true` stay; `nalgebra_with_glam` and
    `facade_no_default_features` stay `report_only`. Keep the comments' history style.
-5. `scripts/release.py` (dry run, no argument): the order lists the 54 packages, dependencies first,
-   then the facade, then `nalgebra_glam`; paste the order in the report. On a branch the dry run
+5. `scripts/release.py` (dry run, no argument): the order lists every package of the final list,
+   dependencies first, then the facade, then `nalgebra_glam`; paste the order in the report. On a branch the dry run
    lists refusals (HEAD is not `origin/main`, the version is not bumped yet): expected, list them.
    Edit the script only if the order is wrong (report why).
 6. Push, wait for the checks, then `docs/PACKAGES.md` from this PR's CI run: `gh run download <run>

@@ -2,4 +2,4 @@
 //! `Lblt3`: the Bunch-Kaufman `LBLᵀ` factorisation of a symmetric `Matrix3` (upstream
 //! `nalgebra::linalg::LBLT<T, U3>`), fully unrolled (WP 8.5-P15).
 
-pub use nalgebra_linalg_pivot4::linalg::lblt::lblt3::*;
+pub use nalgebra_linalg_pivot3::linalg::lblt::lblt3::*;

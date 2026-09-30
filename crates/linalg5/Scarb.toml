@@ -1,24 +1,21 @@
 [package]
 name = "nalgebra_linalg5"
-description = "LU / Cholesky / QR / symmetric eigen / SVD of dimension 5."
+description = "QR of dimension 5; the `Perm5` methods (0.1.0 has no `Lu5`, `Cholesky5` or `Udu5`)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "linalg", "qr", "svd", "symmetric-eigen"]
+keywords = ["linear-algebra", "fixed-point", "linalg", "lu", "qr"]
 readme = "README.md"
 
-# `eigen`, `svd`, `qr` (as in `nalgebra`, whose features of the same names forward to these):
-# `linalg::symmetric_eigen5`, `linalg::svd*` of the shapes of dimension 5 (`svd` builds on `eigen`)
-# and `linalg::qr*` of dimension 5. On by default; `nalgebra` depends on this package with
-# `default-features = false`, so `nalgebra` without its default features still leaves them out
-# (features unify per compilation unit, docs/SPLIT.md §1).
+# `qr` (as in `nalgebra`, whose features of the same names forward to these): `qr` gates
+# `linalg::qr`. On by default; `nalgebra` depends on this package with `default-features = false`,
+# so `nalgebra` without its default features still leaves them out (features unify per compilation
+# unit, docs/SPLIT.md §1).
 [features]
-default = ["eigen", "svd", "qr"]
-eigen = ["nalgebra_linalg_svd_eigen4/eigen"]
-svd = ["eigen", "nalgebra_linalg_svd_eigen4/svd"]
+default = ["qr"]
 qr = []
 
 [dependencies]
@@ -27,7 +24,6 @@ nalgebra_types2 = { path = "../types2", version = "0.1.0" }
 nalgebra_types3 = { path = "../types3", version = "0.1.0" }
 nalgebra_types4 = { path = "../types4", version = "0.1.0" }
 nalgebra_types5 = { path = "../types5", version = "0.1.0" }
-nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

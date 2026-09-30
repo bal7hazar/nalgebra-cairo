@@ -15,17 +15,15 @@ experimental-features = ["associated_item_constraints"]
 
 # `closures` (as in `nalgebra`, which forwards its own feature of that name here): the methods of
 # the dynamic matrices and of the dynamic forms of the static shapes that take a closure (`map`,
-# `fold`, `apply`, `zip_*`...), and the static crates' own. On by default; `nalgebra` and
-# `nalgebra_sparse` depend on this package with `default-features = false`, so `nalgebra` without
-# its default features still leaves them out (features unify per compilation unit, docs/SPLIT.md
-# §1).
+# `fold`, `apply`, `zip_*`...). On by default; `nalgebra` and `nalgebra_sparse` depend on this
+# package with `default-features = false`, so `nalgebra` without its default features still leaves
+# them out (features unify per compilation unit, docs/SPLIT.md §1). WP 9-NS12b (decision D1): it no
+# longer forwards to the static method crates, whose closure-taking methods none of these call (a
+# user of their traits depends on them directly, with their own default `closures`; the facade
+# forwards to each of them).
 [features]
 default = ["closures"]
-closures = [
-    "nalgebra_static_core/closures", "nalgebra_static2/closures", "nalgebra_static3/closures",
-    "nalgebra_static4/closures", "nalgebra_static5/closures", "nalgebra_static6_tall/closures",
-    "nalgebra_static6_wide/closures",
-]
+closures = []
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
@@ -41,7 +39,6 @@ nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = 
 nalgebra_static5 = { path = "../static5", version = "0.1.0", default-features = false }
 nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
 nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.0", default-features = false }
-nalgebra_blocks = { path = "../blocks", version = "0.1.0" }
 simba.workspace = true
 
 [dev-dependencies]

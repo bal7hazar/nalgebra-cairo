@@ -1,14 +1,5 @@
-pub mod full_piv_lu1;
-pub mod full_piv_lu1x2;
-pub mod full_piv_lu1x3;
 pub mod full_piv_lu1x4;
-pub mod full_piv_lu2;
-pub mod full_piv_lu2x1;
-pub mod full_piv_lu2x3;
 pub mod full_piv_lu2x4;
-pub mod full_piv_lu3;
-pub mod full_piv_lu3x1;
-pub mod full_piv_lu3x2;
 pub mod full_piv_lu3x4;
 pub mod full_piv_lu4;
 pub mod full_piv_lu4x1;

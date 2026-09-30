@@ -5,9 +5,7 @@
 //! `PermuteRows` / `PermuteColumns` impls on every shape with 1 / 5 rows or columns. Moves only:
 //! exact.
 
-use nalgebra_core::base::errors::{INDEX_OUT_OF_BOUNDS, PERMUTATION_ORDER};
 use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
-use simba::scalar::Real;
 use crate::base::matrix2x5::Matrix2x5;
 use crate::base::matrix3x5::Matrix3x5;
 use crate::base::matrix4x5::Matrix4x5;
@@ -39,101 +37,6 @@ pub struct Perm5 {
 impl Perm5PartialEq of PartialEq<Perm5> {
     fn eq(lhs: @Perm5, rhs: @Perm5) -> bool {
         lhs.p1 == rhs.p1 && lhs.p2 == rhs.p2 && lhs.p3 == rhs.p3 && lhs.p4 == rhs.p4
-    }
-}
-
-/// Methods of `Perm5` (upstream `PermutationSequence<U5>`). The row / column permutations
-/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
-#[generate_trait]
-pub impl Perm5Impl of Perm5Trait {
-    /// The identity permutation (no swap). Upstream: `PermutationSequence::identity`.
-    #[inline(always)]
-    fn identity() -> Perm5 {
-        Perm5 { p1: 1, p2: 2, p3: 3, p4: 4 }
-    }
-
-    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based) after those
-    /// already recorded; `i == i2` records nothing. Same contract as
-    /// `Perm2Trait::append_permutation`
-    /// (one transposition per step, in step order): panics with `nalgebra: permutation order`
-    /// otherwise, and with `nalgebra: index out of bounds` when an index is `>= 5`. Upstream:
-    /// `PermutationSequence::append_permutation`.
-    fn append_permutation(ref self: Perm5, i: usize, i2: usize) {
-        if i != i2 {
-            let (lo, hi) = if i < i2 {
-                (i, i2)
-            } else {
-                (i2, i)
-            };
-            assert(hi < 5, INDEX_OUT_OF_BOUNDS);
-            let last: usize = if self.p4 != 4 {
-                4
-            } else if self.p3 != 3 {
-                3
-            } else if self.p2 != 2 {
-                2
-            } else if self.p1 != 1 {
-                1
-            } else {
-                0
-            };
-            assert(lo >= last, PERMUTATION_ORDER);
-            let v: u8 = (hi + 1).try_into().unwrap();
-            match lo {
-                0 => self.p1 = v,
-                1 => self.p2 = v,
-                2 => self.p3 = v,
-                3 => self.p4 = v,
-                _ => {},
-            }
-        }
-    }
-
-    /// The number of transpositions actually recorded. Upstream: `PermutationSequence::len`.
-    fn len(self: Perm5) -> usize {
-        let mut n: usize = 0;
-        if self.p1 != 1 {
-            n += 1;
-        }
-        if self.p2 != 2 {
-            n += 1;
-        }
-        if self.p3 != 3 {
-            n += 1;
-        }
-        if self.p4 != 4 {
-            n += 1;
-        }
-        n
-    }
-
-    /// Whether no transposition is recorded. Upstream: `PermutationSequence::is_empty`.
-    #[inline(always)]
-    fn is_empty(self: Perm5) -> bool {
-        self.p1 == 1 && self.p2 == 2 && self.p3 == 3 && self.p4 == 4
-    }
-
-    /// `1` for an even number of transpositions, `-1` for an odd one. Exact. Upstream:
-    /// `PermutationSequence::determinant`.
-    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm5) -> T {
-        let mut odd = false;
-        if self.p1 != 1 {
-            odd = !odd;
-        }
-        if self.p2 != 2 {
-            odd = !odd;
-        }
-        if self.p3 != 3 {
-            odd = !odd;
-        }
-        if self.p4 != 4 {
-            odd = !odd;
-        }
-        if odd {
-            -R::one()
-        } else {
-            R::one()
-        }
     }
 }
 

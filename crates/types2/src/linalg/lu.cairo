@@ -24,9 +24,6 @@
 //! permutation matrix is deliberately not offered: nothing in the library needs it, and it would
 //! cost a full matrix product to use.
 
-use nalgebra_core::base::errors::{INDEX_OUT_OF_BOUNDS, PERMUTATION_ORDER};
-use simba::scalar::Real;
-
 /// The row permutation of a 2x2 factorisation: the single transposition of step 1.
 ///
 /// `p1` is the 1-based index of the row swapped with row 1 (`1` = no swap, `2` = rows 1 and 2
@@ -35,79 +32,6 @@ use simba::scalar::Real;
 pub struct Perm2 {
     /// Row swapped with row 1 at step 1, in `1..=2`.
     pub p1: u8,
-}
-
-/// Methods of `Perm2` (upstream `PermutationSequence<U2>`). The row / column permutations
-/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
-#[generate_trait]
-pub impl Perm2Impl of Perm2Trait {
-    /// The identity permutation of a 2x2 factorisation (no swap). Upstream:
-    /// `PermutationSequence::identity`.
-    #[inline(always)]
-    fn identity() -> Perm2 {
-        Perm2 { p1: 1 }
-    }
-
-    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based, like upstream)
-    /// after those already recorded; `i == i2` records nothing. Upstream:
-    /// `PermutationSequence::append_permutation`.
-    ///
-    /// The compact sequence stores ONE transposition per elimination step, `(k, p_k)` with `p_k >=
-    /// k`, in step order: the transposition `(min, max)` is recorded as the step `min`, which
-    /// must come after every step already recorded — what every upstream decomposition does
-    /// (`LU`, `FullPivLU` and `ColPivQR` append `(i, piv)` with `piv >= i` at step `i`). Panics
-    /// with `nalgebra: permutation order` otherwise (upstream's heap sequence only panics when it
-    /// is full: "Maximum number of permutations exceeded."), and with `nalgebra: index out of
-    /// bounds` when an index is `>= 2` (upstream panics when the permutation is applied).
-    fn append_permutation(ref self: Perm2, i: usize, i2: usize) {
-        if i != i2 {
-            let (lo, hi) = if i < i2 {
-                (i, i2)
-            } else {
-                (i2, i)
-            };
-            assert(hi < 2, INDEX_OUT_OF_BOUNDS);
-            let last: usize = if self.p1 != 1 {
-                1
-            } else {
-                0
-            };
-            assert(lo >= last, PERMUTATION_ORDER);
-            // `lo < hi < 2`: the only step is the first.
-            self.p1 = (hi + 1).try_into().unwrap();
-        }
-    }
-
-    /// The number of transpositions actually recorded (the steps `k` with `p_k != k`). Upstream:
-    /// `PermutationSequence::len`.
-    fn len(self: Perm2) -> usize {
-        let mut n: usize = 0;
-        if self.p1 != 1 {
-            n += 1;
-        }
-        n
-    }
-
-    /// Whether no transposition is recorded (the identity). Upstream:
-    /// `PermutationSequence::is_empty`.
-    #[inline(always)]
-    fn is_empty(self: Perm2) -> bool {
-        self.p1 == 1
-    }
-
-    /// The determinant of the permutation: `1` for an even number of transpositions, `-1` for an
-    /// odd one. Exact. Upstream: `PermutationSequence::determinant`.
-    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm2) -> T {
-        let mut odd = false;
-        if self.p1 != 1 {
-            odd = !odd;
-        }
-        if odd {
-            -R::one()
-        } else {
-            R::one()
-        }
-    }
 }
 use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
 use crate::base::row_vector2::RowVector2;

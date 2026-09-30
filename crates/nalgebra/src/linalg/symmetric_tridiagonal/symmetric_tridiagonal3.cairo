@@ -3,4 +3,4 @@
 //! `nalgebra::linalg::SymmetricTridiagonal<T, U3>`) by Householder reflections, fully unrolled
 //! (WP 8.5-P16).
 
-pub use nalgebra_linalg_spectral4::linalg::symmetric_tridiagonal::symmetric_tridiagonal3::*;
+pub use nalgebra_linalg_spectral3::linalg::symmetric_tridiagonal::symmetric_tridiagonal3::*;

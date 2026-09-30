@@ -1,0 +1,43 @@
+[package]
+name = "nalgebra_linalg_spectral2"
+description = "Bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 2 (and 1)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "linalg", "bidiagonal", "eigen", "exp", "hessenberg", "pow", "schur", "symmetric-tridiagonal"]
+readme = "README.md"
+
+# `hessenberg`, `bidiagonal`, `schur`, `exp` (as in `nalgebra`, whose features of the same names
+# forward to these): `hessenberg` gates `linalg::hessenberg`, `linalg::symmetric_tridiagonal`,
+# `linalg::balancing`, `linalg::householder_steps`; `bidiagonal` gates `linalg::bidiagonal`; `schur`
+# gates `linalg::schur`, `linalg::eigen` (on `hessenberg`); `exp` gates `linalg::exp`,
+# `linalg::pow`. On by default; `nalgebra` depends on this package with `default-features = false`,
+# so `nalgebra` without its default features still leaves them out (features unify per compilation
+# unit, docs/SPLIT.md §1).
+[features]
+default = ["hessenberg", "bidiagonal", "schur", "exp"]
+hessenberg = ["nalgebra_linalg_core/hessenberg"]
+bidiagonal = []
+schur = ["hessenberg"]
+exp = ["nalgebra_linalg_core/exp"]
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_static_core = { path = "../static_core", version = "0.1.0", default-features = false }
+nalgebra_static2 = { path = "../static2", version = "0.1.0", default-features = false }
+nalgebra_linalg_core = { path = "../linalg_core", version = "0.1.0", default-features = false }
+nalgebra_linalg2 = { path = "../linalg2", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

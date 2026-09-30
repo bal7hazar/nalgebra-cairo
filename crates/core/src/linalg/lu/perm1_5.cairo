@@ -5,8 +5,6 @@
 //! `PermuteRows` / `PermuteColumns` impls on every shape with 1 / 5 rows or columns. Moves only:
 //! exact.
 
-use simba::scalar::Real;
-use crate::base::errors::INDEX_OUT_OF_BOUNDS;
 use crate::base::matrix1::Matrix1;
 use crate::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
 
@@ -23,51 +21,6 @@ impl Perm1PartialEq of PartialEq<Perm1> {
     fn eq(lhs: @Perm1, rhs: @Perm1) -> bool {
         let _ = (lhs, rhs);
         true
-    }
-}
-
-/// Methods of `Perm1` (upstream `PermutationSequence<U1>`). The row / column permutations
-/// are the generic `PermuteRows` / `PermuteColumns` (`linalg/permutation_sequence.cairo`).
-#[generate_trait]
-pub impl Perm1Impl of Perm1Trait {
-    /// The identity permutation (no swap). Upstream: `PermutationSequence::identity`.
-    #[inline(always)]
-    fn identity() -> Perm1 {
-        Perm1 {}
-    }
-
-    /// Records the transposition of the rows (or columns) `i` and `i2` (0-based) after those
-    /// already recorded; `i == i2` records nothing. Same contract as
-    /// `Perm2Trait::append_permutation`
-    /// (one transposition per step, in step order): panics with `nalgebra: permutation order`
-    /// otherwise, and with `nalgebra: index out of bounds` when an index is `>= 1`. Upstream:
-    /// `PermutationSequence::append_permutation`.
-    fn append_permutation(ref self: Perm1, i: usize, i2: usize) {
-        if i != i2 {
-            // Any transposition of a 1x1 sequence has an index out of bounds.
-            core::panic_with_felt252(INDEX_OUT_OF_BOUNDS);
-        }
-        let _ = self;
-    }
-
-    /// The number of transpositions actually recorded. Upstream: `PermutationSequence::len`.
-    fn len(self: Perm1) -> usize {
-        let _ = self;
-        0
-    }
-
-    /// Whether no transposition is recorded. Upstream: `PermutationSequence::is_empty`.
-    #[inline(always)]
-    fn is_empty(self: Perm1) -> bool {
-        let _ = self;
-        true
-    }
-
-    /// `1` for an even number of transpositions, `-1` for an odd one. Exact. Upstream:
-    /// `PermutationSequence::determinant`.
-    fn determinant<T, impl R: Real<T>, +Neg<T>, +Drop<T>>(self: Perm1) -> T {
-        let _ = self;
-        R::one()
     }
 }
 

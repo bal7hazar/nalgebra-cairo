@@ -1,14 +1,12 @@
 # Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2, final names WP 9-NS1b; the
-# per-dimension re-cut of docs/SPLIT.md §18, move R1: WP 9-R1).
+# per-dimension re-cut of docs/SPLIT.md §18, moves R1 / R2: WP 9-R1, WP 9-R2).
 #
-# R1 state: every crate but the decompositions follows the approved re-cut
-# (`tools/split/crates.recut.toml`, §18.1): `core`, `types2`..`types6`, `static_core`,
-# `static2`..`static6_*`, `geometry2`..`geometry6`, `transform2` / `transform3`,
-# `statistics2`..`statistics6`, `blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse`. The
-# decomposition crates keep their names and their contents (`linalg4`, `linalg_svd_eigen4`,
-# `linalg_pivot4`, `linalg_spectral4`, `linalg5`, `linalg_pivot5`, `linalg_spectral5`, `linalg6`,
-# `linalg_pivot6`, `linalg_spectral6`, with the rules of the 27-crate map) until move R2 switches
-# them to the proposal's `linalg*2`..`linalg*6`.
+# R2 state (WP 9-R2): the live map is the approved re-cut (`tools/split/crates.recut.toml`,
+# docs/SPLIT.md §18.1) for every crate, the decompositions included (`linalg_core`, `linalg2`..
+# `linalg6`, `linalg_svd_eigen2`..`6`, `linalg_pivot2`..`6`, `linalg_spectral2`..`6`); the two
+# files differ by this header only. WP 9-NS12b: the fixed-size edition of the static shapes
+# (`base::dynamic::shapes`: `InsertFixedColumns`..`RemoveFixedRows`, `Canvas6Edit`) in `blocks`
+# (docs/SPLIT.md §18.5).
 #
 # Read by `tools/split/cratemap.py`, hence by the generators (`tools/shapegen`, `tools/linalggen`),
 # `scripts/api_parity.py`, `tools/split/public_paths.py` and `tools/split/rewrite_imports.py`.
@@ -46,7 +44,6 @@
 #     follow      "struct": the crate of the struct named by the impl's first type argument
 #   lift        (top-level, default true) an impl never sits below the crate of one of its type
 #               arguments: its crate is the highest of the rule's and theirs.
-
 facade = "facade"
 lift = true
 # `mapplan.py`: method-call edges towards a larger dimension are over-approximations (dropped)
@@ -87,14 +84,25 @@ statistics4 = "nalgebra_statistics4"
 statistics5 = "nalgebra_statistics5"
 statistics6 = "nalgebra_statistics6"
 blas = "nalgebra_blas"
+linalg_core = "nalgebra_linalg_core"
+linalg2 = "nalgebra_linalg2"
+linalg_svd_eigen2 = "nalgebra_linalg_svd_eigen2"
+linalg_pivot2 = "nalgebra_linalg_pivot2"
+linalg_spectral2 = "nalgebra_linalg_spectral2"
+linalg3 = "nalgebra_linalg3"
+linalg_svd_eigen3 = "nalgebra_linalg_svd_eigen3"
+linalg_pivot3 = "nalgebra_linalg_pivot3"
+linalg_spectral3 = "nalgebra_linalg_spectral3"
 linalg4 = "nalgebra_linalg4"
 linalg_svd_eigen4 = "nalgebra_linalg_svd_eigen4"
 linalg_pivot4 = "nalgebra_linalg_pivot4"
 linalg_spectral4 = "nalgebra_linalg_spectral4"
 linalg5 = "nalgebra_linalg5"
+linalg_svd_eigen5 = "nalgebra_linalg_svd_eigen5"
 linalg_pivot5 = "nalgebra_linalg_pivot5"
 linalg_spectral5 = "nalgebra_linalg_spectral5"
 linalg6 = "nalgebra_linalg6"
+linalg_svd_eigen6 = "nalgebra_linalg_svd_eigen6"
 linalg_pivot6 = "nalgebra_linalg_pivot6"
 linalg_spectral6 = "nalgebra_linalg_spectral6"
 dynamic = "nalgebra_dynamic"
@@ -148,6 +156,12 @@ names = [
     "TransformKernels",
 ]
 
+# [band_split]: crate-internal kernel traits holding every dimension, split per band by the moves
+# (docs/SPLIT.md §3.3.2): {generated trait: {band: the item whose crate hosts that band's methods}}
+# (read by `mapplan.py`; without the table: `SvdRightTrait` 5 / 6, the live map's split)
+[band_split]
+SvdRightTrait = { "2" = "Svd2", "3" = "Svd3", "4" = "Svd4", "5" = "Svd5", "6" = "Svd6" }
+
 # [label_bands]: the dimension of the items whose name does not say it, for `strict_calls`
 [label_bands]
 "(Unit)?(Dual)?Quaternion.*" = 3
@@ -163,18 +177,37 @@ names = [
 [modules]
 "geometry/point.cairo::errors" = "core"
 
-# [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4) on the R1 names (a crate
-# pulls its dependencies; move R3 re-declares them with the per-closure budgets of §18.2 / §19),
-# measured on a GitHub runner by `.github/workflows/split-measure.yml` (`tools/split/mapplan.py`
-# carries them into the plan). `glam_bridge` is `nalgebra_glam` rewritten on the sub-crates
-# (`glam_proto.py`), `@x` a registry crate of `measure.py`. `consumer_cost.toml` lists the same
-# closures by package name.
+# [closures]: the declared closures (docs/SPLIT.md §6.2, §19) re-expressed on the new names (a
+# crate pulls its dependencies), then the dimension 5-6 closures of §19 (budget 20 s / 4.5 GB) and
+# the "static 2-4 + base family" closures of §16.2 (measured, not declared)
 [closures]
 nalgebra_glam = ["glam_bridge"]
-static3_svd = ["static3", "linalg_svd_eigen4"]
-core_pivot = ["linalg_pivot4"]
+static3_svd = ["static3", "linalg_svd_eigen2", "linalg_svd_eigen3"]
+static4_svd = ["static4", "linalg_svd_eigen2", "linalg_svd_eigen3", "linalg_svd_eigen4"]
+core_pivot = ["linalg_pivot2", "linalg_pivot3", "linalg_pivot4"]
 static4_geometry = ["static4", "geometry2", "geometry3", "geometry4", "transform2", "transform3"]
-static4_factor = ["static4", "linalg4"]
+static4_factor = ["static4", "linalg2", "linalg3", "linalg4"]
+static3_geometry = ["static3", "geometry2", "geometry3"]
+static5 = ["static5"]
+static5_factor = ["static5", "linalg5"]
+static5_svd = ["static5", "linalg_svd_eigen5"]
+static5_pivot = ["static5", "linalg_pivot5"]
+static5_spectral = ["static5", "linalg_spectral5"]
+static5_geometry = ["static5", "geometry5"]
+static6 = ["static6_wide"]
+static6_factor = ["static6_wide", "linalg6"]
+static6_svd = ["static6_wide", "linalg_svd_eigen6"]
+static6_pivot = ["static6_wide", "linalg_pivot6"]
+static6_spectral = ["static6_wide", "linalg_spectral6"]
+static6_geometry = ["static6_wide", "geometry6"]
+svd_eigen6 = ["linalg_svd_eigen6"]
+pivot6 = ["linalg_pivot6"]
+static4_blocks = ["static4", "blocks"]
+static4_views = ["static4", "views"]
+static4_norm = ["static4", "norm"]
+static4_statistics = ["static4", "statistics2", "statistics3", "statistics4"]
+static4_statistics_all = ["static4", "statistics2", "statistics3", "statistics4", "statistics5", "statistics6"]
+static4_blas = ["static4", "blas"]
 glam_0_4_1_alone = ["@glam_core", "@glam_int"]
 
 # --- rules -------------------------------------------------------------------------------------
@@ -232,6 +265,17 @@ kind = ["struct"]
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
+# the rank-one column updates of a Cholesky factor build the factor of the next dimension
+# (`Cholesky2::insert_column -> Cholesky3`): with the decompositions of that dimension, as the
+# shape methods sit above the types of the next dimension
+[[rule]]
+name = "Cholesky2UpdateTrait"
+crate = "linalg3"
+
+[[rule]]
+name = "Cholesky3UpdateTrait"
+crate = "linalg4"
+
 # LU steps of each size with the types of their band (the public `gauss_step` resolves the impl at
 # the caller: its type's module, docs/SPLIT.md §15)
 [[rule]]
@@ -251,21 +295,11 @@ args_any = ["Perm6"]
 crate = "static6_wide"
 
 # the type-level kernels of the conversions of a rotation / translation into a matrix (docs/SPLIT.md
-# §18.3, WP 9-R1): `Matrix3FromTranslation2KernelTrait` & co., with the matrix's types (the
-# largest digit of the name), called by the conversion impl and by the geometry method through
-# `#[inline(always)]`
+# §18.3, WP 9-R1): with the matrix's types (the largest digit of the name)
 [[rule]]
 name = "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait"
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
-
-# R1 (until R2): the permutation methods stay with their types (the proposal moves them to
-# `linalg2`..`linalg5` with the decompositions, docs/SPLIT.md §18.5)
-[[rule]]
-file = ["linalg/lu.cairo", "linalg/lu/perm1_5.cairo"]
-name = "Perm[1-5]Trait"
-by = "name"
-bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5" }
 
 # `GivensRotation` (upstream `linalg::givens`), its methods and the traits of its impls: `types2`,
 # the lowest crate that can hold `cancel_y(Vector2)`; the struct's fields are crate-private, so its
@@ -472,6 +506,21 @@ file = ["geometry/point6.cairo"]
 crate = "types6"
 
 
+# WP 9-NS12b: the fixed-size edition of the static shapes (`InsertFixedColumns` / `InsertFixedRows`
+# / `RemoveFixedColumns` / `RemoveFixedRows`, one impl per (shape, D) pair, and the private
+# `Canvas6Edit` kernels) on the `Matrix6` canvas of `FixedResize` (`PadTo6` / `CropFrom6`): with
+# that canvas in `blocks` (the traits and their impls together, the anchor rule); they name no
+# dynamic type, so `dynamic` no longer depends on `blocks`
+[[rule]]
+file = ["base/dynamic/shapes.cairo"]
+name = "InsertFixedColumns|InsertFixedRows|RemoveFixedColumns|RemoveFixedRows|Canvas6Edit"
+crate = "blocks"
+
+[[rule]]
+file = ["base/dynamic/shapes.cairo"]
+trait = ["InsertFixedColumns", "InsertFixedRows", "RemoveFixedColumns", "RemoveFixedRows", "Canvas6Edit"]
+crate = "blocks"
+
 [[rule]]
 file = ["base/dynamic.cairo", "base/dynamic/*"]
 crate = "dynamic"
@@ -549,7 +598,13 @@ by = "name"
 bands = { "2" = "geometry2", "3" = "geometry3", "4" = "geometry4", "5" = "geometry5", "6" = "geometry6" }
 default = "geometry2"
 
-# linalg: family x band (dimension <= 4, 5, 6); the size is the file's, else the item name's
+# linalg: family x dimension (dimension 1 folded into 2); what no dimension names: `linalg_core`
+# the methods of `Perm1` (generated with `Perm5` in `linalg/lu/perm1_5.cairo`, whose file band is
+# 5): dimension 1 folds into the crates of dimension 2 (WP 9-R2)
+[[rule]]
+name = "Perm1Trait"
+crate = "linalg2"
+
 [[rule]]
 file = ["linalg/lu/lu6*"]
 crate = "static6_wide"
@@ -558,43 +613,38 @@ crate = "static6_wide"
 file = ["linalg/householder*.cairo"]
 kind = ["impl"]
 by = "args"
-bands = { "4" = "linalg4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
-default = "linalg4"
+bands = { "2" = "linalg2", "3" = "linalg3", "4" = "linalg4", "5" = "linalg5", "6" = "linalg6" }
+default = "linalg_core"
 
 [[rule]]
-file = ["linalg/householder*.cairo"]
-crate = "linalg4"
+file = ["linalg/householder*.cairo", "linalg/givens.cairo", "linalg/balancing.cairo",
+    "linalg/lu_steps.cairo", "linalg/permutation_sequence.cairo"]
+crate = "linalg_core"
 
 [[rule]]
 file = ["linalg/lu.cairo", "linalg/lu/*", "linalg/inverse.cairo", "linalg/cholesky*", "linalg/ldlt*",
     "linalg/udu*", "linalg/qr.cairo", "linalg/qr/*"]
 by = "auto"
-bands = { "4" = "linalg4", "5" = "linalg5", "6" = "linalg6" }
-default = "linalg4"
+bands = { "2" = "linalg2", "3" = "linalg3", "4" = "linalg4", "5" = "linalg5", "6" = "linalg6" }
+default = "linalg_core"
 
 [[rule]]
 file = ["linalg/svd*", "linalg/symmetric_eigen*"]
 by = "auto"
-bands = { "4" = "linalg_svd_eigen4", "5" = "linalg5", "6" = "linalg6" }
-default = "linalg_svd_eigen4"
+bands = { "2" = "linalg_svd_eigen2", "3" = "linalg_svd_eigen3", "4" = "linalg_svd_eigen4", "5" = "linalg_svd_eigen5", "6" = "linalg_svd_eigen6" }
+default = "linalg_core"
 
 [[rule]]
 file = ["linalg/col_piv_qr*", "linalg/full_piv_lu*", "linalg/lblt*"]
 by = "auto"
-bands = { "4" = "linalg_pivot4", "5" = "linalg_pivot5", "6" = "linalg_pivot6" }
-default = "linalg_pivot4"
-
-[[rule]]
-file = ["linalg/bidiagonal*"]
-by = "auto"
-bands = { "4" = "linalg_spectral4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
-default = "linalg_spectral4"
+bands = { "2" = "linalg_pivot2", "3" = "linalg_pivot3", "4" = "linalg_pivot4", "5" = "linalg_pivot5", "6" = "linalg_pivot6" }
+default = "linalg_core"
 
 [[rule]]
 file = ["linalg/*"]
 by = "auto"
-bands = { "4" = "linalg_spectral4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
-default = "linalg_spectral4"
+bands = { "2" = "linalg_spectral2", "3" = "linalg_spectral3", "4" = "linalg_spectral4", "5" = "linalg_spectral5", "6" = "linalg_spectral6" }
+default = "linalg_core"
 
 [[rule]]
 file = ["sparse*", "io*"]

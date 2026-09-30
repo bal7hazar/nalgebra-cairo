@@ -3,4 +3,4 @@
 //! `nalgebra::linalg::Hessenberg<T, U3>`) by Householder reflections, fully unrolled
 //! (WP 8.5-P16).
 
-pub use nalgebra_linalg_spectral4::linalg::hessenberg::hessenberg3::*;
+pub use nalgebra_linalg_spectral3::linalg::hessenberg::hessenberg3::*;

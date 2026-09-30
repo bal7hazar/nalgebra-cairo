@@ -10,4 +10,4 @@
 //! positive-definite, clustered, rank-deficient Gram and 1-ulp-perturbed matrices) plus one sweep
 //! of margin; see `SymmetricEigen6Trait::new` for the figures.
 
-pub use nalgebra_linalg6::linalg::symmetric_eigen6::*;
+pub use nalgebra_linalg_svd_eigen6::linalg::symmetric_eigen6::*;
