@@ -6,6 +6,8 @@
 //! exact.
 
 pub use nalgebra_core::linalg::lu::perm1_5::*;
+pub use nalgebra_linalg2::linalg::lu::perm1_5::*;
+pub use nalgebra_linalg5::linalg::lu::perm1_5::*;
 pub use nalgebra_types2::base::row_vector2::Perm1PermuteRowsRowVector2;
 pub use nalgebra_types2::base::vector2::Perm1PermuteColumnsVector2;
 pub use nalgebra_types3::base::row_vector3::Perm1PermuteRowsRowVector3;

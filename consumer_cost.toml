@@ -46,8 +46,9 @@ nalgebra_glam = ["nalgebra_glam", "nalgebra_core", "nalgebra_types2", "nalgebra_
 static4_geometry = ["nalgebra_static4", "nalgebra_geometry2", "nalgebra_geometry3", "nalgebra_geometry4",
     "nalgebra_transform2", "nalgebra_transform3"]
 
-# WP 9-NS9: the SVD / eigen, pivoting and factorisation closures (docs/SPLIT.md §6.2, §12.4); WP 9-R1:
-# on the per-dimension types / methods, the decomposition crates unchanged until move R2
-static3_svd = ["nalgebra_static3", "nalgebra_linalg_svd_eigen4"]
-core_pivot = ["nalgebra_core", "nalgebra_linalg_pivot4"]
-static4_factor = ["nalgebra_static4", "nalgebra_linalg4"]
+# WP 9-NS9: the SVD / eigen, pivoting and factorisation closures (docs/SPLIT.md §6.2, §12.4); WP 9-R2:
+# on the per-dimension decompositions (docs/SPLIT.md §18.2: static 2-3 + SVD / eigen 2-3, pivoting
+# 2-4, static 2-4 + LU / Cholesky / QR 2-4; the budgets of §18.2 / §19 come with move R3)
+static3_svd = ["nalgebra_static3", "nalgebra_linalg_svd_eigen2", "nalgebra_linalg_svd_eigen3"]
+core_pivot = ["nalgebra_linalg_pivot2", "nalgebra_linalg_pivot3", "nalgebra_linalg_pivot4"]
+static4_factor = ["nalgebra_static4", "nalgebra_linalg2", "nalgebra_linalg3", "nalgebra_linalg4"]

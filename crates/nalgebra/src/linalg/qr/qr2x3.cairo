@@ -3,4 +3,4 @@
 //! modified Gram-Schmidt, the algorithm of `Qr3` / `Qr4` (see `linalg::qr` for the study of the
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
-pub use nalgebra_linalg4::linalg::qr::qr2x3::*;
+pub use nalgebra_linalg3::linalg::qr::qr2x3::*;

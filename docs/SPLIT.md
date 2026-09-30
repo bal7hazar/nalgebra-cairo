@@ -1132,6 +1132,14 @@ decompositions (29 re-cut sub-crates, the 10 decomposition crates unchanged, no 
 proposal for R2: `GivensRotation` with its methods and traits in `types2`, the `Reflection1..4`
 methods with their structs, `geometry::point::errors` in `core` (`[modules]`), `TransformKernels`
 internal. Next: R2 (decompositions), R3 (closures, release order, READMEs).
+R2 done in one PR (WP 9-R2): the live map is the approved re-cut for every crate (the two maps
+differ by their header only); the 10 decomposition crates became 21 (`linalg_core`, `linalg2..6`,
+`linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; the 10 directories continue with
+their dimension's content, 11 are new); `SvdRightTrait` split per dimension (`SvdRightTrait2..6` in
+`linalg_svd_eigen2..6`, the shared filters in `linalg_core`), `Perm1Trait`..`Perm5Trait` in
+`linalg2..5` (`Perm1Trait` by a new rule, dimension 1 folded into 2), `Cholesky2/3UpdateTrait` in
+`linalg3` / `linalg4`; `gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0. Next:
+R3.
 
 ### 18.7 Owner decisions on the re-cut (2026-09-29, validated in the orchestrator session)
 

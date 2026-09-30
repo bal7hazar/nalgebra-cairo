@@ -3,4 +3,4 @@
 //! `nalgebra::linalg::Bidiagonal<T, U2, U2>`) by Householder reflections, fully unrolled
 //! (WP 8.5-P16).
 
-pub use nalgebra_linalg_spectral4::linalg::bidiagonal::bidiagonal2::*;
+pub use nalgebra_linalg_spectral2::linalg::bidiagonal::bidiagonal2::*;

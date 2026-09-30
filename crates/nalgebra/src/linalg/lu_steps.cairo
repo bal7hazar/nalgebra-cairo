@@ -4,8 +4,8 @@
 //! (`src/linalg/lu.rs`), as free functions over the static squares (`gauss_step(ref m, diag, i)`).
 //! The 0-based step index is a run-time value: each square matches it on its unrolled steps.
 
-use nalgebra_linalg4::linalg::lu::lu2::Lu2Trait;
-use nalgebra_linalg4::linalg::lu::lu3::Lu3Trait;
+use nalgebra_linalg2::linalg::lu::lu2::Lu2Trait;
+use nalgebra_linalg3::linalg::lu::lu3::Lu3Trait;
 use nalgebra_linalg4::linalg::lu::lu4::Lu4Trait;
 use nalgebra_static6_wide::linalg::lu::lu6::Lu6Trait;
 use nalgebra_types2::base::matrix2::Matrix2;

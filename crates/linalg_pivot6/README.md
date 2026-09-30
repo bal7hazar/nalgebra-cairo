@@ -1,37 +1,12 @@
 # nalgebra_linalg_pivot6
 
-The column-pivoting QR, the full-pivoting LU and the LBLᵀ decomposition of dimension 6, of [nalgebra-cairo](https://github.com/bal7hazar/nalgebra-cairo),
-the Cairo port of the Rust `nalgebra` crate on `fixed::Fixed` (Q32.32), built for provable game
-physics.
+Column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6.
 
-## What it holds
+Part of [nalgebra-cairo](https://github.com/bal7hazar/nalgebra-cairo), the Cairo port of the Rust
+`nalgebra` crate on `fixed::Fixed` (Q32.32), split per dimension (docs/SPLIT.md §18: a number in a
+crate name is exactly that dimension). Upstream's module paths are kept (`nalgebra_linalg_pivot6::<module
+path>` is `nalgebra::<module path>`); most users depend on the facade `nalgebra`, which re-exports
+every sub-crate at its 0.1.0 paths. Modules under `internal` hold items that are crate-private in
+`nalgebra` 0.1.0: no stability promise.
 
-- `linalg::col_piv_qr`: `A·P = Q·R` by Householder reflections, every shape with 6 rows or 6
-  columns (`ColPivQr6`, `ColPivQr6x1` ..);
-- `linalg::full_piv_lu`: `P·A·Q = L·U` of the same shapes (`FullPivLu6`, `FullPivLu6x1` ..);
-- `linalg::lblt`: the Bunch-Kaufman `P·A·Pᵀ = L·B·Lᵀ` of `Matrix6` (`Lblt6`).
-
-Upstream's module paths are kept: `nalgebra_linalg_pivot6::linalg::full_piv_lu::full_piv_lu6::FullPivLu6`
-is `nalgebra::linalg::full_piv_lu::full_piv_lu6::FullPivLu6` (docs/SPLIT.md §3.1). The shapes up
-to 4x4 are in `nalgebra_linalg_pivot4`, those of dimension 5 in `nalgebra_linalg_pivot5`. It
-depends on [`nalgebra_core`](../core/README.md), [`nalgebra_shapes5`](../shapes5/README.md), [`nalgebra_shapes6`](../shapes6/README.md) and [`nalgebra_static6_wide`](../static6_wide/README.md) (`Perm6` for the permutations).
-
-## When to depend on it
-
-Depend on it (and the crates it depends on) when you need rank-revealing factorisations of the
-dimension-6 shapes without the rest of the library. For upstream's whole API at upstream's paths, depend on the facade `nalgebra`, which re-exports
-every sub-crate at the 0.1.0 paths.
-
-## Features
-
-All on by default, as in `nalgebra` (whose features of the same names forward to these):
-`col_piv_qr`, `full_piv_lu`, `lblt` (one module each).
-
-## `internal`
-
-This crate has no `internal` module: it shares no crate-private item of `nalgebra` 0.1.0 with the
-crates above it.
-
-## License
-
-MIT.
+Minimal README of the re-cut (WP 9-R2); the full one comes with move R3.

@@ -28,8 +28,8 @@
 // the in-crate tests reach the internal items of the module (and the other modules' tests
 // through `crate::linalg::...`) here (WP 9-NS9)
 #[cfg(test)]
-pub(crate) use nalgebra_linalg_svd_eigen4::internal::linalg::svd2::Svd2InternalTrait;
-pub use nalgebra_linalg_svd_eigen4::linalg::svd2::*;
+pub(crate) use nalgebra_linalg_svd_eigen2::internal::linalg::svd2::Svd2InternalTrait;
+pub use nalgebra_linalg_svd_eigen2::linalg::svd2::*;
 
 /// Test-only field-wise equality (upstream `Svd2` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.

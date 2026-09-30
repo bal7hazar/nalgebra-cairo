@@ -14,8 +14,8 @@
 // the in-crate tests reach the internal items of the module (and the other modules' tests
 // through `crate::linalg::...`) here (WP 9-NS9)
 #[cfg(test)]
-pub(crate) use nalgebra_linalg_svd_eigen4::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
-pub use nalgebra_linalg_svd_eigen4::linalg::symmetric_eigen2::*;
+pub(crate) use nalgebra_linalg_svd_eigen2::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
+pub use nalgebra_linalg_svd_eigen2::linalg::symmetric_eigen2::*;
 
 /// Test-only field-wise equality (upstream `SymmetricEigen2` has no `PartialEq`): the tests and the
 /// benchmarks compare factors through it.

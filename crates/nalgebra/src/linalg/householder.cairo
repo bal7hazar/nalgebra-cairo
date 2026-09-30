@@ -6,4 +6,4 @@
 //! `clear_row_unchecked` and `assemble_q` belong to the Householder reductions of P16
 //! (`Bidiagonal`, `Hessenberg`, `SymmetricTridiagonal`) and come with them.
 
-pub use nalgebra_linalg4::linalg::householder::*;
+pub use nalgebra_linalg_core::linalg::householder::*;

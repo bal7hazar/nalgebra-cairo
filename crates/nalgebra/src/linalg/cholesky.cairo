@@ -31,6 +31,8 @@
 //! When no square root is wanted, upstream's `UDU` (`crate::linalg::udu`, on the crate-internal
 //! `LDLᵀ` kernel of DESIGN D6) factorises without one, indefinite symmetric matrices included.
 
+pub use nalgebra_linalg2::linalg::cholesky::*;
+pub use nalgebra_linalg3::linalg::cholesky::*;
 pub use nalgebra_linalg4::linalg::cholesky::*;
 pub use nalgebra_linalg6::linalg::cholesky::*;
 

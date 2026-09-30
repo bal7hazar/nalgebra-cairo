@@ -6,6 +6,8 @@
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
+use nalgebra_linalg_core::internal::linalg::svd::kernels::SvdRightImpl;
+use nalgebra_linalg_svd_eigen2::internal::linalg::svd::kernels::SvdRightImpl2;
 use nalgebra_types2::base::matrix2::Matrix2;
 use nalgebra_types2::base::vector2::Vector2;
 use nalgebra_types2::internal::base::sym_matrix2::SymMatrix2;
@@ -14,7 +16,6 @@ use nalgebra_types4::base::matrix4::Matrix4;
 use nalgebra_types4::base::matrix4x2::Matrix4x2;
 use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
-use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use crate::linalg::svd::kernels::SvdComplete4Impl;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Matrix4x2<T>`:
@@ -413,14 +414,14 @@ pub(crate) impl Svd4x2InternalImpl<
     /// The right singular vectors (the columns of `v`, ascending eigenvalue order of `MᵀM`).
     #[inline(always)]
     fn right(m: Matrix4x2<T>) -> Matrix2<T> {
-        SvdRightImpl::<T>::right2(Self::gram(Self::normalised(m)))
+        SvdRightImpl2::<T>::right2(Self::gram(Self::normalised(m)))
     }
 
     /// `right`, or `None` when the eigen decomposition of `MᵀM` did not converge within `eps`.
     #[inline(always)]
     fn try_right(m: Matrix4x2<T>, eps: T) -> Option<Matrix2<T>> {
         let _ = eps;
-        Some(SvdRightImpl::<T>::right2(Self::gram(Self::normalised(m))))
+        Some(SvdRightImpl2::<T>::right2(Self::gram(Self::normalised(m))))
     }
 
     /// `w_i = M v_i` (`MatrixMul::mul_mat`: one fused sum per component) and `σ_i = |w_i|`

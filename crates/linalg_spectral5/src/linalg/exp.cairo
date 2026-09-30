@@ -10,7 +10,7 @@ use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use nalgebra_linalg_spectral4::internal::linalg::exp::SINGULAR_PADE;
+use nalgebra_linalg_core::internal::linalg::exp::SINGULAR_PADE;
 use nalgebra_static5::base::matrix5::Matrix5Trait;
 use nalgebra_types5::base::matrix5::Matrix5;
 use nalgebra_types5::linalg::lu::perm1_5::Perm5;
