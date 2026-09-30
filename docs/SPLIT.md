@@ -1317,7 +1317,7 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
   "committed brief"; the `nalgebra` row of `OPERATIONS.md` §4 still names
   `~/orchestrator/nalgebra-cairo/briefs/`, the project manager's file).
 
-**Next, in order.**
+**Next, in order** (as planned at 15:40 UTC; the order is superseded by the 16:45 update below).
 - **R2** (`docs/briefs/wp-9-r2.md`, Opus 5.5) and **R3** (`docs/briefs/wp-9-r3.md`, the `sonnet`
   alias) launched together once this PR is on `main`, each as a `nalgebra-wp-9-r<n>` unit. R3 has two
   phases so that its files never overlap R2's: phase 1 now (non-decomposition READMEs, the facade

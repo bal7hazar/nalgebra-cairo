@@ -55,13 +55,18 @@ the crate is cut. Two phases:
    rows cut (same format; header "PROPOSAL, WP 9-NS12b"). `mapplan.py --map` on it (lines, direct
    dependencies, acyclicity) and `cratemap.py --map tools/split/crates.dyncut.toml --anchors
    --no-placement` (0 findings) are light and may run locally.
-4. **Measured on the runner**: push the branch, then
-   `gh workflow run split-measure.yml --ref feat/wp-9-ns12b -f map=tools/split/crates.dyncut.toml
-   -f source=a35e55b2d2d43176dc6b23fca585caaa92754bb0 -f crates=<the new crates, and nalgebra_dynamic
-   on the current map as the reference> -f closures=none -f label="WP 9-NS12b"` (read the workflow's
-   inputs first; measure the reference in the same run, since runners differ between runs), `gh run
-   watch`, and read the job summary / artifact. If the prototype cannot reproduce the real tree's
-   figure, say what the phase-2 CI will have to confirm and with what margin.
+4. **Measured on the runner**, in two runs of `split-measure.yml` (read its inputs first: a run
+   plans ONE map, and its `crates` input selects crates of that map only): push the branch, then
+   (a) the proposal: `gh workflow run split-measure.yml --ref feat/wp-9-ns12b
+   -f map=tools/split/crates.dyncut.toml -f source=a35e55b2d2d43176dc6b23fca585caaa92754bb0
+   -f crates=<the new crates> -f closures=none -f label="WP 9-NS12b proposal"`, and (b) the
+   reference: the same with `-f map=tools/split/crates.recut.toml -f crates=nalgebra_dynamic
+   -f label="WP 9-NS12b reference"`; `gh run watch` each and read the job summaries / artifacts.
+   Every marginal is its own job on its own runner, and runners differ by up to about 30 % between
+   jobs (the workflow's header): compare the proposal with the reference through their medians and
+   IQRs, and keep every new crate under the gate with a margin that covers that spread. If the
+   prototype cannot reproduce the real tree's figure, say what the phase-2 CI (the enforcing
+   `Consumer cost` job on the real tree) will have to confirm, and with what margin.
 5. `REPORT.md`, section "Phase 1": the attribution (item 1), the proposed crates (name, one-line
    content in §18.1's style, lines, direct dependencies, runner marginal with IQR), the alternatives,
    the run links, what phase 2 will change (map rows, generator, packages, facade, `ci.yml`), and the
@@ -85,9 +90,9 @@ the crate is cut. Two phases:
 
 ### 3.1 Phase 1
 
-Allowed: `tools/split/crates.dyncut.toml` (new). Nothing else is edited. If a tool of `tools/split/`
-needs a fix to plan or measure the cut, do not edit it (R2 may be editing it): report the fix under
-Escalations, with a workaround if one exists.
+Allowed: `tools/split/crates.dyncut.toml` (new; this lot owns it, R2 never creates it). Nothing else
+is edited. If a tool of `tools/split/` needs a fix to plan or measure the cut, do not edit it (R2 may
+be editing it): report the fix under Escalations, with a workaround if one exists.
 
 ### 3.2 Phase 2
 
