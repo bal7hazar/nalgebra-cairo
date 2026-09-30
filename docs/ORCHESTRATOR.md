@@ -79,6 +79,9 @@ systemd-run --user --collect --unit=nalgebra-$wp --description="$title" \
   -E PATH="$HOME/orchestrator/shims:$HOME/.venvs/nalgebra/bin:$PATH" -E HOME="$HOME" \
   -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 \
   --working-directory="$wt" scripts/agent.sh "$wt" claude "$model" "$wt/docs/briefs/$wp.md" "$log"
+# the drop-in ~/.config/systemd/user/nalgebra-.service.d/50-agent-limits.conf (MemoryMax=20G, Nice,
+# OOMScoreAdjust) wins over -p MemoryMax: set the cap on the running unit
+systemctl --user set-property --runtime nalgebra-$wp MemoryMax=14G
 ```
 
 - The shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`;

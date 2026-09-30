@@ -29,11 +29,11 @@ outside `src/`, one README per package).
 | NS3..NS11 ✅ | The moves, bottom-up, one family band per PR, each with zero step change (`gas_compare.py`) and unchanged public paths (`path_proof`): the 27-crate split (#66-#76); NS11b (#77) no-op facade features, `scripts/release.py`, enforcing `Consumer cost` | NS1b |
 | NS12a ✅ | Per-closure budgets in `consumer_cost.py`, `scripts/packages_table.py`, the PACKAGES.md artifact (#78) | NS11b |
 | NS13 ✅ | Re-cut plan (owner, 2026-09-29: a number in a crate name means exactly that dimension): `docs/SPLIT.md` §18, `tools/split/crates.recut.toml`, 54 packages (#79) | NS12a |
-| R1 | Re-cut move 1: types, methods, geometry, transforms, statistics per dimension, the 8 type-level kernels (#80) | NS13 |
+| R1 ✅ | Re-cut move 1: types, methods, geometry, transforms, statistics per dimension, the 8 type-level kernels (#80) | NS13 |
 | R2 | Re-cut move 2: `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`, `SvdRightTrait` per dimension, `Perm*Trait` to `linalg2..5` | R1 |
-| R3 | Release plumbing on the 54 names: closures with the §18.2 / §19 budgets, release order, one README per package, facade README ("Dimensions 5 and 6"), `docs/PACKAGES.md`, CHANGELOG 0.1.1 | R1 (linalg rows after R2) |
-| NS12 | `nalgebra_dynamic` cut under gate 2 (new names to the project manager first), `--report-only-marginals` dropped, `split-measure.yml` repointed or retired | R2 |
-| 0.1.1 | Release of the 54 packages (`scripts/release.py`, dry run first), on the project manager's written go | R3, NS12 |
+| R3 | Release plumbing on the final names (phase 2 after NS12b): closures with the §18.2 / §19 budgets, release order, one README per package, facade README ("Dimensions 5 and 6"), `docs/PACKAGES.md`, CHANGELOG 0.1.1 | R1 (linalg rows after R2) |
+| NS12b | `nalgebra_dynamic` cut under gate 2: plan measured on the runner while R2 runs, then the move after R2 (new names to the project manager first), `--report-only-marginals` dropped, `split-measure.yml` repointed or retired | R2 |
+| 0.1.1 | Release of every package (`scripts/release.py`, dry run first), on the project manager's written go | R3, NS12b |
 
 Gates, precisely (programme session, 2026-09-28): gate 2 (5 s / 1 GB) is a crate's **marginal** cost,
 cost(empty consumer of the crate) − cost(empty consumer of its direct dependencies together); gate 3
