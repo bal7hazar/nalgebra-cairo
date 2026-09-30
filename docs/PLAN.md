@@ -1,8 +1,9 @@
 # Execution plan
 
-> **State (2026-09-28): `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 are published** (M8 done, parity
-> 99.9 %). Active: **M9, package split behind a facade** (owner decision 2026-09-28). See
-> [HANDOFF.md](HANDOFF.md).
+> **State (2026-09-30): `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 are published** (M8 done, parity
+> 99.9 %). Active: **M9, package split behind a facade** (owner decision 2026-09-28), now the
+> per-dimension re-cut (R1-R3, `docs/SPLIT.md` §18); its dated status is `docs/SPLIT.md` §20 and the
+> sections after it. Process: [ORCHESTRATOR.md](ORCHESTRATOR.md).
 
 ## M9 — Package split under the size rule (owner, 2026-09-28)
 
@@ -25,7 +26,14 @@ outside `src/`, one README per package).
 | NS1 ✅ | Plan `docs/SPLIT.md` (#62), approved by the programme session with conditions (SPLIT §12) | NS0 |
 | NS2 | Tooling: generators emit per crate (names from a configuration), `gas_compare.py`, `path_proof`, test-import rewriter, `api_parity.py` over several crates | NS1 |
 | NS1b | Final crate names (dimension + content, no bare suffix), small-crate merges, GitHub-runner measurement of the declared closures (median < 15 s); list approved by the programme session and shown to the owner | NS2 |
-| NS3..NS11 | The moves, bottom-up, one family band per PR, each with zero step change (`gas_compare.py`) and unchanged public paths (`path_proof`) | NS1b |
+| NS3..NS11 ✅ | The moves, bottom-up, one family band per PR, each with zero step change (`gas_compare.py`) and unchanged public paths (`path_proof`): the 27-crate split (#66-#76); NS11b (#77) no-op facade features, `scripts/release.py`, enforcing `Consumer cost` | NS1b |
+| NS12a ✅ | Per-closure budgets in `consumer_cost.py`, `scripts/packages_table.py`, the PACKAGES.md artifact (#78) | NS11b |
+| NS13 ✅ | Re-cut plan (owner, 2026-09-29: a number in a crate name means exactly that dimension): `docs/SPLIT.md` §18, `tools/split/crates.recut.toml`, 54 packages (#79) | NS12a |
+| R1 | Re-cut move 1: types, methods, geometry, transforms, statistics per dimension, the 8 type-level kernels (#80) | NS13 |
+| R2 | Re-cut move 2: `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`, `SvdRightTrait` per dimension, `Perm*Trait` to `linalg2..5` | R1 |
+| R3 | Release plumbing on the 54 names: closures with the §18.2 / §19 budgets, release order, one README per package, facade README ("Dimensions 5 and 6"), `docs/PACKAGES.md`, CHANGELOG 0.1.1 | R1 (linalg rows after R2) |
+| NS12 | `nalgebra_dynamic` cut under gate 2 (new names to the project manager first), `--report-only-marginals` dropped, `split-measure.yml` repointed or retired | R2 |
+| 0.1.1 | Release of the 54 packages (`scripts/release.py`, dry run first), on the project manager's written go | R3, NS12 |
 
 Gates, precisely (programme session, 2026-09-28): gate 2 (5 s / 1 GB) is a crate's **marginal** cost,
 cost(empty consumer of the crate) − cost(empty consumer of its direct dependencies together); gate 3
@@ -37,8 +45,8 @@ closure, the first consumer to fix: +37 s / +5.5 GB today).
 No public path may change (glam-cairo's cut, PK-G section 9: Cairo finds a core-trait impl without an
 import only in the type's own module, and has no supertraits, so types and the methods returning them stay
 with the type's crate); target: a non-breaking **0.1.x** release through the facade, like glam 0.4.1.
-Releases: no publication without the programme session's written go; sub-crates share the repository
-version.
+Releases: no publication without the project manager's written go (`docs/ORCHESTRATOR.md`,
+"Releases"); sub-crates share the repository version.
 
 Execution model: one **orchestrator** session owns the plan, the workspace manifests, CI, the gas
 snapshot and the merges. Work packages are delegated to **sub-agents running in parallel**, each
@@ -127,9 +135,9 @@ The stack mirrors the Rust ecosystem repository by repository (owner's decision;
 glam-cairo `docs/SPLIT.md`): bal7hazar/fixed-cairo (`fixed`, the scalar), bal7hazar/simba-cairo
 (`simba`, the scalar traits), bal7hazar/nalgebra-cairo (this repository, `nalgebra`),
 bal7hazar/glam-cairo, bal7hazar/glamx-cairo, bal7hazar/rapier-cairo (renamed from `*.cairo`; old
-URLs redirect). Escalations (scalar included) and cross-repository questions go to the
-programme-management session "Angry Birds Cairo orchestration" (`/home/claude/projects/pm/`), which
-relays them to the sibling orchestrators.
+URLs redirect). Escalations (scalar included) and cross-repository questions go to the project
+manager of `slingfall` (notebook `/home/claude/projects/pm/`), which relays them to the sibling
+tracks.
 
 | step | content | state |
 |---|---|---|
@@ -182,11 +190,9 @@ tolerance first (a variant outside the reference tolerance never ships), then st
 closeness to upstream's formula. A parity item that can only be ported with a costlier formulation
 is reported to the orchestrator rather than ported as is. The strict-parity target of 0.1.0 stands.
 
-Execution: at most two agents at a time (machine budget: six agents across the programme), one
-whenever rapier-cairo or the programme tasks (`pm-*` units) need it: nalgebra-cairo is not on the critical path of the
-programme's first game (programme management, 2026-09-25; machine rules in
-`/home/claude/projects/pm/OPERATIONS.md` §3). Opus 5.5 for numerics and generator design, Sonnet
-for mechanical template work; one PR per WP; parity figures reported per PR.
+Execution: models, machine budget and launchers are those of `slingfall/OPERATIONS.md` §2-§4, the
+track's recipes are in [ORCHESTRATOR.md](ORCHESTRATOR.md); one PR per WP; parity figures reported
+per PR.
 
 ## M6 — Interop and release — superseded by M8 (P19 `nalgebra_glam`, 8.7 release)
 

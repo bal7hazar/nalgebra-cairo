@@ -1,93 +1,116 @@
-# Sub-agent strategy (orchestrator)
+# Orchestration of the nalgebra track
 
-Instructions for the orchestrator session. This file is meant to be pasted verbatim into the
-prompt of an orchestrator of another repository (nalgebra-cairo, rapier-cairo). Porter-side rules
-live in `AGENTS.md`, design decisions in `docs/DESIGN.md`, sequencing in `docs/PLAN.md`.
+What the orchestrator of the nalgebra track (repositories simba-cairo and nalgebra-cairo) adds to
+its standard role, which Nexus keeps (`bal7hazar/nexus`), and to the operating document of the
+project, [`slingfall/OPERATIONS.md`](https://github.com/bal7hazar/slingfall/blob/main/OPERATIONS.md)
+(models §2, machine and capacity §3, launchers §4, merge gates and audits §6, releases §7). This
+file never restates them; where it would contradict them, they win. Porter-side rules live in
+`AGENTS.md`, design decisions in `docs/DESIGN.md`, sequencing in `docs/PLAN.md`, the package split
+and its dated status in `docs/SPLIT.md`.
 
-Role of the main session: orchestrate, split, brief, review, merge. Never implement anything
-large directly.
+## Line and records
 
-## Execution: local CLIs, not the Agent tool
+- The orchestrator session is created by the project manager of `slingfall` and reports to it
+  through this repository: the dated status of the track in `docs/SPLIT.md` and `docs/PLAN.md`; a
+  message only for a decision, a blocker, or an objective done. Escalations and cross-repository
+  questions (the scalar in fixed-cairo, glam-cairo, rapier-cairo) go to the project manager.
+- Machine-local archives, `~/orchestrator/nalgebra-cairo/`: `reports/` (every agent's `REPORT.md`,
+  archived before its merge), `logs/`, `wt/` (the agents' worktrees), `refs/` (nalgebra-rs 0.35.0
+  sources), `escalations/`, and `briefs/` (the briefs given before 2026-09-30, when they were not
+  committed).
 
-- The Agent tool burns the orchestrator session's quota: use it only for short, read-only
-  research.
-- Every sub-task runs in its own git worktree + branch (`feat/<module>`), launched in the
-  background with its output redirected to a log file.
-- Implementation work packages run on the **claude CLI only** (account distinct from the session),
-  Opus 5.5 or Sonnet 5 by difficulty, never Fable:
-  `claude -p "$(cat brief.md)" --model <sonnet|claude-opus-5-5> --dangerously-skip-permissions --name <task>`;
-  resume with context: `claude --continue -p "<follow-up>"` in the same worktree.
-- The codex CLI is used sparingly and **only for audits and second opinions** (a review of a PR, a
-  numerics cross-check), never for an implementation lot (owner rule, restated 2026-09-25, recorded
-  in the programme's `pm/decisions/2026-09-25-codex-audits-only.md`):
-  `codex exec -C <worktree> -m <model> -c model_reasoning_effort=<low|medium|high|xhigh> --dangerously-bypass-approvals-and-sandbox -o REPORT.md "$(cat brief.md)"`.
-- The agent writes a `REPORT.md` (not committed) at the root of its worktree: the orchestrator
-  reads that file and the log, not the transcript.
-- On a shared machine, launch each agent as a systemd user unit so that it survives desktop-session
-  restarts, with an OOM policy, the build-lock shims and long Bash timeouts (a headless `claude -p`
-  ends when its turn ends: agents must never background a command and stop):
-  `systemd-run --user --collect --unit=<repo>-<wp> -p OOMPolicy=continue -E PATH="$HOME/orchestrator/shims:$PATH" -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 --working-directory=<wt> scripts/agent.sh <wt> claude <model> <brief> <log>`;
-  the shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`.
-- Test packages: an agent that needs a new test-only package (compile budget ≈ 7 GB each) adds the
-  workspace member and its CI matrix entry; the orchestrator adds the new check to the required
-  status checks at merge time (never before: a required check that does not run blocks every PR).
+## Models
 
-## Model choice by difficulty
+By kind of task, as `OPERATIONS.md` §2 says. The launcher takes a claude CLI model name
+(`claude-opus-5-5`, or the alias `sonnet` for mechanical lots). The model that ran is read, never
+assumed, from the agent's session transcript, and titles its unit, the orchestrator's background
+task and the records:
+`grep -oh '"model":"[^"]*"' ~/.claude/projects/-home-claude-orchestrator-nalgebra-cairo-wt-<wp>/*.jsonl | sort | uniq -c`.
 
-| difficulty | claude CLI (implementation) | codex CLI (audits only) | examples |
-|---|---|---|---|
-| mechanical, well framed | Sonnet 5 | `gpt-5.5` or `gpt-5.6-*` (effort `medium`) | template-generated code, test compaction, spec alignment, benching variants already identified |
-| standard port with numerics | Opus 5.5 | `gpt-5.6-*` (effort `high`) | a new module: kernels, tests, golden vectors, benches |
-| genuinely complex | Opus 5.5 (Fable is not used for sub-agents) | `gpt-6-astra` (effort `xhigh`) | novel numerics, hard debugging, cross-module design, API arbitration |
+## The brief
 
-- The strong models are not the default, but do not rule them out when the problem warrants
-  them.
-- The smaller the model (or the lower the effort), the tighter the brief must be.
-- The codex model tiering is inferred from the names (`gpt-6-astra` above `gpt-5.6-*`, which are
-  above `gpt-5.5`); adjust it if the actual ranking is known. Observed on 2026-09-20: the ChatGPT
-  account refuses `gpt-5.6` ("not supported when using Codex with a ChatGPT account"); `gpt-5.5`
-  works.
+One brief per task, committed on `main` before the launch as `docs/briefs/<wp>.md` (a
+documents-only change). The implementer's branch is cut from `main` after it, so the Codex reviewer
+finds it on the pull request's branch (`nexus review ... --brief docs/briefs/<wp>.md`). Every brief
+tells the agent to read first the blocks it shares with the others: `docs/briefs/_env.md` (the
+machine: shims, foreground only, crate-scoped checks) and, for a package-split move,
+`docs/briefs/_move_common.md`. Content, in this order:
 
-## The brief (mandatory, in this order)
-
-1. Files to read first (`AGENTS.md`, `docs/DESIGN.md`, style precedents on `main`).
+1. Files to read first (`AGENTS.md`, `docs/DESIGN.md`, style precedents on `main`, the reports of
+   the previous lots).
 2. Strict scope: a file allowlist; everything else is forbidden. Shared files (`lib.cairo`,
    `Scarb.toml`, CI, design docs, CHANGELOG, status) belong to the orchestrator: the agent lists
    its needs in an "Escalations" section of the report instead of editing them.
 3. Expected API (exact names from the source being ported), numeric semantics, what is
    explicitly deferred (DEFER).
-4. Efficiency rules and numeric targets (gas/steps); variants to bench when the formulation is
+4. Efficiency rules and numeric targets (gas / steps); variants to bench when the formulation is
    not obvious (the winner in the library, the losers in `benches::alt` with their benches).
-5. Tests: table-driven, compile budget (max file size, max number of fuzz tests), golden vectors
-   from the reference oracle, panics with exact messages.
+5. Tests: table-driven, compile budget (max file size, max number of fuzz tests; the compile budget
+   of the test crates is the first cause of CI failure observed), golden vectors from the reference
+   oracle, panics with exact messages.
 6. Definition of done: crate-scoped checks (the touched packages; never the whole-workspace gate on
-   the shared machine, the pull-request CI is the full gate) run in the **foreground** (never a background command
-   followed by the end of the turn: in headless mode the session stops), gas snapshots
-   regenerated, conventional commits with the trailer, push, PR via `gh pr create` following the
-   template, `gh pr checks --watch` until green, **never merge**, `REPORT.md` in the imposed
-   format (summary, API, gas table, deviations, deferred items, requested re-exports,
+   the shared machine, the pull-request CI is the full gate) run in the **foreground** (never a
+   background command followed by the end of the turn: in headless mode the session stops), gas
+   snapshots regenerated, conventional commits with the trailer, push, PR via `gh pr create`
+   following the template, `gh pr checks --watch` until green, **never merge**, `REPORT.md` in the
+   imposed format (summary, API, gas table, deviations, deferred items, requested re-exports,
    escalations, PR URL).
 7. "Work autonomously, do not ask questions, do not widen the scope."
 
-## Conflict-free parallelism
+Parallel lots: pre-declare every stub (modules, tests, benches, golden files) in the shared files
+before launching a wave, one gas snapshot per module, so that the allowlists of the lots running at
+the same time do not overlap; a wave starts when its dependencies are merged.
 
-- Pre-declare every stub (modules, tests, benches, golden files) in the shared files before
-  launching a wave; one gas snapshot per module. Parallel PRs then never touch a common file.
-- Waves follow the dependency graph; a wave starts when its dependencies are merged.
-- After each merge, the orchestrator alone updates re-exports, status, changelog and design
-  decisions, then pushes to `main`.
+## Launching, following and resuming an implementer
 
-## Quality control and quota
+Implementers start with the track's launcher, `scripts/agent.sh`, as a systemd user unit
+(`OPERATIONS.md` §4) until that document names `nexus` for the track; reviews and audits go through
+`nexus`. Before every launch: the capacity rule of `OPERATIONS.md` §3 (`~/orchestrator/capacity.json`)
+and `nexus resources` (the launcher and `nexus` do not count each other's agents).
 
-- Merge only on green CI + a review of the report (API parity, deviations, gas table).
-- An interrupted agent (rate limit, end of turn) is resumed with `claude --continue -p` rather
-  than relaunched from scratch.
-- Watch the compile budget of the test crates: it is the first cause of CI failure observed.
+```sh
+wp=wp-9-r2; model=claude-opus-5-5; title="[Opus 5.5] WP 9-R2 <slug>"
+wt=~/orchestrator/nalgebra-cairo/wt/$wp; log=~/orchestrator/nalgebra-cairo/logs/$wp.log
+git fetch -q origin && git worktree add -b feat/$wp "$wt" origin/main
+systemd-run --user --collect --unit=nalgebra-$wp --description="$title" \
+  -p MemoryMax=14G -p OOMPolicy=continue \
+  -E PATH="$HOME/orchestrator/shims:$PATH" -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 \
+  --working-directory="$wt" scripts/agent.sh "$wt" claude "$model" "$wt/docs/briefs/$wp.md" "$log"
+```
+
+- The shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`.
+  A session whose `systemctl --user` fails with "org.freedesktop.systemd1 exited" is on another
+  session bus: prefix the command with `DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus`.
+- Follow: one background task of the orchestrator session per agent, titled with the model that ran
+  (`[Opus 5.5] WP 9-R2 <slug>`), ending when the unit ends; then the orchestrator reads `REPORT.md`
+  at the worktree root and the log, not the transcript.
+- An interrupted agent, or one whose work needs a fix, is resumed in its worktree with its context,
+  never started again: the same recipe with the unit `nalgebra-$wp-<k>` and
+  `scripts/agent.sh "$wt" claude "$model" "$wt/docs/briefs/$wp.md" "$log" --resume "<what to do>"`.
+- Test packages: an agent that needs a new test-only package (compile budget ≈ 7 GB each) adds the
+  workspace member and its CI matrix entry; the orchestrator adds the new check to the required
+  status checks at merge time (never before: a required check that does not run blocks every PR).
+
+## Closing a task
+
+1. Read `REPORT.md` and the pull request: scope within the allowlist, deviations, the gas / step
+   table, and for a move the proofs of its checklist (below), checked in the CI logs. Archive
+   `REPORT.md` to `~/orchestrator/nalgebra-cairo/reports/<wp>.md` before the merge
+   (`gh pr merge --delete-branch` removes the worktree).
+2. With every check green, the Codex review:
+   `nexus review --project slingfall --task <9-R2> --repository nalgebra-cairo --branch feat/<wp> --brief docs/briefs/<wp>.md`,
+   then `nexus wait <handle>` as a background task titled with the reviewer's model, and the audits
+   `OPERATIONS.md` §6 requires for the kind of task. A finding is verified before it goes back to
+   the implementer by `--resume`; a new review follows on the new head.
+3. Squash merge, with the verdict in the merge body (`Codex review: <handle> PASS`, or
+   `Codex review: none — <reason>` in the cases the standard allows); then the orchestrator alone
+   updates re-exports, status, changelog and design decisions.
 
 ## Repository tooling
 
 - `scripts/agent.sh <worktree> <claude|codex> <model> <brief.md> <log> [--resume "<follow-up>"]`
-  wraps the two CLIs with this strategy (framing system prompt, `--name`, `REPORT.md`).
+  wraps the CLI with the framing system prompt, `--name` and `REPORT.md`; implementation lots use
+  `claude` only.
 - Gas snapshots live in `gas/<module>.json` (one per CI shard); `snforge test -p <pkg> | python3
   scripts/gas_report.py --update gas/` regenerates a package's shards, `./scripts/check.sh --update`
   all of them (orchestrator only), CI checks each shard's file.
@@ -105,10 +128,9 @@ large directly.
   automatically) and the ENFORCING job `Consumer cost` that merges them into one verdict (the
   required check; `report_only` entries of `consumer_cost.toml`, the facade among them, are shown and
   never gated; `--report-only-marginals` is the transition switch that gates lines and closures
-  only: ON in `ci.yml` until the re-cut of the crate map, owner decision 2026-09-29, because
-  `nalgebra_dynamic`'s marginal median is 8.7 s on the current map; `--merge` accepts it too, to
-  re-judge downloaded shard files). A deeper measurement of a few crates: `--package A --package B --no-closures --repeat 9
-  --interleave`.
+  only: ON in `ci.yml` until `nalgebra_dynamic` is cut under gate 2, owner decision 2026-09-29 and
+  `docs/SPLIT.md` §20; `--merge` accepts it too, to re-judge downloaded shard files). A deeper
+  measurement of a few crates: `--package A --package B --no-closures --repeat 9 --interleave`.
 - `scripts/facade_features.py` (CI job `Facade features`): consumers of the workspace facade naming
   its five no-op features (`statistics`, `blas`, `dynamic`, `sparse`, `io`; docs/SPLIT.md §17) build,
   with and without the default features; `--resolve` is the cheap local form.
@@ -142,25 +164,19 @@ large directly.
 
 ## Releases (registry publication and tags)
 
-Standing delegation, confirmed by the owner in this repository's orchestrator session on
-2026-09-25: the go for a registry release or a release tag of `simba` (simba-cairo) or `nalgebra`
-(nalgebra-cairo) is given **in writing by the programme session ("Angry Birds Cairo
-orchestration", the project lead)** on the owner's behalf, under the conditions of
-`/home/claude/projects/pm/decisions/2026-09-25-release-go-delegated-to-pm.md`:
+On the project manager's written go, under the conditions of `OPERATIONS.md` §6-§7 (the owner's
+delegation of 2026-09-25, `pm/decisions/2026-09-25-release-go-delegated-to-pm.md`). What this
+repository adds:
 
 1. CI green on `main` at the release commit (every shard, the Workspace job, gas snapshot and shard
-   coverage: the whole-workspace gate), and this repository's release checklist followed (gas snapshots, `api_parity.py --check`,
-   CHANGELOG entry, `repository` metadata, `scarb package` verified).
+   coverage: the whole-workspace gate), and this repository's release checklist followed (gas
+   snapshots, `api_parity.py --check`, CHANGELOG entry, `repository` metadata, `scarb package`
+   verified).
 2. Version policy: a numeric change is a MINOR bump; pre-releases (`0.1.0-alpha.N`) for packages
    consumed before their API is stable; a release that changes numeric results is scheduled so
    that consumers regenerate their goldens.
 3. Publication order follows the dependency chain (`fixed` → `simba` → `nalgebra`), each consumer
-   bumping in its own PR.
-4. The go arrives as a cross-session message from the programme session and is recorded in its
-   `decisions/` or `STATUS.md`; the orchestrator then tags and runs `scarb publish -p <package>`
-   (the registry token stays in the owner's environment and is never printed).
-
-Not delegated: money, accounts, credentials, and this session's permission settings.
+   bumping in its own PR; the registry token stays in the owner's environment and is never printed.
 
 **The release script** `scripts/release.py` (WP 9-NS11b; dry run by default, `--publish` after the
 go): the package set and the publication order come from `scarb metadata` (every package not marked
