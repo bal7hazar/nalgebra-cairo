@@ -74,11 +74,13 @@ wt=~/orchestrator/nalgebra-cairo/wt/$wp; log=~/orchestrator/nalgebra-cairo/logs/
 git fetch -q origin && git worktree add -b feat/$wp "$wt" origin/main
 systemd-run --user --collect --unit=nalgebra-$wp --description="$title" \
   -p MemoryMax=14G -p OOMPolicy=continue \
-  -E PATH="$HOME/orchestrator/shims:$PATH" -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 \
+  -E PATH="$HOME/orchestrator/shims:$HOME/.venvs/nalgebra/bin:$PATH" -E HOME="$HOME" \
+  -E BASH_MAX_TIMEOUT_MS=3600000 -E BASH_DEFAULT_TIMEOUT_MS=1800000 \
   --working-directory="$wt" scripts/agent.sh "$wt" claude "$model" "$wt/docs/briefs/$wp.md" "$log"
 ```
 
-- The shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`.
+- The shims serialise `scarb` / `snforge` builds through `flock ~/orchestrator/heavy-build.lock`;
+  `~/.venvs/nalgebra` holds `mpmath` for the oracle scripts (system pip is blocked by PEP 668).
   A session whose `systemctl --user` fails with "org.freedesktop.systemd1 exited" is on another
   session bus: prefix the command with `DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$(id -u)/bus`.
 - Follow: one background task of the orchestrator session per agent, titled with the model that ran
