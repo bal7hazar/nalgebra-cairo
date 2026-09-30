@@ -22,9 +22,10 @@ the Rust `nalgebra` crate on `fixed::Fixed` (Q32.32), built for provable game ph
 Upstream's module paths are kept: `nalgebra_dynamic::base::dynamic::DMatrix` is
 `nalgebra::base::dynamic::DMatrix` (docs/SPLIT.md §3.1). It depends on
 [`nalgebra_core`](../core/README.md), the types of every dimension
-([`nalgebra_types2`](../types2/README.md) .. [`nalgebra_types6`](../types6/README.md)), the method
+([`nalgebra_types2`](../types2/README.md), [`nalgebra_types3`](../types3/README.md), [`nalgebra_types4`](../types4/README.md), [`nalgebra_types5`](../types5/README.md), [`nalgebra_types6`](../types6/README.md)), the method
 crates of the static shapes ([`nalgebra_static_core`](../static_core/README.md),
-[`nalgebra_static2`](../static2/README.md) .. [`nalgebra_static5`](../static5/README.md),
+[`nalgebra_static2`](../static2/README.md), [`nalgebra_static3`](../static3/README.md),
+[`nalgebra_static4`](../static4/README.md), [`nalgebra_static5`](../static5/README.md),
 [`nalgebra_static6_tall`](../static6_tall/README.md),
 [`nalgebra_static6_wide`](../static6_wide/README.md)); it does not depend on `nalgebra_blocks`.
 

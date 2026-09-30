@@ -19,7 +19,7 @@ It depends on `simba`.
 
 ## When to depend on it
 
-It is the base of every closure (it costs 0.5 s / 0.03 GB over an empty consumer, `docs/SPLIT.md` §18.1).
+It is the base of every closure (it costs 0.5 s / 0.04 GB over an empty consumer, final CI run, `docs/PACKAGES.md`).
 
 Depend on `nalgebra_core` for the generic trait declarations and the dimension-1 types only; every other sub-crate depends on it.
 

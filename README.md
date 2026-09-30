@@ -64,8 +64,8 @@ rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of 
 | What you need | Depend on | Measured cost |
 |---|---|---:|
 | the upstream API at upstream's paths | [`nalgebra`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra) | 29.8 s / 9.96 GB (0.1.0: 96.7 s / 10.4 GB; [CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)) |
-| the types only (vectors, matrices, points, operators, products, indexing) | `nalgebra_core`, `nalgebra_types2` .. `nalgebra_types6` | marginal: `types2` 0.3 s, `types3` 0.5 s, `types4` 0.7 s, `types5` 1.6 s, `types6` 2.7 s |
-| the named methods of dimensions 2-4 (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*`...) | `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4` (`static4` pulls the two others and the types) | marginal of `static4`: 1.8 s / 0.32 GB |
+| the types only (vectors, matrices, points, operators, products, indexing) | `nalgebra_core`, `nalgebra_types2` .. `nalgebra_types6` | marginal: `types2` 0.3 s, `types3` 0.4 s, `types4` 0.9 s, `types5` 1.0 s, `types6` 2.5 s |
+| the named methods of dimensions 2-4 (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*`...) | `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4` (`static4` pulls the two others and the types) | marginal of `static4`: 1.0 s / 0.33 GB |
 | 2D / 3D geometry (rotations, quaternions, isometries, similarities) | `nalgebra_static3`, `nalgebra_geometry2`, `nalgebra_geometry3` | 6.3 s / 1.43 GB (`static3_geometry`) |
 | geometry 2-4 with the transforms | `nalgebra_static4`, `nalgebra_geometry2` .. `nalgebra_geometry4`, `nalgebra_transform2`, `nalgebra_transform3` | 11.2 s / 2.44 GB (`static4_geometry`) |
 | conversions to glam-cairo | `nalgebra_glam` (needs `glam` >= 0.4.1) | 7.4 s / 1.77 GB (`nalgebra_glam`; `glam_core` alone 1.3 s / 0.56 GB) |

@@ -17,7 +17,7 @@ physics.
 Upstream's module paths are kept: `nalgebra_sparse::sparse::CsMatrix` is
 `nalgebra::sparse::CsMatrix` (docs/SPLIT.md §3.1). It depends on
 [`nalgebra_core`](../core/README.md), the types of every dimension
-([`nalgebra_types2`](../types2/README.md) .. [`nalgebra_types6`](../types6/README.md)) and
+([`nalgebra_types2`](../types2/README.md), [`nalgebra_types3`](../types3/README.md), [`nalgebra_types4`](../types4/README.md), [`nalgebra_types5`](../types5/README.md), [`nalgebra_types6`](../types6/README.md)) and
 [`nalgebra_dynamic`](../dynamic/README.md) (which it pulls with the dynamic shapes it builds on).
 
 ## When to depend on it

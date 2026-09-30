@@ -80,8 +80,9 @@ the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). 
   cold build of an empty consumer over its own dependencies; the typical closures cost at most
   15 s / 3 GB (package granularity rule, enforced by the CI job `Consumer cost`). Measured (GitHub
   runner, cold build over an empty consumer): the facade 29.8 s / 9.96 GB (0.1.0: 96.7 s / 10.4 GB
-  with the default features); typical closures 3.5 - 10.4 s / 1.0 - 2.4 GB (static 2-3 + SVD 5.5 s,
-  static 2-4 + factorisations 8.3 s, static 2-4 + geometry 10.4 s; the dimension 5-6 closures have
+  with the default features); typical closures up to dimension 4, all gated at 15 s / 3 GB: 3.5 - 11.7 s / 1.05 - 2.83 GB
+  (static 2-3 + SVD 5.5 s, static 2-4 + factorisations 8.3 s, static 2-4 + geometry 10.4 s,
+  static 2-4 + BLAS 11.7 s / 2.83 GB; the dimension 5-6 closures have
   their own budget, below); `nalgebra_glam` 7.6 s / 1.69 GB (0.1.0 on `nalgebra` + `glam`: 37 s /
   5.5 GB). Figures of [CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070) (5 interleaved rounds, one runner per shard); the per-package
   table of that run is [docs/PACKAGES.md](docs/PACKAGES.md). The highest package marginal is 2.6 s /
