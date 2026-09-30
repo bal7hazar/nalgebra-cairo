@@ -15,16 +15,23 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix4x2FixedColumnsMatrix4x2, Matrix4x2FixedColumnsVector4, Matrix4x2FixedRowsMatrix2,
     Matrix4x2FixedRowsMatrix3x2, Matrix4x2FixedRowsMatrix4x2, Matrix4x2FixedRowsRowVector2,
 };
-pub use nalgebra_core::base::matrix4x2::*;
 pub use nalgebra_norm::base::norm::{
     Matrix4x2EuclideanNorm, Matrix4x2LpNorm, Matrix4x2OneNorm, Matrix4x2UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix2x5::Matrix4x2MulMatrix2x5;
-pub use nalgebra_shapes5::base::matrix4x5::Matrix4x2TrMulMatrix4x5;
-pub use nalgebra_shapes6::base::matrix2x6::Matrix4x2MulMatrix2x6;
-pub use nalgebra_shapes6::base::matrix4x6::Matrix4x2TrMulMatrix4x6;
-pub use nalgebra_static3::geometry::rotation2::Matrix4x2MulRotation2;
 pub use nalgebra_static4::base::matrix4x2::*;
+pub use nalgebra_types4::base::matrix4x2::{
+    Matrix4x2, Matrix4x2Add, Matrix4x2AddAssign, Matrix4x2Bounded, Matrix4x2DivAssignScalar,
+    Matrix4x2FromColumnArrays, Matrix4x2IndexLinear, Matrix4x2IndexPair, Matrix4x2IntoColumnArrays,
+    Matrix4x2MatrixIndexLinear, Matrix4x2MatrixIndexPair, Matrix4x2MulAssignScalar,
+    Matrix4x2MulMatrix2, Matrix4x2MulMatrix2x3, Matrix4x2MulMatrix2x4, Matrix4x2MulRotation2,
+    Matrix4x2MulVector2, Matrix4x2Neg, Matrix4x2PartialOrd, Matrix4x2Sub, Matrix4x2SubAssign,
+    Matrix4x2Sum, Matrix4x2SumSnapshot, Matrix4x2TrMulMatrix4, Matrix4x2TrMulMatrix4x2,
+    Matrix4x2TrMulMatrix4x3, Matrix4x2TrMulVector4,
+};
+pub use nalgebra_types5::base::matrix2x5::Matrix4x2MulMatrix2x5;
+pub use nalgebra_types5::base::matrix4x5::Matrix4x2TrMulMatrix4x5;
+pub use nalgebra_types6::base::matrix2x6::Matrix4x2MulMatrix2x6;
+pub use nalgebra_types6::base::matrix4x6::Matrix4x2TrMulMatrix4x6;
 pub use nalgebra_views::base::matrix_view::{
     Matrix4x2FixedViewMatrix1, Matrix4x2FixedViewMatrix2, Matrix4x2FixedViewMatrix3x2,
     Matrix4x2FixedViewMatrix4x2, Matrix4x2FixedViewRowVector2, Matrix4x2FixedViewVector2,

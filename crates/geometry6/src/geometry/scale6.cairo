@@ -19,9 +19,9 @@
 use core::num::traits::One;
 use core::ops::MulAssign;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::vector6::Vector6;
+use nalgebra_types6::geometry::point6::Point6;
 use simba::scalar::Real;
-use crate::geometry::point6::Point6;
 
 /// A non-uniform scale by `vector`, one factor per axis. The field name is upstream's (`Scale {
 /// vector }`).

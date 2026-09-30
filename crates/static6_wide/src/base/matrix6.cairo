@@ -24,12 +24,12 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::norm::Norm;
 use nalgebra_core::internal::base::kernels::Powi;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
-use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
-use nalgebra_shapes6::base::vector6::Vector6;
 use nalgebra_static6_tall::internal::base::matrix6::Matrix6EditTrait;
+use nalgebra_types6::base::matrix5x6::Matrix5x6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6x5::Matrix6x5;
+use nalgebra_types6::base::row_vector6::RowVector6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::{Real, Transcendental};
 use crate::linalg::Matrix6LuTrait;
 

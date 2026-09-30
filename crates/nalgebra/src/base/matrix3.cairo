@@ -24,21 +24,27 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix3FixedColumnsMatrix3, Matrix3FixedColumnsMatrix3x2, Matrix3FixedColumnsVector3,
     Matrix3FixedRowsMatrix2x3, Matrix3FixedRowsMatrix3, Matrix3FixedRowsRowVector3,
 };
-
-pub use nalgebra_core::base::matrix3::*;
+pub use nalgebra_geometry2::geometry::isometry2::Matrix3FromIsometry2;
+pub use nalgebra_geometry2::geometry::similarity2::Matrix3FromSimilarity2;
+pub use nalgebra_geometry2::geometry::unit_complex::Matrix3FromUnitComplex;
+pub use nalgebra_geometry3::geometry::unit_quaternion::Matrix3FromUnitQuaternion;
 pub use nalgebra_norm::base::norm::{
     Matrix3EuclideanNorm, Matrix3LpNorm, Matrix3OneNorm, Matrix3UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix3x5::{Matrix3MulMatrix3x5, Matrix3TrMulMatrix3x5};
-pub use nalgebra_shapes6::base::matrix3x6::{Matrix3MulMatrix3x6, Matrix3TrMulMatrix3x6};
 pub use nalgebra_static3::base::matrix3::*;
-pub use nalgebra_static3::geometry::isometry2::Matrix3FromIsometry2;
-pub use nalgebra_static3::geometry::rotation2::Matrix3FromRotation2;
-pub use nalgebra_static3::geometry::rotation3::{Matrix3FromRotation3, Matrix3MulRotation3};
-pub use nalgebra_static3::geometry::similarity2::Matrix3FromSimilarity2;
-pub use nalgebra_static3::geometry::translation2::Matrix3FromTranslation2;
-pub use nalgebra_static3::geometry::unit_complex::Matrix3FromUnitComplex;
-pub use nalgebra_static3::geometry::unit_quaternion::Matrix3FromUnitQuaternion;
+
+pub use nalgebra_types3::base::matrix3::{
+    Matrix3, Matrix3Add, Matrix3AddAssign, Matrix3Bounded, Matrix3DivAssignScalar,
+    Matrix3FromColumnArrays, Matrix3FromRotation2, Matrix3FromRotation3, Matrix3FromTranslation2,
+    Matrix3IndexLinear, Matrix3IndexPair, Matrix3IntoColumnArrays, Matrix3MatrixIndexLinear,
+    Matrix3MatrixIndexPair, Matrix3Mul, Matrix3MulAssign, Matrix3MulAssignScalar, Matrix3MulMatrix3,
+    Matrix3MulMatrix3x2, Matrix3MulPoint, Matrix3MulRotation3, Matrix3MulVector3, Matrix3Neg,
+    Matrix3One, Matrix3PartialOrd, Matrix3ProductSnapshot, Matrix3Sub, Matrix3SubAssign, Matrix3Sum,
+    Matrix3SumSnapshot, Matrix3TrMulMatrix3, Matrix3TrMulMatrix3x2, Matrix3TrMulVector3,
+};
+pub use nalgebra_types4::base::matrix3x4::{Matrix3MulMatrix3x4, Matrix3TrMulMatrix3x4};
+pub use nalgebra_types5::base::matrix3x5::{Matrix3MulMatrix3x5, Matrix3TrMulMatrix3x5};
+pub use nalgebra_types6::base::matrix3x6::{Matrix3MulMatrix3x6, Matrix3TrMulMatrix3x6};
 pub use nalgebra_views::base::matrix_view::{
     Matrix3FixedViewMatrix1, Matrix3FixedViewMatrix2, Matrix3FixedViewMatrix2x3,
     Matrix3FixedViewMatrix3, Matrix3FixedViewMatrix3x2, Matrix3FixedViewRowVector2,

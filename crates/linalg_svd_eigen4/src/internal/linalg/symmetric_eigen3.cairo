@@ -2,12 +2,13 @@
 //! packages above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::internal::base::sym_matrix3::{SymMatrix3, SymMatrix3Trait};
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static3::base::vector3::Vector3Trait;
 use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
+use nalgebra_static3::internal::base::sym_matrix3::SymMatrix3Trait;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
 use simba::scalar::Real;
 use crate::linalg::symmetric_eigen3::SymmetricEigen3;
 

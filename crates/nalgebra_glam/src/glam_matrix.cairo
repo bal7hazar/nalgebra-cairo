@@ -33,13 +33,13 @@ use glam_core::{
     BVec2, BVec3, BVec4, IVec2, IVec3, IVec4, Mat2, Mat3, Mat4, UVec2, UVec3, UVec4, Vec2, Vec3,
     Vec4,
 };
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_core::base::unit::UnitTrait;
-use nalgebra_core::base::vector2::{UnitVector2, Vector2};
-use nalgebra_core::base::vector3::{UnitVector3, Vector3};
-use nalgebra_core::base::vector4::{UnitVector4, Vector4};
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::{UnitVector2, Vector2};
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::{UnitVector3, Vector3};
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::{UnitVector4, Vector4};
 
 /// The `Vector2<Fixed>` with the components of `Vec2`, in order (`x, y`). Exact.
 /// Upstream: `From<Vec2> for Vector2<f32>`.

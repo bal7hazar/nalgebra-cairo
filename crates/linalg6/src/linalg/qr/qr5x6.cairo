@@ -5,9 +5,9 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types6::base::matrix5x6::Matrix5x6;
 use simba::scalar::Real;
 
 /// The QR factorisation `A = q * r` of a `Matrix5x6<T>`: `q` is 5x5, `r` is 5x6

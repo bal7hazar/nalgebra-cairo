@@ -17,5 +17,4 @@
 //! one fused `mul_add` / `sum_prod2` (one floor rounding and one overflow check). Overflow panics;
 //! nothing wraps silently. Unlike upstream, the bias is subtracted unconditionally (upstream skips
 //! it when zero: subtracting zero is exact, so the results are identical).
-
-pub use nalgebra_geometry6::geometry::reflection5::*;
+pub use nalgebra_geometry5::geometry::reflection5::*;

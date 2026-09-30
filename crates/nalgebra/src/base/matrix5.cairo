@@ -18,9 +18,9 @@ pub use nalgebra_blocks::base::matrix_view::{
 pub use nalgebra_norm::base::norm::{
     Matrix5EuclideanNorm, Matrix5LpNorm, Matrix5OneNorm, Matrix5UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix5::*;
-pub use nalgebra_shapes6::base::matrix5x6::{Matrix5MulMatrix5x6, Matrix5TrMulMatrix5x6};
 pub use nalgebra_static5::base::matrix5::*;
+pub use nalgebra_types5::base::matrix5::*;
+pub use nalgebra_types6::base::matrix5x6::{Matrix5MulMatrix5x6, Matrix5TrMulMatrix5x6};
 pub use nalgebra_views::base::matrix_view::{
     Matrix5FixedViewMatrix1, Matrix5FixedViewMatrix2, Matrix5FixedViewMatrix2x3,
     Matrix5FixedViewMatrix2x4, Matrix5FixedViewMatrix2x5, Matrix5FixedViewMatrix3,

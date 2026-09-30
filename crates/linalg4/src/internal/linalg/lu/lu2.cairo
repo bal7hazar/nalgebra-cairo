@@ -1,8 +1,8 @@
 //! Internal, no stability promise: the crate-private items of `linalg::lu::lu2` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::vector2::Vector2;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
 use simba::scalar::Real;
 use crate::linalg::lu::lu2::Lu2;
 

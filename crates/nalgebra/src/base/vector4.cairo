@@ -26,15 +26,23 @@ pub use nalgebra_blocks::base::matrix_view::{
     Vector4FixedColumnsVector4, Vector4FixedRowsMatrix1, Vector4FixedRowsVector2,
     Vector4FixedRowsVector3, Vector4FixedRowsVector4,
 };
-pub use nalgebra_core::base::vector4::*;
 pub use nalgebra_norm::base::norm::{
     Vector4EuclideanNorm, Vector4LpNorm, Vector4OneNorm, Vector4UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix4x5::Vector4TrMulMatrix4x5;
-pub use nalgebra_shapes5::base::row_vector5::Vector4MulRowVector5;
-pub use nalgebra_shapes6::base::matrix4x6::Vector4TrMulMatrix4x6;
-pub use nalgebra_shapes6::base::row_vector6::Vector4MulRowVector6;
 pub use nalgebra_static4::base::vector4::*;
+pub use nalgebra_types4::base::vector4::{
+    Matrix4x1, UnitVector4, Vector4, Vector4Add, Vector4AddAssign, Vector4Bounded, Vector4DivAssign,
+    Vector4FromArray, Vector4FromColumnArrays, Vector4IndexLinear, Vector4IndexPair,
+    Vector4IntoArray, Vector4IntoColumnArrays, Vector4MatrixIndexLinear, Vector4MatrixIndexPair,
+    Vector4MulAssign, Vector4MulMatrix1, Vector4MulRowVector2, Vector4MulRowVector3,
+    Vector4MulRowVector4, Vector4Neg, Vector4PartialOrd, Vector4Sub, Vector4SubAssign, Vector4Sum,
+    Vector4SumSnapshot, Vector4TrMulMatrix4, Vector4TrMulMatrix4x2, Vector4TrMulMatrix4x3,
+    Vector4TrMulVector4,
+};
+pub use nalgebra_types5::base::matrix4x5::Vector4TrMulMatrix4x5;
+pub use nalgebra_types5::base::row_vector5::Vector4MulRowVector5;
+pub use nalgebra_types6::base::matrix4x6::Vector4TrMulMatrix4x6;
+pub use nalgebra_types6::base::row_vector6::Vector4MulRowVector6;
 pub use nalgebra_views::base::matrix_view::{
     Vector4FixedViewMatrix1, Vector4FixedViewVector2, Vector4FixedViewVector3,
     Vector4FixedViewVector4,

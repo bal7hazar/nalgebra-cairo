@@ -4,11 +4,11 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
-use nalgebra_shapes5::base::matrix4x5::Matrix4x5;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types5::base::matrix4x5::Matrix4x5;
 use simba::scalar::Real;
 
 /// The bidiagonalisation `A = U D Vᵀ` of a `Matrix4x5<T>`: `D` 4x4 LOWER bidiagonal (`4 < 5`),

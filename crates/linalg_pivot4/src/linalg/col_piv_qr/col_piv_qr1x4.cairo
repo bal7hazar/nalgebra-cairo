@@ -5,9 +5,9 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::row_vector4::RowVector4;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_core::linalg::lu::Perm4;
+use nalgebra_types4::base::row_vector4::RowVector4;
+use nalgebra_types4::linalg::lu::Perm4;
 use simba::scalar::Real;
 
 /// The QR factorisation with column pivoting of a `RowVector4<T>`: `A P = Q R` (`P` = `p`, applied

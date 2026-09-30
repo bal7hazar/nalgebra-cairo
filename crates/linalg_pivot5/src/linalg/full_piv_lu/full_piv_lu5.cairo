@@ -5,8 +5,8 @@
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::linalg::lu::perm1_5::Perm5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::linalg::lu::perm1_5::Perm5;
 use simba::scalar::Real;
 
 /// The LU factorisation with full (row and column) pivoting of a `Matrix5<T>`: `P A Q = L U`.

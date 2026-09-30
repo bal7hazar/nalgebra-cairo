@@ -5,10 +5,10 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6x5::Matrix6x5;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use super::kernels::QrComplete6Impl;
 

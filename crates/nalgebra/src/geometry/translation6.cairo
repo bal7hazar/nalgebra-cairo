@@ -7,5 +7,5 @@
 //!
 //! There is no `to_homogeneous`: the homogeneous matrix of a 6D translation is 7x7, and the static
 //! shapes stop at 6 (DESIGN D4). Out of scope for 0.1.0 by owner ruling (issue #41).
-
 pub use nalgebra_geometry6::geometry::translation6::*;
+pub use nalgebra_types6::geometry::translation6::*;

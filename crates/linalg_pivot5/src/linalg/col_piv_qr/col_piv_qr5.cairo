@@ -6,9 +6,9 @@
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes5::linalg::lu::perm1_5::Perm5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types5::linalg::lu::perm1_5::Perm5;
 use simba::scalar::Real;
 
 /// The QR factorisation with column pivoting of a `Matrix5<T>`: `A P = Q R` (`P` = `p`, applied to

@@ -115,6 +115,11 @@ names = [
     # benchmarks that stay in `nalgebra` (the `LDLᵀ` kernel is crate-private in 0.1.0)
     "(Lu|Qr)[2-4]InternalTrait", "(Svd|SymmetricEigen)[23]InternalTrait", "Ldlt[2-46]", "Ldlt[2-46]Trait", "Jacobi3",
     "Jacobi3Trait",
+    # WP 9-R1: the type-level kernels of the rotation / translation conversions (docs/SPLIT.md
+    # §18.3), called by the geometry methods of the crates above
+    "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait",
+    # WP 9-R1 (`transform2`): the kernels of the homogeneous transforms, used by `transform3`
+    "TransformKernels",
 ]
 
 # [band_split]: crate-internal kernel traits holding every dimension, split per band by the moves
@@ -131,6 +136,12 @@ SvdRightTrait = { "2" = "Svd2", "3" = "Svd3", "4" = "Svd4", "5" = "Svd5", "6" = 
 "Matrix4Cg.*" = 3
 "Matrix5Cg.*" = 4
 "Matrix6Cg.*" = 5
+
+# [modules]: the crate of an inline module that a package below every package hosting the items of
+# its file uses (default: the lowest of those): the point panic messages (`geometry::point::errors`)
+# name the index errors of `Point1` (`core`) up to `Point6` (WP 9-R1)
+[modules]
+"geometry/point.cairo::errors" = "core"
 
 # [closures]: the declared closures (docs/SPLIT.md §6.2, §19) re-expressed on the new names (a
 # crate pulls its dependencies), then the dimension 5-6 closures of §19 (budget 20 s / 4.5 GB) and
@@ -189,9 +200,20 @@ bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "t
 # in `geometry5` / `geometry6` (above `types6`), which keeps `types6` under the line gate
 [[rule]]
 name = "Rotation2|Rotation3|Reflection[1-4]|Reflection[1-4](Columns|Rows)"
-kind = ["struct", "trait"]
+# (`inherent`: a trait with a single impl in its file, `Reflection1Columns` once split)
+kind = ["struct", "trait", "inherent"]
 by = "name"
 bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
+# the constructors and accessors of `Reflection1`..`Reflection4` (`Reflection2Trait::new`, `axis`,
+# `bias`: field reads and fused kernels only) stay with their struct, whose fields are private: the
+# `ReflectionNColumns` / `ReflectionNRows` impls on the shapes of a larger dimension read them through
+# `axis` / `bias` from the types crates above (WP 9-R1)
+[[rule]]
+name = "Reflection[1-4]Trait"
+kind = ["inherent"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4" }
 
 # the conversions of a rotation / translation into a matrix (`Matrix3FromRotation2`): with the
 # matrix's types (whichever file holds them: the pre-split tree and today's differ); those that run
@@ -237,6 +259,22 @@ crate = "static6_wide"
 trait = ["PermuteRows", "PermuteColumns"]
 args_any = ["Perm6"]
 crate = "static6_wide"
+
+# the type-level kernels of the conversions of a rotation / translation into a matrix (docs/SPLIT.md
+# §18.3, WP 9-R1): with the matrix's types (the largest digit of the name)
+[[rule]]
+name = "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait"
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
+# `GivensRotation` (upstream `linalg::givens`), its methods and the traits of its impls: `types2`,
+# the lowest crate that can hold `cancel_y(Vector2)`; the struct's fields are crate-private, so its
+# constructors cannot sit in a crate above it, and the declarations of `GivensRotate` /
+# `GivensRotateRows` name it (WP 9-R1: not `core` / `linalg_core`)
+[[rule]]
+name = "GivensRotation|GivensRotationTrait|GivensRotationInternalTrait|GivensRotate|GivensRotateRows"
+kind = ["trait", "struct", "inherent"]
+crate = "types2"
 
 # generic trait declarations: `core` (their impls sit with the types of each band, below)
 [[rule]]

@@ -36,16 +36,25 @@ pub use nalgebra_blocks::base::matrix_view::{
     Vector3FixedColumnsVector3, Vector3FixedRowsMatrix1, Vector3FixedRowsVector2,
     Vector3FixedRowsVector3,
 };
-
-pub use nalgebra_core::base::vector3::*;
 pub use nalgebra_norm::base::norm::{
     Vector3EuclideanNorm, Vector3LpNorm, Vector3OneNorm, Vector3UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix3x5::Vector3TrMulMatrix3x5;
-pub use nalgebra_shapes5::base::row_vector5::Vector3MulRowVector5;
-pub use nalgebra_shapes6::base::matrix3x6::Vector3TrMulMatrix3x6;
-pub use nalgebra_shapes6::base::row_vector6::Vector3MulRowVector6;
 pub use nalgebra_static3::base::vector3::*;
+
+pub use nalgebra_types3::base::vector3::{
+    Matrix3x1, UnitVector3, Vector3, Vector3Add, Vector3AddAssign, Vector3Bounded, Vector3DivAssign,
+    Vector3FromArray, Vector3FromColumnArrays, Vector3IndexLinear, Vector3IndexPair,
+    Vector3IntoArray, Vector3IntoColumnArrays, Vector3MatrixIndexLinear, Vector3MatrixIndexPair,
+    Vector3MulAssign, Vector3MulMatrix1, Vector3MulRowVector2, Vector3MulRowVector3, Vector3Neg,
+    Vector3PartialOrd, Vector3Sub, Vector3SubAssign, Vector3Sum, Vector3SumSnapshot,
+    Vector3TrMulMatrix3, Vector3TrMulMatrix3x2, Vector3TrMulVector3,
+};
+pub use nalgebra_types4::base::matrix3x4::Vector3TrMulMatrix3x4;
+pub use nalgebra_types4::base::row_vector4::Vector3MulRowVector4;
+pub use nalgebra_types5::base::matrix3x5::Vector3TrMulMatrix3x5;
+pub use nalgebra_types5::base::row_vector5::Vector3MulRowVector5;
+pub use nalgebra_types6::base::matrix3x6::Vector3TrMulMatrix3x6;
+pub use nalgebra_types6::base::row_vector6::Vector3MulRowVector6;
 pub use nalgebra_views::base::matrix_view::{
     Vector3FixedViewMatrix1, Vector3FixedViewVector2, Vector3FixedViewVector3,
 };

@@ -219,6 +219,12 @@ class CrateMap:
         self.rules = [Rule(r, self.crates) for r in d.get("rule", [])]
         self.single = len(set(self.crates.values())) == 1
         self.internal = [re.compile(x) for x in d.get("internal", {}).get("names", [])]
+        # `[modules]`: the crate of an inline module (`"geometry/point.cairo::errors" = "core"`) that a
+        # package below every package hosting its file's items uses (WP 9-R1); default: the lowest
+        self.modules = dict(d.get("modules", {}))
+        for c in self.modules.values():
+            if c not in self.crates:
+                raise SystemExit(f"crates.toml: unknown crate {c!r} in [modules]")
         self._index = None
 
     # --- packages --------------------------------------------------------------------------------
@@ -462,6 +468,8 @@ class CrateMap:
                 # with the lowest
                 test = TEST_ONLY.search(text[it.start:it.end]) is not None
                 host = self.facade_package if test else min(pkgs, key=self.package_rank)
+                if not test and f"{f}::{it.name}" in self.modules:
+                    host = self.crates[self.modules[f"{f}::{it.name}"]]
                 pieces[(host, f)].append((f, text[it.start:it.end]))
         # a whole file keeps its text, except the imports of `[internal]` items (now at `internal::`)
         for (pkg, f), text in list(whole.items()):
@@ -476,7 +484,8 @@ class CrateMap:
             masked_joined = cc.mask(joined)
             # (nor is `Self::gauss_step`: a name after `::` is never imported)
             used = set(IDENT.findall(re.sub(r"\bfn\s+\w+|::\s*\w+", " ", masked_joined)))
-            used -= _defined(masked_joined + "\n" + cc.mask(whole.get((pkg, mod), "")))
+            defined_here = _defined(masked_joined + "\n" + cc.mask(whole.get((pkg, mod), "")))
+            used -= defined_here
             # a trait the piece uses through method calls only (`Rotation2AngleTrait::new(a)
             # .to_homogeneous()` needs `Rotation2Trait`): kept when one of the original file's
             # `use` names is a trait of a type the piece names (`Rotation2`, `Rotation2...Trait`)
@@ -490,7 +499,8 @@ class CrateMap:
                     for full in expand_use(mu.group(1)):
                         nm = full.split(" as ")[-1].split("::")[-1].strip()
                         it = idx.get(nm)
-                        if nm in used or it is None or it.kind not in ("trait", "inherent"):
+                        # (never a trait the piece defines itself, WP 9-R1)
+                        if nm in used or nm in defined_here or it is None or it.kind not in ("trait", "inherent"):
                             continue
                         if it.kind == "trait" and self._methods(it, texts) & called \
                                 and re.search(r"\btrait\s+\w+\s*<", cc.mask(texts.get(it.file, ""))[it.start:it.end]):
@@ -714,7 +724,10 @@ class CrateMap:
         names = set(IDENT.findall(masked))
         out, last = [], 0
         for m in USE.finditer(masked):
-            stmt = text[m.start():m.end()]
+            # the statement alone: `USE` starts at the blank (masked) comments above it (WP 9-R1)
+            sm = masked[m.start():m.end()]
+            start = m.start() + len(sm) - len(sm.lstrip())
+            stmt = text[start:m.end()]
             if stmt.lstrip().startswith("pub"):
                 continue
             hit = False
@@ -729,8 +742,7 @@ class CrateMap:
             if not hit:
                 continue
             new = new or self._rewrite_use(stmt.strip(), f, f, pkg, names, placed, idx)
-            lead = stmt[: len(stmt) - len(stmt.lstrip())]
-            out.append(text[last:m.start()] + lead + (new or ""))
+            out.append(text[last:start] + (new or ""))
             last = m.end()
         out.append(text[last:])
         return "".join(out)

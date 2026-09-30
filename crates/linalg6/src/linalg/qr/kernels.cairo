@@ -4,7 +4,7 @@
 //! full orthogonal `Q` that `q_tr_mul` applies.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 
 /// The completions of orthonormal families of 6-vectors (crate-internal).

@@ -1,8 +1,8 @@
 //! Internal, no stability promise: the crate-private items of `linalg::qr::qr4` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::linalg::qr::qr4::Qr4;
 

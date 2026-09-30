@@ -4,10 +4,10 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 
 /// The tridiagonalisation `A = Q T Qᵀ` of a symmetric `Matrix5<T>`: `T` symmetric tridiagonal,

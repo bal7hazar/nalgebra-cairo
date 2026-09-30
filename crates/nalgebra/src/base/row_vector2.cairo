@@ -19,16 +19,27 @@ pub use nalgebra_blocks::base::matrix_kronecker::{
 pub use nalgebra_blocks::base::matrix_view::{
     RowVector2FixedColumnsMatrix1, RowVector2FixedColumnsRowVector2, RowVector2FixedRowsRowVector2,
 };
-pub use nalgebra_core::base::row_vector2::*;
 pub use nalgebra_norm::base::norm::{
     RowVector2EuclideanNorm, RowVector2LpNorm, RowVector2OneNorm, RowVector2UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix2x5::RowVector2MulMatrix2x5;
-pub use nalgebra_shapes5::base::row_vector5::RowVector2TrMulRowVector5;
-pub use nalgebra_shapes6::base::matrix2x6::RowVector2MulMatrix2x6;
-pub use nalgebra_shapes6::base::row_vector6::RowVector2TrMulRowVector6;
-pub use nalgebra_static3::base::row_vector2::*;
-pub use nalgebra_static3::geometry::rotation2::RowVector2MulRotation2;
+pub use nalgebra_static2::base::row_vector2::*;
+pub use nalgebra_types2::base::row_vector2::{
+    Matrix1x2, RowVector2, RowVector2Add, RowVector2AddAssign, RowVector2Bounded,
+    RowVector2DivAssignScalar, RowVector2FromArray, RowVector2FromColumnArrays,
+    RowVector2IndexLinear, RowVector2IndexPair, RowVector2IntoArray, RowVector2IntoColumnArrays,
+    RowVector2MatrixIndexLinear, RowVector2MatrixIndexPair, RowVector2MulAssignScalar,
+    RowVector2MulMatrix2, RowVector2MulRotation2, RowVector2MulVector2, RowVector2Neg,
+    RowVector2PartialOrd, RowVector2Sub, RowVector2SubAssign, RowVector2Sum, RowVector2SumSnapshot,
+    RowVector2TrMulMatrix1, RowVector2TrMulRowVector2,
+};
+pub use nalgebra_types3::base::matrix2x3::RowVector2MulMatrix2x3;
+pub use nalgebra_types3::base::row_vector3::RowVector2TrMulRowVector3;
+pub use nalgebra_types4::base::matrix2x4::RowVector2MulMatrix2x4;
+pub use nalgebra_types4::base::row_vector4::RowVector2TrMulRowVector4;
+pub use nalgebra_types5::base::matrix2x5::RowVector2MulMatrix2x5;
+pub use nalgebra_types5::base::row_vector5::RowVector2TrMulRowVector5;
+pub use nalgebra_types6::base::matrix2x6::RowVector2MulMatrix2x6;
+pub use nalgebra_types6::base::row_vector6::RowVector2TrMulRowVector6;
 pub use nalgebra_views::base::matrix_view::{
     RowVector2FixedViewMatrix1, RowVector2FixedViewRowVector2,
 };

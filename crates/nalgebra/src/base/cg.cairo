@@ -11,5 +11,7 @@
 //! the trait in scope. `Matrix4::new_perspective` / `new_orthographic` are `Perspective3` /
 //! `Orthographic3`'s (upstream delegates them there).
 
+pub use nalgebra_geometry2::base::cg::*;
+pub use nalgebra_geometry3::base::cg::*;
 pub use nalgebra_geometry4::base::cg::*;
-pub use nalgebra_shapes6::base::cg::*;
+pub use nalgebra_geometry5::base::cg::*;

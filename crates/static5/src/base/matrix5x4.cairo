@@ -9,22 +9,22 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::norm::Norm;
-use nalgebra_core::base::row_vector4::RowVector4;
-use nalgebra_core::base::vector4::Vector4;
 use nalgebra_core::internal::base::kernels::Powi;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
-use nalgebra_shapes5::base::matrix4x5::Matrix4x5;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::matrix5x3::Matrix5x3;
-use nalgebra_shapes5::base::matrix5x4::Matrix5x4;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes5::internal::base::matrix5x4::Matrix5x4EditTrait;
-use nalgebra_shapes6::base::matrix6x4::Matrix6x4;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::row_vector4::RowVector4;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types5::base::matrix4x5::Matrix4x5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::matrix5x3::Matrix5x3;
+use nalgebra_types5::base::matrix5x4::Matrix5x4;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types5::internal::base::matrix5x4::Matrix5x4EditTrait;
+use nalgebra_types6::base::matrix6x4::Matrix6x4;
 use simba::scalar::{Real, Transcendental};
 
 /// Methods of `Matrix5x4<T>` for any `Real` scalar.

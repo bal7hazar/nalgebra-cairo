@@ -16,16 +16,23 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix4x3FixedRowsMatrix2x3, Matrix4x3FixedRowsMatrix3, Matrix4x3FixedRowsMatrix4x3,
     Matrix4x3FixedRowsRowVector3,
 };
-pub use nalgebra_core::base::matrix4x3::*;
 pub use nalgebra_norm::base::norm::{
     Matrix4x3EuclideanNorm, Matrix4x3LpNorm, Matrix4x3OneNorm, Matrix4x3UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix3x5::Matrix4x3MulMatrix3x5;
-pub use nalgebra_shapes5::base::matrix4x5::Matrix4x3TrMulMatrix4x5;
-pub use nalgebra_shapes6::base::matrix3x6::Matrix4x3MulMatrix3x6;
-pub use nalgebra_shapes6::base::matrix4x6::Matrix4x3TrMulMatrix4x6;
-pub use nalgebra_static3::geometry::rotation3::Matrix4x3MulRotation3;
 pub use nalgebra_static4::base::matrix4x3::*;
+pub use nalgebra_types4::base::matrix4x3::{
+    Matrix4x3, Matrix4x3Add, Matrix4x3AddAssign, Matrix4x3Bounded, Matrix4x3DivAssignScalar,
+    Matrix4x3FromColumnArrays, Matrix4x3IndexLinear, Matrix4x3IndexPair, Matrix4x3IntoColumnArrays,
+    Matrix4x3MatrixIndexLinear, Matrix4x3MatrixIndexPair, Matrix4x3MulAssignScalar,
+    Matrix4x3MulMatrix3, Matrix4x3MulMatrix3x2, Matrix4x3MulMatrix3x4, Matrix4x3MulRotation3,
+    Matrix4x3MulVector3, Matrix4x3Neg, Matrix4x3PartialOrd, Matrix4x3Sub, Matrix4x3SubAssign,
+    Matrix4x3Sum, Matrix4x3SumSnapshot, Matrix4x3TrMulMatrix4, Matrix4x3TrMulMatrix4x2,
+    Matrix4x3TrMulMatrix4x3, Matrix4x3TrMulVector4,
+};
+pub use nalgebra_types5::base::matrix3x5::Matrix4x3MulMatrix3x5;
+pub use nalgebra_types5::base::matrix4x5::Matrix4x3TrMulMatrix4x5;
+pub use nalgebra_types6::base::matrix3x6::Matrix4x3MulMatrix3x6;
+pub use nalgebra_types6::base::matrix4x6::Matrix4x3TrMulMatrix4x6;
 pub use nalgebra_views::base::matrix_view::{
     Matrix4x3FixedViewMatrix1, Matrix4x3FixedViewMatrix2, Matrix4x3FixedViewMatrix2x3,
     Matrix4x3FixedViewMatrix3, Matrix4x3FixedViewMatrix3x2, Matrix4x3FixedViewMatrix4x2,

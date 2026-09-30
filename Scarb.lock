@@ -25,7 +25,10 @@ dependencies = [
  "nalgebra_blocks",
  "nalgebra_core",
  "nalgebra_dynamic",
+ "nalgebra_geometry2",
+ "nalgebra_geometry3",
  "nalgebra_geometry4",
+ "nalgebra_geometry5",
  "nalgebra_geometry6",
  "nalgebra_linalg4",
  "nalgebra_linalg5",
@@ -38,15 +41,26 @@ dependencies = [
  "nalgebra_linalg_spectral6",
  "nalgebra_linalg_svd_eigen4",
  "nalgebra_norm",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
  "nalgebra_sparse",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
  "nalgebra_static5",
  "nalgebra_static6_tall",
  "nalgebra_static6_wide",
- "nalgebra_statistics",
+ "nalgebra_static_core",
+ "nalgebra_statistics2",
+ "nalgebra_statistics3",
+ "nalgebra_statistics4",
+ "nalgebra_statistics5",
+ "nalgebra_statistics6",
+ "nalgebra_transform2",
+ "nalgebra_transform3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "nalgebra_views",
  "simba",
  "snforge_std",
@@ -58,8 +72,11 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -70,9 +87,12 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
  "nalgebra_static6_tall",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -93,13 +113,45 @@ dependencies = [
  "fixed",
  "nalgebra_blocks",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
  "nalgebra_static5",
  "nalgebra_static6_tall",
  "nalgebra_static6_wide",
+ "nalgebra_static_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_geometry2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_geometry3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_geometry2",
+ "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "simba",
  "snforge_std",
 ]
@@ -110,9 +162,25 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_static3",
- "nalgebra_static4",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_geometry5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -123,8 +191,11 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -136,7 +207,13 @@ dependencies = [
  "fixed",
  "glam_core",
  "nalgebra_core",
+ "nalgebra_geometry2",
+ "nalgebra_geometry3",
+ "nalgebra_static2",
  "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "snforge_std",
 ]
 
@@ -146,9 +223,12 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "simba",
  "snforge_std",
 ]
@@ -160,7 +240,10 @@ dependencies = [
  "fixed",
  "nalgebra_core",
  "nalgebra_linalg_svd_eigen4",
- "nalgebra_shapes5",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
  "simba",
  "snforge_std",
 ]
@@ -173,9 +256,12 @@ dependencies = [
  "nalgebra_core",
  "nalgebra_linalg5",
  "nalgebra_linalg_svd_eigen4",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
  "nalgebra_static6_wide",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -186,6 +272,9 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "simba",
  "snforge_std",
 ]
@@ -196,7 +285,10 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
  "simba",
  "snforge_std",
 ]
@@ -207,9 +299,12 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
  "nalgebra_static6_wide",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -221,9 +316,13 @@ dependencies = [
  "fixed",
  "nalgebra_core",
  "nalgebra_linalg4",
- "nalgebra_shapes5",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
+ "nalgebra_static_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "simba",
  "snforge_std",
 ]
@@ -236,8 +335,11 @@ dependencies = [
  "nalgebra_core",
  "nalgebra_linalg4",
  "nalgebra_linalg_spectral4",
- "nalgebra_shapes5",
  "nalgebra_static5",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
  "simba",
  "snforge_std",
 ]
@@ -250,9 +352,12 @@ dependencies = [
  "nalgebra_core",
  "nalgebra_linalg4",
  "nalgebra_linalg_spectral4",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
  "nalgebra_static6_wide",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -263,7 +368,11 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
+ "nalgebra_static2",
  "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "simba",
  "snforge_std",
 ]
@@ -274,37 +383,18 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
  "nalgebra_static5",
  "nalgebra_static6_tall",
  "nalgebra_static6_wide",
- "simba",
- "snforge_std",
-]
-
-[[package]]
-name = "nalgebra_shapes5"
-version = "0.1.0"
-dependencies = [
- "fixed",
- "nalgebra_core",
- "nalgebra_static3",
- "simba",
- "snforge_std",
-]
-
-[[package]]
-name = "nalgebra_shapes6"
-version = "0.1.0"
-dependencies = [
- "fixed",
- "nalgebra_core",
- "nalgebra_geometry4",
- "nalgebra_shapes5",
- "nalgebra_static3",
+ "nalgebra_static_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -481,8 +571,23 @@ dependencies = [
  "fixed",
  "nalgebra_core",
  "nalgebra_dynamic",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_static2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
  "simba",
  "snforge_std",
 ]
@@ -493,6 +598,10 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
+ "nalgebra_static2",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
  "simba",
  "snforge_std",
 ]
@@ -503,8 +612,12 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
+ "nalgebra_static2",
  "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
  "simba",
  "snforge_std",
 ]
@@ -515,10 +628,14 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -529,11 +646,15 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_static2",
  "nalgebra_static3",
  "nalgebra_static4",
  "nalgebra_static5",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -544,21 +665,89 @@ version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
  "nalgebra_static6_tall",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
 
 [[package]]
-name = "nalgebra_statistics"
+name = "nalgebra_static_core"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_statistics2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_statistics3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_statistics4"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_statistics5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_statistics6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
@@ -1121,14 +1310,108 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_transform2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_geometry2",
+ "nalgebra_static2",
+ "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_transform3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_geometry3",
+ "nalgebra_static4",
+ "nalgebra_transform2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_types2"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_types3"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_types4"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_types5"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
+name = "nalgebra_types6"
+version = "0.1.0"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_views"
 version = "0.1.0"
 dependencies = [
  "fixed",
  "nalgebra_blocks",
  "nalgebra_core",
- "nalgebra_shapes5",
- "nalgebra_shapes6",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]

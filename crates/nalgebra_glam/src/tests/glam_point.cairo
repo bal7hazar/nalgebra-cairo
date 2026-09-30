@@ -1,8 +1,8 @@
 use fixed::Fixed;
 use glam_core::{BVec2, BVec3, BVec4, IVec2, IVec3, IVec4, UVec2, UVec3, UVec4, Vec2, Vec3, Vec4};
-use nalgebra_core::base::point2::Point2;
-use nalgebra_core::base::point3::Point3;
-use nalgebra_core::geometry::point4::Point4;
+use nalgebra_types2::base::point2::Point2;
+use nalgebra_types3::base::point3::Point3;
+use nalgebra_types4::geometry::point4::Point4;
 use crate::black_box;
 use crate::glam_point::*;
 use super::int;

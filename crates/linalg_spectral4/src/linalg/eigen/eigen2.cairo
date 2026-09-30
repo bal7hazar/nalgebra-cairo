@@ -2,8 +2,8 @@
 //! `Eigen2`: the eigen decomposition of a `Matrix2` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U2>`), WP 8.5-P16.
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::vector2::Vector2;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
 use simba::scalar::Real;
 use crate::linalg::schur::schur2::Schur2Trait;
 

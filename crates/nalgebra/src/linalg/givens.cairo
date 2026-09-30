@@ -9,8 +9,12 @@
 //! Numerics: the norm `sqrt(c² + s²)` is ONE rounding (`Real::norm2`), each component of the
 //! rotation a correctly rounded quotient, each rotated entry ONE fused sum of two products.
 
-pub use nalgebra_core::linalg::givens::*;
-pub use nalgebra_shapes5::base::matrix2x5::GivensRotationRotateMatrix2x5;
-pub use nalgebra_shapes5::base::matrix5x2::GivensRotationRotateRowsMatrix5x2;
-pub use nalgebra_shapes6::base::matrix2x6::GivensRotationRotateMatrix2x6;
-pub use nalgebra_shapes6::base::matrix6x2::GivensRotationRotateRowsMatrix6x2;
+pub use nalgebra_types2::linalg::givens::*;
+pub use nalgebra_types3::base::matrix2x3::GivensRotationRotateMatrix2x3;
+pub use nalgebra_types3::base::matrix3x2::GivensRotationRotateRowsMatrix3x2;
+pub use nalgebra_types4::base::matrix2x4::GivensRotationRotateMatrix2x4;
+pub use nalgebra_types4::base::matrix4x2::GivensRotationRotateRowsMatrix4x2;
+pub use nalgebra_types5::base::matrix2x5::GivensRotationRotateMatrix2x5;
+pub use nalgebra_types5::base::matrix5x2::GivensRotationRotateRowsMatrix5x2;
+pub use nalgebra_types6::base::matrix2x6::GivensRotationRotateMatrix2x6;
+pub use nalgebra_types6::base::matrix6x2::GivensRotationRotateRowsMatrix6x2;

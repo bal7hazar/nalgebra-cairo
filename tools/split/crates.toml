@@ -1,4 +1,14 @@
-# Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2, final names WP 9-NS1b).
+# Crate map of the package split (docs/SPLIT.md §3, §7; WP 9-NS2, final names WP 9-NS1b; the
+# per-dimension re-cut of docs/SPLIT.md §18, move R1: WP 9-R1).
+#
+# R1 state: every crate but the decompositions follows the approved re-cut
+# (`tools/split/crates.recut.toml`, §18.1): `core`, `types2`..`types6`, `static_core`,
+# `static2`..`static6_*`, `geometry2`..`geometry6`, `transform2` / `transform3`,
+# `statistics2`..`statistics6`, `blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse`. The
+# decomposition crates keep their names and their contents (`linalg4`, `linalg_svd_eigen4`,
+# `linalg_pivot4`, `linalg_spectral4`, `linalg5`, `linalg_pivot5`, `linalg_spectral5`, `linalg6`,
+# `linalg_pivot6`, `linalg_spectral6`, with the rules of the 27-crate map) until move R2 switches
+# them to the proposal's `linalg*2`..`linalg*6`.
 #
 # Read by `tools/split/cratemap.py`, hence by the generators (`tools/shapegen`, `tools/linalggen`),
 # `scripts/api_parity.py`, `tools/split/public_paths.py` and `tools/split/rewrite_imports.py`.
@@ -39,22 +49,43 @@
 
 facade = "facade"
 lift = true
+# `mapplan.py`: method-call edges towards a larger dimension are over-approximations (dropped)
+strict_calls = true
+# impls whose bodies call the methods of a higher crate: the move gives them a type-level kernel
+# (`#[inline(always)]`, same bodies, no step change; docs/SPLIT.md §3.3.3, §18.3); stubbed in the
+# prototype
+kernel_wrappers = ["Rotation3Div", "Matrix3FromRotation2", "Matrix4FromRotation3", "Matrix2FromTranslation1",
+    "Matrix3FromTranslation2", "Matrix4FromTranslation3", "Matrix5FromTranslation4", "Matrix6FromTranslation5"]
 
 [crates]
 core = "nalgebra_core"
+types2 = "nalgebra_types2"
+types3 = "nalgebra_types3"
+types4 = "nalgebra_types4"
+types5 = "nalgebra_types5"
+types6 = "nalgebra_types6"
+static_core = "nalgebra_static_core"
+static2 = "nalgebra_static2"
 static3 = "nalgebra_static3"
-shapes5 = "nalgebra_shapes5"
 static4 = "nalgebra_static4"
-geometry4 = "nalgebra_geometry4"
-shapes6 = "nalgebra_shapes6"
 static5 = "nalgebra_static5"
 static6_tall = "nalgebra_static6_tall"
 static6_wide = "nalgebra_static6_wide"
+geometry2 = "nalgebra_geometry2"
+geometry3 = "nalgebra_geometry3"
+geometry4 = "nalgebra_geometry4"
+geometry5 = "nalgebra_geometry5"
+geometry6 = "nalgebra_geometry6"
+transform2 = "nalgebra_transform2"
+transform3 = "nalgebra_transform3"
 blocks = "nalgebra_blocks"
 views = "nalgebra_views"
 norm = "nalgebra_norm"
-geometry6 = "nalgebra_geometry6"
-statistics = "nalgebra_statistics"
+statistics2 = "nalgebra_statistics2"
+statistics3 = "nalgebra_statistics3"
+statistics4 = "nalgebra_statistics4"
+statistics5 = "nalgebra_statistics5"
+statistics6 = "nalgebra_statistics6"
 blas = "nalgebra_blas"
 linalg4 = "nalgebra_linalg4"
 linalg_svd_eigen4 = "nalgebra_linalg_svd_eigen4"
@@ -110,22 +141,43 @@ names = [
     # benchmarks that stay in `nalgebra` (the `LDLᵀ` kernel is crate-private in 0.1.0)
     "(Lu|Qr)[2-4]InternalTrait", "(Svd|SymmetricEigen)[23]InternalTrait", "Ldlt[2-46]", "Ldlt[2-46]Trait", "Jacobi3",
     "Jacobi3Trait",
+    # WP 9-R1: the type-level kernels of the rotation / translation conversions (docs/SPLIT.md
+    # §18.3), called by the geometry methods of the crates above
+    "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait",
+    # WP 9-R1 (`transform2`): the kernels of the homogeneous transforms, used by `transform3`
+    "TransformKernels",
 ]
 
-# [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4), the crates a consumer of
-# a product pulls in together, measured on a GitHub runner by `.github/workflows/split-measure.yml`
-# (`tools/split/mapplan.py` carries them into the plan, renamed by its merges). `glam_bridge` is
-# `nalgebra_glam` rewritten on the sub-crates (`glam_proto.py`), `@x` a registry crate of
-# `measure.py`. `consumer_cost.toml` lists the same closures by package name ("planned").
+# [label_bands]: the dimension of the items whose name does not say it, for `strict_calls`
+[label_bands]
+"(Unit)?(Dual)?Quaternion.*" = 3
+"UnitComplex.*" = 2
+"Matrix[123]Cg.*" = 2
+"Matrix4Cg.*" = 3
+"Matrix5Cg.*" = 4
+"Matrix6Cg.*" = 5
+
+# [modules]: the crate of an inline module that a package below every package hosting the items of
+# its file uses (default: the lowest of those): the point panic messages (`geometry::point::errors`)
+# name the index errors of `Point1` (`core`) up to `Point6` (WP 9-R1)
+[modules]
+"geometry/point.cairo::errors" = "core"
+
+# [closures]: the declared closures of gate 3 (docs/SPLIT.md §6.2, §12.4) on the R1 names (a crate
+# pulls its dependencies; move R3 re-declares them with the per-closure budgets of §18.2 / §19),
+# measured on a GitHub runner by `.github/workflows/split-measure.yml` (`tools/split/mapplan.py`
+# carries them into the plan). `glam_bridge` is `nalgebra_glam` rewritten on the sub-crates
+# (`glam_proto.py`), `@x` a registry crate of `measure.py`. `consumer_cost.toml` lists the same
+# closures by package name.
 [closures]
 nalgebra_glam = ["glam_bridge"]
-static3_svd = ["core", "static3", "linalg_svd_eigen4"]
-core_pivot = ["core", "linalg_pivot4"]
-static4_geometry = ["core", "static3", "shapes5", "static4", "geometry4"]
-static4_factor = ["core", "static3", "shapes5", "static4", "linalg4"]
+static3_svd = ["static3", "linalg_svd_eigen4"]
+core_pivot = ["linalg_pivot4"]
+static4_geometry = ["static4", "geometry2", "geometry3", "geometry4", "transform2", "transform3"]
+static4_factor = ["static4", "linalg4"]
 glam_0_4_1_alone = ["@glam_core", "@glam_int"]
 
-# --- rules (NS1's `final` layout under the final names, docs/SPLIT.md §3.1-3.2) -------------------------------------------
+# --- rules -------------------------------------------------------------------------------------
 
 # core-trait impls of ONE nalgebra type (`Add<Matrix3>`, `PartialOrd`, array `Into`): with the struct
 [[rule]]
@@ -136,30 +188,56 @@ trait = ["Add", "Sub", "Neg", "Mul", "Div", "Rem", "AddAssign", "SubAssign", "Mu
     "Into", "TryInto", "Serde", "Debug", "Display", "Hash", "Copy", "Drop", "Felt252DictValue"]
 follow = "struct"
 
-# crate-private edit kernels of the shapes: with the types of their band (dimension 6: its methods)
+# crate-private edit kernels of the shapes: with the types of their band (dimension 6: its methods,
+# `types6` keeps its line margin, as in the live map)
 [[rule]]
 shape_file = true
 name = ".*EditTrait"
-bands = { "4" = "core", "5" = "shapes5", "6" = "static6_tall" }
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "static6_tall" }
 
-# the 1- and 4-dimensional point / translation types (`nalgebra_glam` converts them); the methods
-# of `Point4` / `Translation4` build dimension-5 types
+# the 2D / 3D knot, broken (§18.3): the rotation and reflection TYPES with the shapes of their
+# dimension (`div_rotation` and the reflection impls of the shapes name them, nothing more), their
+# methods in `geometryN`; `Reflection5` / `Reflection6` reflect shapes of dimension 5-6 only: whole
+# in `geometry5` / `geometry6` (above `types6`), which keeps `types6` under the line gate
 [[rule]]
-name = "Point4Trait|Translation4Trait"
-crate = "shapes5"
+name = "Rotation2|Rotation3|Reflection[1-4]|Reflection[1-4](Columns|Rows)"
+# (`inherent`: a trait with a single impl in its file, `Reflection1Columns` once split)
+kind = ["struct", "trait", "inherent"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
+# the constructors and accessors of `Reflection1`..`Reflection4` (`Reflection2Trait::new`, `axis`,
+# `bias`: field reads and fused kernels only) stay with their struct, whose fields are private: the
+# `ReflectionNColumns` / `ReflectionNRows` impls on the shapes of a larger dimension read them through
+# `axis` / `bias` from the types crates above (WP 9-R1)
 [[rule]]
-file = ["geometry/point4.cairo", "geometry/translation4.cairo", "geometry/point1.cairo",
-    "geometry/translation1.cairo"]
-crate = "core"
+name = "Reflection[1-4]Trait"
+kind = ["inherent"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4" }
 
-# LU steps of each size with the types of their band (WP 9-NS3: the public `gauss_step` /
-# `gauss_step_swap` resolve the impl at the caller, so it must sit in the module of its type or of
-# `LuSteps`; docs/SPLIT.md §15, "LuSteps by band", applied by WP 9-NS4)
+# the conversions of a rotation / translation into a matrix (`Matrix3FromRotation2`): with the
+# matrix's types (whichever file holds them: the pre-split tree and today's differ); those that run
+# a method get a type-level kernel (`kernel_wrappers` above)
+[[rule]]
+kind = ["impl"]
+name = "Matrix\\dFrom(Rotation|Translation)\\d"
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
+# the point / translation / permutation types of every dimension with the shapes of that dimension
+[[rule]]
+name = "(Point|Translation)[1-6]|Perm[1-5]"
+kind = ["struct"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
+# LU steps of each size with the types of their band (the public `gauss_step` resolves the impl at
+# the caller: its type's module, docs/SPLIT.md §15)
 [[rule]]
 trait = ["LuSteps"]
 by = "name"
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 default = "core"
 
 # `Perm6` and its permutation impls: with `Matrix6` (`is_invertible` runs `Lu6`)
@@ -172,51 +250,50 @@ trait = ["PermuteRows", "PermuteColumns"]
 args_any = ["Perm6"]
 crate = "static6_wide"
 
-# the crate-private traits of the public generic building blocks `reflection_axis_mut`
-# (`HouseholderAxis`), `clear_column_unchecked` / `clear_row_unchecked` / `assemble_q`
-# (`ColumnMajor`) and `balance_parlett_reinsch` / `unbalance` (`Balancing`): a caller resolves the
-# impl at the call site, so each impl must sit in its trait's module or its type's module (Cairo's
-# lookup, docs/SPLIT.md §1). The dimension-5 / 6 impls cannot sit with the trait in `linalg4` /
-# `linalg_spectral4` (those would pull `shapes6`), so the declarations go down to `shapes5`
-# (`internal`, with the impls up to dimension 5: `static4`, below `linalg4`, already pulls it) and
-# the dimension-6 impls to their type's module in `shapes6`; the public functions stay with their
-# family (WP 9-NS9, the anchor fix of docs/SPLIT.md §15)
+# the type-level kernels of the conversions of a rotation / translation into a matrix (docs/SPLIT.md
+# §18.3, WP 9-R1): `Matrix3FromTranslation2KernelTrait` & co., with the matrix's types (the
+# largest digit of the name), called by the conversion impl and by the geometry method through
+# `#[inline(always)]`
 [[rule]]
-name = "ColumnMajor|Balancing|HouseholderAxis"
-crate = "shapes5"
-
-[[rule]]
-trait = ["ColumnMajor", "Balancing", "HouseholderAxis"]
-by = "args"
-bands = { "5" = "shapes5", "6" = "shapes6" }
-default = "shapes5"
-
-# solve / permutation families: declarations low, impls with the types of their largest shape
-[[rule]]
-name = "SolveKernel|MatrixSolve|PermuteRows|PermuteColumns"
+name = "Matrix\\dFrom(Rotation|Translation)\\dKernelTrait"
 by = "name"
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
-default = "core"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
+# R1 (until R2): the permutation methods stay with their types (the proposal moves them to
+# `linalg2`..`linalg5` with the decompositions, docs/SPLIT.md §18.5)
 [[rule]]
 file = ["linalg/lu.cairo", "linalg/lu/perm1_5.cairo"]
-name = "Perm.*"
+name = "Perm[1-5]Trait"
 by = "name"
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
-default = "core"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5" }
 
+# `GivensRotation` (upstream `linalg::givens`), its methods and the traits of its impls: `types2`,
+# the lowest crate that can hold `cancel_y(Vector2)`; the struct's fields are crate-private, so its
+# constructors cannot sit in a crate above it, and the declarations of `GivensRotate` /
+# `GivensRotateRows` name it (WP 9-R1: not `core` / `linalg_core`)
 [[rule]]
-trait = ["SolveKernel", "MatrixSolve", "PermuteRows", "PermuteColumns"]
+name = "GivensRotation|GivensRotationTrait|GivensRotationInternalTrait|GivensRotate|GivensRotateRows"
+kind = ["trait", "struct", "inherent"]
+crate = "types2"
+
+# generic trait declarations: `core` (their impls sit with the types of each band, below)
+[[rule]]
+name = "GivensRotation|gauss_step|gauss_step_swap|ColumnMajor|Balancing|HouseholderAxis|LuSteps|SolveKernel|MatrixSolve|PermuteRows|PermuteColumns|GivensRotate|GivensRotateRows|BlasTranspose|ColumnVectorLen|RowVectorLen|MatrixMul|MatrixTrMul|MatrixIndex|Norm|Normed|Unit|TransformMul|TransformDiv|TransformSetCategory|ApproxEqTrait"
+kind = ["trait", "struct", "inherent", "fn"]
+crate = "core"
+
+# impls of the generic families of the types: in the module of their largest shape (Cairo's lookup)
+[[rule]]
+trait = ["ColumnMajor", "Balancing", "HouseholderAxis", "SolveKernel", "MatrixSolve", "PermuteRows",
+    "PermuteColumns", "GivensRotate", "GivensRotateRows", "BlasTranspose", "ColumnVectorLen",
+    "RowVectorLen", "MatrixMul", "MatrixTrMul", "MatrixIndex", "Reflection1Columns", "Reflection1Rows",
+    "Reflection2Columns", "Reflection2Rows", "Reflection3Columns", "Reflection3Rows", "Reflection4Columns",
+    "Reflection4Rows"]
 by = "args"
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 default = "core"
 
-# `LuInvert`, its impls and the public `try_invert_to` that resolves them at the caller: together
-# in the module of the trait, where every caller finds them (WP 9-NS3). Not in `linalg4` (WP 9-NS9):
-# `Matrix6LuInvert` runs `Lu6` (`static6_wide`) and cannot sit in `Matrix6`'s module (`shapes6`,
-# below `static6_wide`), so the trait's crate must be above both `linalg4` (`Lu2`..`Lu4`) and
-# `static6_wide`; in `linalg4` that would pull every dimension-6 crate into the closure
-# `static4_factor`. The facade holds them, as it holds `MatrixInfSup` (0.1.0 path kept)
+# `LuInvert`, its impls and `try_invert_to`: the facade (docs/SPLIT.md §15)
 [[rule]]
 name = "LuInvert|try_invert_to"
 crate = "facade"
@@ -224,27 +301,6 @@ crate = "facade"
 [[rule]]
 trait = ["LuInvert"]
 crate = "facade"
-
-[[rule]]
-file = ["linalg/lu_steps.cairo"]
-crate = "core"
-
-# public `GivensRotation` (upstream linalg::givens): declarations low, impls on their shape's band
-[[rule]]
-file = ["linalg/givens.cairo"]
-kind = ["impl"]
-by = "args"
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
-default = "core"
-
-[[rule]]
-file = ["linalg/givens.cairo"]
-crate = "core"
-
-# crate-private helper of `relative_eq` / `ulps_eq` used by every shape
-[[rule]]
-name = "ApproxEqTrait"
-crate = "core"
 
 # generic families: own crates, impls in the trait's module (the anchor rule moves them)
 [[rule]]
@@ -271,18 +327,6 @@ crate = "blocks"
 trait = ["FixedRows", "FixedColumns", "FixedResize", "PadTo6", "CropFrom6", "ShapeDims"]
 crate = "blocks"
 
-# products, transposed products, indexing: in the module of the larger operand
-[[rule]]
-trait = ["MatrixMul", "MatrixTrMul", "MatrixIndex"]
-by = "args"
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
-default = "core"
-
-[[rule]]
-name = "MatrixMul|MatrixTrMul"
-crate = "core"
-
-# norms: markers and every `Norm` impl in `norm` (the impls in the marker's module)
 [[rule]]
 name = "EuclideanNorm|LpNorm|OneNorm|UniformNorm"
 crate = "norm"
@@ -291,7 +335,6 @@ crate = "norm"
 trait = ["Norm"]
 crate = "norm"
 
-# `MatrixInfSup` (root): the facade
 [[rule]]
 name = "MatrixInfSup"
 crate = "facade"
@@ -300,34 +343,12 @@ crate = "facade"
 trait = ["MatrixInfSup"]
 crate = "facade"
 
-# shapes: inherent traits (methods) per band, above the types of the next band
+# shapes: methods per dimension (dimension 1 folded into `static_core`), the dimension-6 methods in
+# two crates by shape family (the one exception to "one number, one crate": 6 rows / 6 columns)
 [[rule]]
-file = ["base/vector2.cairo", "base/vector3.cairo", "base/matrix1.cairo"]
+file = ["base/matrix1.cairo"]
 kind = ["inherent"]
-crate = "static3"
-
-[[rule]]
-shape_file = true
-kind = ["inherent"]
-band = [1, 2, 3]
-crate = "static3"
-
-[[rule]]
-shape_file = true
-kind = ["inherent"]
-band = [4]
-crate = "static4"
-
-[[rule]]
-shape = ["Matrix2x5", "Matrix3x5", "Matrix4x5", "RowVector5"]
-kind = ["inherent"]
-crate = "static5"
-
-[[rule]]
-shape_file = true
-kind = ["inherent"]
-band = [5]
-crate = "static5"
+crate = "static_core"
 
 [[rule]]
 shape = ["Matrix2x6", "Matrix3x6", "Matrix4x6", "Matrix5x6", "RowVector6"]
@@ -344,64 +365,189 @@ crate = "static6_wide"
 [[rule]]
 shape_file = true
 kind = ["inherent"]
-band = [6]
-crate = "static6_tall"
+bands = { "2" = "static2", "3" = "static3", "4" = "static4", "5" = "static5", "6" = "static6_tall" }
+
+# homogeneous coordinates (`base::cg`): `MatrixNCgTrait` is the (N-1)-dimensional geometry
+[[rule]]
+file = ["base/cg.cairo"]
+name = "Matrix[12]Cg.*"
+crate = "geometry2"
+
+[[rule]]
+file = ["base/cg.cairo"]
+name = "Matrix3Cg.*"
+crate = "geometry2"
+
+[[rule]]
+file = ["base/cg.cairo"]
+name = "Matrix4Cg.*"
+crate = "geometry3"
+
+[[rule]]
+file = ["base/cg.cairo"]
+name = "Matrix5Cg.*"
+crate = "geometry4"
+
+[[rule]]
+file = ["base/cg.cairo"]
+name = "Matrix6Cg.*"
+crate = "geometry5"
 
 # shapes: structs, aliases and the rest with the types of their band
 [[rule]]
 shape_file = true
-bands = { "4" = "core", "5" = "shapes5", "6" = "shapes6" }
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
 
-# base families (the swizzles of `Point5` / `Point6` with those types; `Matrix6CgTrait` builds
-# dimension-6 types only)
+# point methods and swizzles: the geometry of their dimension (1 folded into 2)
 [[rule]]
-name = "Point5SwizzleTrait|Point6SwizzleTrait"
+file = ["base/point2.cairo", "base/point3.cairo", "base/point_swizzle.cairo", "geometry/point*.cairo",
+    "geometry/translation*.cairo", "geometry/scale*.cairo", "geometry/reflection*.cairo"]
+kind = ["inherent", "trait"]
+by = "name"
+bands = { "2" = "geometry2", "3" = "geometry3", "4" = "geometry4", "5" = "geometry5", "6" = "geometry6" }
+default = "geometry2"
+
+# conversions between a translation and a vector / point of its dimension: with the types
+[[rule]]
+file = ["geometry/translation*.cairo"]
+name = "Translation\\d(From|Into)(Vector|Point)"
+kind = ["impl"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+
+[[rule]]
+file = ["geometry/translation1.cairo", "geometry/scale1.cairo"]
+crate = "geometry2"
+
+[[rule]]
+file = ["geometry/translation2.cairo", "geometry/scale2.cairo"]
+crate = "geometry2"
+
+[[rule]]
+file = ["geometry/translation3.cairo", "geometry/scale3.cairo"]
+crate = "geometry3"
+
+[[rule]]
+file = ["geometry/translation4.cairo", "geometry/scale4.cairo"]
+crate = "geometry4"
+
+[[rule]]
+file = ["geometry/translation5.cairo", "geometry/scale5.cairo"]
+crate = "geometry5"
+
+[[rule]]
+file = ["geometry/translation6.cairo", "geometry/scale6.cairo"]
 crate = "geometry6"
 
 [[rule]]
-name = "Matrix6CgTrait"
-crate = "shapes6"
+file = ["geometry/point1.cairo", "geometry/reflection1.cairo"]
+crate = "core"
+
+[[rule]]
+file = ["geometry/point2.cairo", "geometry/reflection2.cairo", "base/point2.cairo"]
+crate = "types2"
+
+[[rule]]
+file = ["geometry/point3.cairo", "geometry/reflection3.cairo", "base/point3.cairo"]
+crate = "types3"
+
+[[rule]]
+file = ["geometry/point4.cairo", "geometry/reflection4.cairo"]
+crate = "types4"
+
+[[rule]]
+file = ["geometry/reflection5.cairo"]
+crate = "geometry5"
+
+[[rule]]
+file = ["geometry/point5.cairo"]
+crate = "types5"
+
+[[rule]]
+file = ["geometry/reflection6.cairo"]
+crate = "geometry6"
+
+[[rule]]
+file = ["geometry/point6.cairo"]
+crate = "types6"
+
 
 [[rule]]
 file = ["base/dynamic.cairo", "base/dynamic/*"]
 crate = "dynamic"
 
+# `base::statistics`: one inherent trait per shape (`Matrix3StatisticsTrait`), hence per dimension
+# like the methods (docs/SPLIT.md §18.4: a dimension-4 user does not pull dimensions 5-6)
 [[rule]]
 file = ["base/*statistics*"]
-crate = "statistics"
+by = "name"
+bands = { "2" = "statistics2", "3" = "statistics3", "4" = "statistics4", "5" = "statistics5", "6" = "statistics6" }
+default = "statistics2"
 
 [[rule]]
 file = ["base/*blas*"]
 crate = "blas"
 
+# the rest of `base` (units, symmetric helpers, kernels): methods with the static crate of their
+# dimension, types with the types, generic items in `core` / `static_core`
 [[rule]]
-file = ["base/*cg*"]
-crate = "geometry4"
+file = ["base/*", "base.cairo"]
+kind = ["inherent"]
+by = "name"
+bands = { "2" = "static2", "3" = "static3", "4" = "static4", "5" = "static5", "6" = "static6_tall" }
+default = "core"
 
 [[rule]]
 file = ["base/*", "base.cairo"]
+by = "name"
+bands = { "1" = "core", "2" = "types2", "3" = "types3", "4" = "types4", "5" = "types5", "6" = "types6" }
+default = "core"
+
+# geometry: 2D and 3D apart; generic items with the 2D geometry, except `AbstractRotation`, whose
+# impls sit in its module and run the 2D and the 3D rotations' methods
+# the general homogeneous transforms (upstream `geometry::transform`, the projections): the
+# N-dimensional geometry of (N+1)x(N+1) matrices, apart from `geometryN` because they run the
+# methods of the dimension N + 1 (`Transform3::try_inverse` runs `Matrix4Trait`), which the rigid
+# geometry (rotations, quaternions, isometries, similarities: `nalgebra_glam`) does not need
+[[rule]]
+file = ["geometry/transform2.cairo", "geometry/projective2.cairo", "geometry/affine2.cairo"]
+crate = "transform2"
+
+[[rule]]
+file = ["geometry/transform3.cairo", "geometry/projective3.cairo", "geometry/affine3.cairo",
+    "geometry/perspective3.cairo", "geometry/orthographic3.cairo"]
+crate = "transform3"
+
+[[rule]]
+file = ["geometry/transform.cairo"]
+kind = ["trait", "struct", "inherent"]
+name = "TransformMul|TransformDiv|TransformSetCategory"
 crate = "core"
 
-# geometry: the 2D / 3D rotation knot with the dimension 1-3 methods, dimension 5 / 6 apart
 [[rule]]
-file = ["geometry/abstract_rotation.cairo", "geometry/point.cairo", "geometry/quaternion.cairo",
-    "geometry/unit_quaternion.cairo", "geometry/unit_complex.cairo", "geometry/rotation2.cairo",
-    "geometry/rotation3.cairo", "geometry/translation2.cairo", "geometry/translation3.cairo",
-    "geometry/isometry2.cairo", "geometry/isometry3.cairo", "geometry/isometry_matrix2.cairo",
-    "geometry/isometry_matrix3.cairo", "geometry/similarity2.cairo", "geometry/similarity3.cairo",
-    "geometry/similarity_matrix2.cairo", "geometry/similarity_matrix3.cairo",
-    "geometry/dual_quaternion.cairo", "geometry/unit_dual_quaternion.cairo"]
-crate = "static3"
+file = ["geometry/transform.cairo"]
+by = "name"
+bands = { "2" = "transform2", "3" = "transform3" }
+default = "transform2"
 
 [[rule]]
-file = ["geometry/point5.cairo", "geometry/point6.cairo", "geometry/translation5.cairo",
-    "geometry/translation6.cairo", "geometry/scale5.cairo", "geometry/scale6.cairo",
-    "geometry/reflection5.cairo", "geometry/reflection6.cairo"]
-crate = "geometry6"
+file = ["geometry/unit_complex.cairo", "geometry/rotation2.cairo", "geometry/isometry2.cairo",
+    "geometry/isometry_matrix2.cairo", "geometry/similarity2.cairo", "geometry/similarity_matrix2.cairo",
+    ]
+crate = "geometry2"
+
+[[rule]]
+file = ["geometry/abstract_rotation.cairo", "geometry/quaternion.cairo", "geometry/unit_quaternion.cairo", "geometry/rotation3.cairo",
+    "geometry/isometry3.cairo", "geometry/isometry_matrix3.cairo", "geometry/similarity3.cairo",
+    "geometry/similarity_matrix3.cairo", "geometry/dual_quaternion.cairo",
+    "geometry/unit_dual_quaternion.cairo"]
+crate = "geometry3"
 
 [[rule]]
 file = ["geometry/*", "geometry.cairo"]
-crate = "geometry4"
+by = "name"
+bands = { "2" = "geometry2", "3" = "geometry3", "4" = "geometry4", "5" = "geometry5", "6" = "geometry6" }
+default = "geometry2"
 
 # linalg: family x band (dimension <= 4, 5, 6); the size is the file's, else the item name's
 [[rule]]

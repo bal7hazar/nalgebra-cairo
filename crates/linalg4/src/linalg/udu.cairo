@@ -9,17 +9,17 @@
 //! `LDLᵀ` `l`, `solve`, `inverse` and `determinant`, which upstream's `UDU` does not have, are
 //! crate-internal).
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
-use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
-use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::internal::base::sym_matrix2::SymMatrix2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::internal::linalg::ldlt::{Ldlt2Trait, Ldlt3Trait, Ldlt4Trait};
 

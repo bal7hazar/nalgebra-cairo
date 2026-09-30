@@ -11,5 +11,4 @@
 //! The methods have the names of the inherent methods: with both `AbstractRotation` and, say,
 //! `Rotation3Trait` imported, `r.inverse()` is ambiguous — import the trait alone in generic
 //! code, or call it by path (`AbstractRotation::inverse(r)`).
-
-pub use nalgebra_static3::geometry::abstract_rotation::*;
+pub use nalgebra_geometry3::geometry::abstract_rotation::*;

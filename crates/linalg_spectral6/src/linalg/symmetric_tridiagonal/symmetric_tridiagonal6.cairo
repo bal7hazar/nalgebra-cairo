@@ -5,9 +5,9 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 
 /// The tridiagonalisation `A = Q T Qᵀ` of a symmetric `Matrix6<T>`: `T` symmetric tridiagonal,

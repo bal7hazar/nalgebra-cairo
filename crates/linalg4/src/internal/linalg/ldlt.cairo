@@ -1,14 +1,14 @@
 //! Internal, no stability promise: the crate-private items of `linalg::ldlt` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
-use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
-use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::internal::base::sym_matrix2::SymMatrix2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 
 /// The `LDLᵀ` factorisation `a = l * diag(d) * lᵀ` of a symmetric 2x2 matrix: the 1

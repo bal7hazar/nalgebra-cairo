@@ -5,5 +5,8 @@
 //! index below the dimension). One `<Point>SwizzleTrait` per point (import it to call them);
 //! `Point3::xy` predates them and stays in `Point3Trait`.
 
-pub use nalgebra_core::base::point_swizzle::*;
+pub use nalgebra_geometry2::base::point_swizzle::*;
+pub use nalgebra_geometry3::base::point_swizzle::*;
+pub use nalgebra_geometry4::base::point_swizzle::*;
+pub use nalgebra_geometry5::base::point_swizzle::*;
 pub use nalgebra_geometry6::base::point_swizzle::*;

@@ -6,10 +6,16 @@
 //! exact.
 
 pub use nalgebra_core::linalg::lu::perm1_5::*;
-pub use nalgebra_shapes5::base::row_vector5::Perm1PermuteRowsRowVector5;
-pub use nalgebra_shapes5::base::vector5::Perm1PermuteColumnsVector5;
-pub use nalgebra_shapes5::linalg::lu::perm1_5::*;
-pub use nalgebra_shapes6::base::matrix5x6::Perm5PermuteRowsMatrix5x6;
-pub use nalgebra_shapes6::base::matrix6x5::Perm5PermuteColumnsMatrix6x5;
-pub use nalgebra_shapes6::base::row_vector6::Perm1PermuteRowsRowVector6;
-pub use nalgebra_shapes6::base::vector6::Perm1PermuteColumnsVector6;
+pub use nalgebra_types2::base::row_vector2::Perm1PermuteRowsRowVector2;
+pub use nalgebra_types2::base::vector2::Perm1PermuteColumnsVector2;
+pub use nalgebra_types3::base::row_vector3::Perm1PermuteRowsRowVector3;
+pub use nalgebra_types3::base::vector3::Perm1PermuteColumnsVector3;
+pub use nalgebra_types4::base::row_vector4::Perm1PermuteRowsRowVector4;
+pub use nalgebra_types4::base::vector4::Perm1PermuteColumnsVector4;
+pub use nalgebra_types5::base::row_vector5::Perm1PermuteRowsRowVector5;
+pub use nalgebra_types5::base::vector5::Perm1PermuteColumnsVector5;
+pub use nalgebra_types5::linalg::lu::perm1_5::*;
+pub use nalgebra_types6::base::matrix5x6::Perm5PermuteRowsMatrix5x6;
+pub use nalgebra_types6::base::matrix6x5::Perm5PermuteColumnsMatrix6x5;
+pub use nalgebra_types6::base::row_vector6::Perm1PermuteRowsRowVector6;
+pub use nalgebra_types6::base::vector6::Perm1PermuteColumnsVector6;

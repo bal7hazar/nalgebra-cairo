@@ -11,5 +11,4 @@
 //! component, every inverse one correctly rounded reciprocal (`Real::recip`, to nearest, ties to
 //! even, like `f64 /`); overflow panics, nothing wraps. `inverse_unchecked` is unchecked only in
 //! upstream's sense (no zero test): a zero factor panics with `Fixed: division by zero`.
-
-pub use nalgebra_geometry4::geometry::scale1::*;
+pub use nalgebra_geometry2::geometry::scale1::*;

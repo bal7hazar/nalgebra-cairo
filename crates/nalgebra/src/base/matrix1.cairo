@@ -27,8 +27,11 @@ pub use nalgebra_core::base::matrix1::*;
 pub use nalgebra_norm::base::norm::{
     Matrix1EuclideanNorm, Matrix1LpNorm, Matrix1OneNorm, Matrix1UniformNorm,
 };
-pub use nalgebra_shapes5::base::row_vector5::{Matrix1MulRowVector5, Matrix1TrMulRowVector5};
-pub use nalgebra_shapes6::base::row_vector6::{Matrix1MulRowVector6, Matrix1TrMulRowVector6};
-pub use nalgebra_static3::base::matrix1::*;
+pub use nalgebra_static_core::base::matrix1::*;
+pub use nalgebra_types2::base::row_vector2::{Matrix1MulRowVector2, Matrix1TrMulRowVector2};
+pub use nalgebra_types3::base::row_vector3::{Matrix1MulRowVector3, Matrix1TrMulRowVector3};
+pub use nalgebra_types4::base::row_vector4::{Matrix1MulRowVector4, Matrix1TrMulRowVector4};
+pub use nalgebra_types5::base::row_vector5::{Matrix1MulRowVector5, Matrix1TrMulRowVector5};
+pub use nalgebra_types6::base::row_vector6::{Matrix1MulRowVector6, Matrix1TrMulRowVector6};
 pub use nalgebra_views::base::matrix_view::Matrix1FixedViewMatrix1;
 pub use crate::root::matrix_inf_sup::Matrix1InfSup;

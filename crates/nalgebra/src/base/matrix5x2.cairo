@@ -19,7 +19,8 @@ pub use nalgebra_blocks::base::matrix_view::{
 pub use nalgebra_norm::base::norm::{
     Matrix5x2EuclideanNorm, Matrix5x2LpNorm, Matrix5x2OneNorm, Matrix5x2UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix5x2::{
+pub use nalgebra_static5::base::matrix5x2::*;
+pub use nalgebra_types5::base::matrix5x2::{
     Matrix5x2, Matrix5x2Add, Matrix5x2AddAssign, Matrix5x2Bounded, Matrix5x2DivAssignScalar,
     Matrix5x2FromColumnArrays, Matrix5x2IndexLinear, Matrix5x2IndexPair, Matrix5x2IntoColumnArrays,
     Matrix5x2MatrixIndexLinear, Matrix5x2MatrixIndexPair, Matrix5x2MulAssignScalar,
@@ -29,9 +30,8 @@ pub use nalgebra_shapes5::base::matrix5x2::{
     Matrix5x2TrMulMatrix5x2, Matrix5x2TrMulMatrix5x3, Matrix5x2TrMulMatrix5x4,
     Matrix5x2TrMulVector5,
 };
-pub use nalgebra_shapes6::base::matrix2x6::Matrix5x2MulMatrix2x6;
-pub use nalgebra_shapes6::base::matrix5x6::Matrix5x2TrMulMatrix5x6;
-pub use nalgebra_static5::base::matrix5x2::*;
+pub use nalgebra_types6::base::matrix2x6::Matrix5x2MulMatrix2x6;
+pub use nalgebra_types6::base::matrix5x6::Matrix5x2TrMulMatrix5x6;
 pub use nalgebra_views::base::matrix_view::{
     Matrix5x2FixedViewMatrix1, Matrix5x2FixedViewMatrix2, Matrix5x2FixedViewMatrix3x2,
     Matrix5x2FixedViewMatrix4x2, Matrix5x2FixedViewMatrix5x2, Matrix5x2FixedViewRowVector2,

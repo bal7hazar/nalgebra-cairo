@@ -25,15 +25,16 @@
 
 #[cfg(test)]
 mod tests;
-// an explicit list: the conversions and products of the shapes into this module's type (0.1.0:
-// `base::matrix*`, `base::row_vector*`) sit in this module of `nalgebra_static3`, the module of
-// their geometry type (docs/SPLIT.md §3.2, §12.6)
-pub use nalgebra_static3::geometry::rotation2::{
-    Isometry2FromRotation2, Rotation2, Rotation2AngleImpl, Rotation2AngleTrait, Rotation2Default,
-    Rotation2Div, Rotation2DivAssignUnitComplex, Rotation2FromUnitComplex, Rotation2Impl,
-    Rotation2Index, Rotation2IntoUnitComplex, Rotation2Mul, Rotation2MulAssignUnitComplex,
-    Rotation2One, Rotation2Trait, Similarity2FromRotation2, errors,
+
+pub use nalgebra_geometry2::geometry::isometry2::Isometry2FromRotation2;
+pub use nalgebra_geometry2::geometry::rotation2::*;
+pub use nalgebra_geometry2::geometry::similarity2::Similarity2FromRotation2;
+pub use nalgebra_geometry2::geometry::unit_complex::{
+    Rotation2DivAssignUnitComplex, Rotation2FromUnitComplex, Rotation2IntoUnitComplex,
+    Rotation2MulAssignUnitComplex,
 };
+
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
-use nalgebra_static3::internal::geometry::rotation2::{Rotation2InternalTrait};
+use nalgebra_geometry2::internal::geometry::rotation2::Rotation2InternalTrait;
+pub use nalgebra_types2::geometry::rotation2::*;

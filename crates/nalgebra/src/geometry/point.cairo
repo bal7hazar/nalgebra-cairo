@@ -11,7 +11,8 @@
 //! import, so `Point2Index` / `Point2PartialOrd` (and the `Point3` ones) must be imported where
 //! they are used.
 
-pub use nalgebra_core::base::point2::{Point2Index, Point2PartialOrd};
-pub use nalgebra_core::base::point3::{Point3Index, Point3PartialOrd};
-pub use nalgebra_core::geometry::point::errors;
-pub use nalgebra_static3::geometry::point::*;
+pub use nalgebra_core::geometry::point::*;
+pub use nalgebra_geometry2::geometry::point::*;
+pub use nalgebra_geometry3::geometry::point::*;
+pub use nalgebra_types2::base::point2::{Point2Index, Point2PartialOrd};
+pub use nalgebra_types3::base::point3::{Point3Index, Point3PartialOrd};

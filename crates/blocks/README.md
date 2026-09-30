@@ -14,8 +14,10 @@ crate on `fixed::Fixed` (Q32.32), built for provable game physics.
 
 Upstream's module paths are kept: `nalgebra_blocks::base::matrix_view::FixedRows` is
 `nalgebra::base::matrix_view::FixedRows` (docs/SPLIT.md §3.1). It depends on
-[`nalgebra_core`](../core/README.md), [`nalgebra_shapes5`](../shapes5/README.md),
-[`nalgebra_shapes6`](../shapes6/README.md) and [`nalgebra_static6_tall`](../static6_tall/README.md).
+[`nalgebra_core`](../core/README.md), [`nalgebra_types2`](../types2/README.md),
+[`nalgebra_types3`](../types3/README.md), [`nalgebra_types4`](../types4/README.md),
+[`nalgebra_types5`](../types5/README.md), [`nalgebra_types6`](../types6/README.md) and
+[`nalgebra_static6_tall`](../static6_tall/README.md).
 
 ## When to depend on it
 

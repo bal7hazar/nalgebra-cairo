@@ -6,21 +6,33 @@
 //! columns (import `PermuteRows` / `PermuteColumns`). Moves only: exact.
 
 pub use nalgebra_core::linalg::permutation_sequence::*;
-pub use nalgebra_shapes5::base::matrix2x5::Perm2PermuteRowsMatrix2x5;
-pub use nalgebra_shapes5::base::matrix3x5::Perm3PermuteRowsMatrix3x5;
-pub use nalgebra_shapes5::base::matrix4x5::Perm4PermuteRowsMatrix4x5;
-pub use nalgebra_shapes5::base::matrix5x2::Perm2PermuteColumnsMatrix5x2;
-pub use nalgebra_shapes5::base::matrix5x3::Perm3PermuteColumnsMatrix5x3;
-pub use nalgebra_shapes5::base::matrix5x4::Perm4PermuteColumnsMatrix5x4;
-pub use nalgebra_shapes6::base::matrix2x6::Perm2PermuteRowsMatrix2x6;
-pub use nalgebra_shapes6::base::matrix3x6::Perm3PermuteRowsMatrix3x6;
-pub use nalgebra_shapes6::base::matrix4x6::Perm4PermuteRowsMatrix4x6;
-pub use nalgebra_shapes6::base::matrix6x2::Perm2PermuteColumnsMatrix6x2;
-pub use nalgebra_shapes6::base::matrix6x3::Perm3PermuteColumnsMatrix6x3;
-pub use nalgebra_shapes6::base::matrix6x4::Perm4PermuteColumnsMatrix6x4;
 pub use nalgebra_static6_wide::linalg::lu::{
     Perm6PermuteColumnsMatrix2x6, Perm6PermuteColumnsMatrix3x6, Perm6PermuteColumnsMatrix4x6,
     Perm6PermuteColumnsMatrix5x6, Perm6PermuteColumnsMatrix6, Perm6PermuteColumnsRowVector6,
     Perm6PermuteRowsMatrix6, Perm6PermuteRowsMatrix6x2, Perm6PermuteRowsMatrix6x3,
     Perm6PermuteRowsMatrix6x4, Perm6PermuteRowsMatrix6x5, Perm6PermuteRowsVector6,
 };
+pub use nalgebra_types2::base::matrix2::{Perm2PermuteColumnsMatrix2, Perm2PermuteRowsMatrix2};
+pub use nalgebra_types2::linalg::lu::{Perm2PermuteColumnsRowVector2, Perm2PermuteRowsVector2};
+pub use nalgebra_types3::base::matrix2x3::{Perm2PermuteRowsMatrix2x3, Perm3PermuteColumnsMatrix2x3};
+pub use nalgebra_types3::base::matrix3::{Perm3PermuteColumnsMatrix3, Perm3PermuteRowsMatrix3};
+pub use nalgebra_types3::base::matrix3x2::{Perm2PermuteColumnsMatrix3x2, Perm3PermuteRowsMatrix3x2};
+pub use nalgebra_types3::linalg::lu::{Perm3PermuteColumnsRowVector3, Perm3PermuteRowsVector3};
+pub use nalgebra_types4::base::matrix2x4::{Perm2PermuteRowsMatrix2x4, Perm4PermuteColumnsMatrix2x4};
+pub use nalgebra_types4::base::matrix3x4::{Perm3PermuteRowsMatrix3x4, Perm4PermuteColumnsMatrix3x4};
+pub use nalgebra_types4::base::matrix4::{Perm4PermuteColumnsMatrix4, Perm4PermuteRowsMatrix4};
+pub use nalgebra_types4::base::matrix4x2::{Perm2PermuteColumnsMatrix4x2, Perm4PermuteRowsMatrix4x2};
+pub use nalgebra_types4::base::matrix4x3::{Perm3PermuteColumnsMatrix4x3, Perm4PermuteRowsMatrix4x3};
+pub use nalgebra_types4::linalg::lu::{Perm4PermuteColumnsRowVector4, Perm4PermuteRowsVector4};
+pub use nalgebra_types5::base::matrix2x5::Perm2PermuteRowsMatrix2x5;
+pub use nalgebra_types5::base::matrix3x5::Perm3PermuteRowsMatrix3x5;
+pub use nalgebra_types5::base::matrix4x5::Perm4PermuteRowsMatrix4x5;
+pub use nalgebra_types5::base::matrix5x2::Perm2PermuteColumnsMatrix5x2;
+pub use nalgebra_types5::base::matrix5x3::Perm3PermuteColumnsMatrix5x3;
+pub use nalgebra_types5::base::matrix5x4::Perm4PermuteColumnsMatrix5x4;
+pub use nalgebra_types6::base::matrix2x6::Perm2PermuteRowsMatrix2x6;
+pub use nalgebra_types6::base::matrix3x6::Perm3PermuteRowsMatrix3x6;
+pub use nalgebra_types6::base::matrix4x6::Perm4PermuteRowsMatrix4x6;
+pub use nalgebra_types6::base::matrix6x2::Perm2PermuteColumnsMatrix6x2;
+pub use nalgebra_types6::base::matrix6x3::Perm3PermuteColumnsMatrix6x3;
+pub use nalgebra_types6::base::matrix6x4::Perm4PermuteColumnsMatrix6x4;

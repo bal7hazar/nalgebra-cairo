@@ -26,5 +26,4 @@
 //!
 //! Numeric contract (AGENTS.md): every sum of products goes through a fused `Real` kernel (one
 //! floor rounding and one overflow check per output scalar); nothing wraps silently.
-
-pub use nalgebra_static3::geometry::isometry_matrix2::*;
+pub use nalgebra_geometry2::geometry::isometry_matrix2::*;

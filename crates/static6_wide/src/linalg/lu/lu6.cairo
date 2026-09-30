@@ -1,31 +1,13 @@
-//! `Lu6`: the LU factorisation with partial pivoting of a `Matrix6` (upstream
-//! `nalgebra::linalg::LU` on a 6x6 matrix).
-//!
-//! `P * A = L * U`, with `L` unit lower triangular, `U` upper triangular and `P` the product of the
-//! 5 row transpositions chosen by partial pivoting. Both factors share one `Matrix6` like upstream
-//! (strict lower triangle = `L`, whose unit diagonal is implicit; upper triangle = `U`) and the
-//! permutation is the compact `Perm6`.
-//!
-//! Everything is unrolled (DESIGN D4: no loop in static code) and every sum of products goes
-//! through a fused `Real` kernel — `mul_add` for a single product, the explicit `Real::Wide`
-//! accumulator beyond that — so each output scalar is floored once and range-checked once
-//! (AGENTS.md rule 4).
-//!
-//! Partial pivoting costs 15 `abs` and comparisons plus 5 conditional row swaps (moves only), and
-//! every swap duplicates the row it moves, so it also costs Sierra statements. Dropping it would be
-//! cheaper and shorter and it is not an option: without it the pivot of step `k` is whatever sits
-//! at `a_kk`, nothing bounds `|l_ik|`, and a matrix as ordinary as a permuted identity factors with
-//! a zero pivot. `bench_lu6_new__alt_no_pivot` and `test_no_pivot_candidate_is_wrong` keep the
-//! measurement and the counter-example. Upstream has no unpivoted variant either, only `LU`
-//! (partial pivoting) and `FullPivLU` (complete pivoting).
+//! Internal, no stability promise: the crate-private items of `linalg::lu::lu6` that the packages
+//! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::linalg::permutation_sequence::PermuteRows;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::internal::linalg::lu::lu6::Lu6InternalTrait;
-use super::Perm6;
+use crate::linalg::lu::Perm6;
 
 /// The LU factorisation with partial pivoting of a `Matrix6<T>`: `P * A = L * U`.
 ///

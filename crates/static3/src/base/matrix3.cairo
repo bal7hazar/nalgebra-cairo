@@ -9,22 +9,22 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix2x3::Matrix2x3;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix3x2::Matrix3x2;
-use nalgebra_core::base::matrix3x4::Matrix3x4;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::matrix4x3::Matrix4x3;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::norm::Norm;
-use nalgebra_core::base::row_vector3::RowVector3;
-use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::kernels::Powi;
-use nalgebra_core::internal::base::matrix3::Matrix3EditTrait;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
+use nalgebra_types3::base::matrix2x3::Matrix2x3;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::matrix3x2::Matrix3x2;
+use nalgebra_types3::base::row_vector3::RowVector3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::geometry::rotation3::Rotation3;
+use nalgebra_types3::internal::base::matrix3::Matrix3EditTrait;
+use nalgebra_types4::base::matrix3x4::Matrix3x4;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::matrix4x3::Matrix4x3;
 use simba::scalar::{Real, Transcendental};
-use crate::geometry::Rotation3;
 use crate::internal::base::matrix3::Matrix3InternalTrait;
 
 /// Methods of `Matrix3<T>` for any `Real` scalar.

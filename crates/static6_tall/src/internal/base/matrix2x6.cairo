@@ -2,9 +2,9 @@
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
 use nalgebra_core::base::errors;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_shapes6::base::matrix2x6::Matrix2x6;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types6::base::matrix2x6::Matrix2x6;
+use nalgebra_types6::base::row_vector6::RowVector6;
 
 /// Private helpers of the `swap*` methods (runtime positions: one `match` each).
 #[generate_trait]

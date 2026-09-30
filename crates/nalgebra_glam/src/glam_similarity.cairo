@@ -34,23 +34,23 @@
 
 use fixed::{Fixed, ONE, TWO, ZERO};
 use glam_core::{Mat3, Mat4, Vec3, Vec4};
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_geometry2::geometry::isometry2::Isometry2;
+use nalgebra_geometry2::geometry::similarity2::{Similarity2, Similarity2Trait};
+use nalgebra_geometry2::geometry::unit_complex::UnitComplex;
+use nalgebra_geometry3::geometry::isometry3::Isometry3;
+use nalgebra_geometry3::geometry::similarity3::{Similarity3, Similarity3Trait};
+use nalgebra_geometry3::geometry::unit_quaternion::UnitQuaternionTrait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
+use nalgebra_static2::base::vector2::Vector2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
-use nalgebra_static3::base::vector2::Vector2Trait;
 use nalgebra_static3::base::vector3::Vector3Trait;
-use nalgebra_static3::geometry::isometry2::Isometry2;
-use nalgebra_static3::geometry::isometry3::Isometry3;
-use nalgebra_static3::geometry::rotation3::Rotation3;
-use nalgebra_static3::geometry::similarity2::{Similarity2, Similarity2Trait};
-use nalgebra_static3::geometry::similarity3::{Similarity3, Similarity3Trait};
-use nalgebra_static3::geometry::translation2::Translation2;
-use nalgebra_static3::geometry::translation3::Translation3;
-use nalgebra_static3::geometry::unit_complex::UnitComplex;
-use nalgebra_static3::geometry::unit_quaternion::UnitQuaternionTrait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::translation2::Translation2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::geometry::rotation3::Rotation3;
+use nalgebra_types3::geometry::translation3::Translation3;
 use crate::glam_matrix::{Matrix3IntoMat3, Matrix4IntoMat4};
 
 /// 3 as a `Fixed`.

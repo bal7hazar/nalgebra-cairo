@@ -9,12 +9,12 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_linalg5::internal::linalg::svd::kernels::SvdRightImpl5;
 use nalgebra_linalg5::internal::linalg::symmetric_eigen5::Sym5;
 use nalgebra_linalg_svd_eigen4::internal::linalg::svd::kernels::SvdRightImpl;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types6::base::matrix5x6::Matrix5x6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6x5::Matrix6x5;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::linalg::svd::kernels::SvdComplete6Impl;
 
