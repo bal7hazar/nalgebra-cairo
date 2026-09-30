@@ -122,7 +122,6 @@ name = "nalgebra_dynamic"
 version = "0.1.0"
 dependencies = [
  "fixed",
- "nalgebra_blocks",
  "nalgebra_core",
  "nalgebra_static2",
  "nalgebra_static3",
