@@ -1,3 +1,7 @@
+//! In `nalgebra_types3`: the `struct` `Translation3`; its 9 impls, among them `Translation3Mul`,
+//! `Translation3FromVector`, `Translation3Div` and 6 more. This module is split over packages; the
+//! other parts are in `nalgebra_geometry3`.
+//!
 //! `Translation3`: a 3D translation (upstream `nalgebra::Translation3`, which is
 //! `Translation<T, 3>`).
 //!

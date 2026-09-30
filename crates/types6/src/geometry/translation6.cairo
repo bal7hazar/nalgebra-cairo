@@ -1,3 +1,7 @@
+//! In `nalgebra_types6`: the `struct` `Translation6`; its 9 impls, among them `Translation6Mul`,
+//! `Translation6FromVector`, `Translation6Div` and 6 more. This module is split over packages; the
+//! other parts are in `nalgebra_geometry6`.
+//!
 //! `Translation6`: a 6-dimensional translation (upstream `nalgebra::Translation6`, i.e.
 //! `Translation<T, 6>`), WP 8.4-P09a.
 //!

@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry3`: its 2 impls, among them `Rotation3Impl`, `Rotation3AngleImpl`. This
+//! module is split over packages; the other parts are in `nalgebra_types3`.
+//!
 //! `Rotation3`: a 3D rotation stored as a 3x3 orthonormal matrix (upstream `nalgebra::Rotation3`).
 //!
 //! - `Rotation3Trait` / `Rotation3Impl`: constructors, transforms, composition, conversions to and

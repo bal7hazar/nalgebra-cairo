@@ -1,3 +1,7 @@
+//! In `nalgebra_core`: the `struct` `Point1`; its 11 impls, among them `Point1Neg`,
+//! `Point1AddAssign`, `Point1SubAssign` and 8 more. This module is split over packages; the other
+//! parts are in `nalgebra_geometry2`.
+//!
 //! `Point1`: a 1-dimensional point (upstream `nalgebra::Point1`, i.e. `Point<T, 1>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

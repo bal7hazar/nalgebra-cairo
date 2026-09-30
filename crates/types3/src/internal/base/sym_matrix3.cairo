@@ -1,3 +1,6 @@
+//! In `nalgebra_types3`: the `struct` `SymMatrix3`. This module is split over packages; the other
+//! parts are in `nalgebra_static3`.
+//!
 //! Internal, no stability promise: the crate-private items of `base::sym_matrix3` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 

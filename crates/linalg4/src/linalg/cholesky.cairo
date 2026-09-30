@@ -1,3 +1,7 @@
+//! In `nalgebra_linalg4`: the `struct` `Cholesky4`; its 2 impls, among them `Cholesky4Impl`,
+//! `Matrix4CholeskyImpl`. This module is split over packages; the other parts are in
+//! `nalgebra_linalg2`, `nalgebra_linalg3`, `nalgebra_linalg6`.
+//!
 //! Cholesky factorisation `A = L·Lᵀ` of a symmetric POSITIVE-DEFINITE matrix, unrolled for the
 //! static sizes 2, 3, 4 and 6 (upstream `nalgebra::linalg::Cholesky`).
 //!

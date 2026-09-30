@@ -1,3 +1,7 @@
+//! In `nalgebra_linalg4`: the impl `Perm4Impl`; the sub-module `lu4`. This module is split over
+//! packages; the other parts are in `nalgebra_core`, `nalgebra_linalg2`, `nalgebra_linalg3`,
+//! `nalgebra_linalg5`, `nalgebra_static6_wide`, `nalgebra_types2` and others.
+//!
 //! LU factorisation with partial pivoting of the static square matrices (upstream
 //! `nalgebra::linalg::lu`), one unrolled module per dimension: `Lu2`, `Lu3`, `Lu4`, `Lu6`.
 //!

@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry6`: the impl `Point6Impl`. This module is split over packages; the other
+//! parts are in `nalgebra_types6`.
+//!
 //! `Point6`: a 6-dimensional point (upstream `nalgebra::Point6`, i.e. `Point<T, 6>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

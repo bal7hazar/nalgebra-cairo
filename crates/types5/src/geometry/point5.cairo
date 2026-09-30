@@ -1,3 +1,7 @@
+//! In `nalgebra_types5`: the `struct` `Point5`; its 11 impls, among them `Point5Neg`,
+//! `Point5AddAssign`, `Point5SubAssign` and 8 more. This module is split over packages; the other
+//! parts are in `nalgebra_geometry5`.
+//!
 //! `Point5`: a 5-dimensional point (upstream `nalgebra::Point5`, i.e. `Point<T, 5>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

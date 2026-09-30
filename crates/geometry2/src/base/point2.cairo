@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry2`: the trait `Point2Trait`; the impl `Point2Impl`. This module is split
+//! over packages; the other parts are in `nalgebra_types2`.
+//!
 //! `Point2`: a 2-dimensional point (upstream `nalgebra::Point2`, which lives in `geometry`).
 //!
 //! A point is an affine position, as opposed to a `Vector2` displacement: points cannot be added

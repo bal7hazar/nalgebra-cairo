@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry6`: the impl `Translation6Impl`. This module is split over packages; the
+//! other parts are in `nalgebra_types6`.
+//!
 //! `Translation6`: a 6-dimensional translation (upstream `nalgebra::Translation6`, i.e.
 //! `Translation<T, 6>`), WP 8.4-P09a.
 //!

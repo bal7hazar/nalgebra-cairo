@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry2`: the impl `Point1Impl`. This module is split over packages; the other
+//! parts are in `nalgebra_core`.
+//!
 //! `Point1`: a 1-dimensional point (upstream `nalgebra::Point1`, i.e. `Point<T, 1>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

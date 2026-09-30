@@ -1,3 +1,7 @@
+//! In `nalgebra_types3`: the `struct` `Point3`; its 11 impls, among them `Point3Neg`,
+//! `Point3AddAssign`, `Point3SubAssign` and 8 more. This module is split over packages; the other
+//! parts are in `nalgebra_geometry3`.
+//!
 //! `Point3`: a 3-dimensional point (upstream `nalgebra::Point3`, which lives in `geometry`).
 //!
 //! A point is an affine position, as opposed to a `Vector3` displacement: points cannot be added

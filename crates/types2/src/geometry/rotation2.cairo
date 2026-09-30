@@ -1,3 +1,7 @@
+//! In `nalgebra_types2`: the `struct` `Rotation2`; its 5 impls, among them `Rotation2Mul`,
+//! `Rotation2Div`, `Rotation2Default` and 2 more; the sub-module `errors`. This module is split
+//! over packages; the other parts are in `nalgebra_geometry2`.
+//!
 //! `Rotation2`: a 2D rotation stored as a 2x2 orthogonal matrix (upstream
 //! `nalgebra::Rotation2`, which is `Rotation<T, 2>`).
 //!

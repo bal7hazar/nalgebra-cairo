@@ -1,3 +1,6 @@
+//! In `nalgebra_static2`: the trait `Unit2Trait`; the impl `Unit2Impl`. This module is split over
+//! packages; the other parts are in `nalgebra_core`, `nalgebra_static3`, `nalgebra_static4`.
+//!
 //! `Unit<V>`: a wrapper guaranteeing (by contract) that a vector has unit norm (upstream
 //! `nalgebra::Unit`).
 //!

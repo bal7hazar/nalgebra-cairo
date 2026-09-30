@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry4`: the impl `Translation4Impl`. This module is split over packages; the
+//! other parts are in `nalgebra_types4`.
+//!
 //! `Translation4`: a 4-dimensional translation (upstream `nalgebra::Translation4`, i.e.
 //! `Translation<T, 4>`), WP 8.4-P09a.
 //!

@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry2`: the impl `Point2ExtImpl`. This module is split over packages; the other
+//! parts are in `nalgebra_core`, `nalgebra_geometry3`.
+//!
 //! Points (upstream `nalgebra::Point`): the panic messages shared by every point type. The
 //! completion of `Point2` / `Point3` (`Point2ExtTrait` / `Point3ExtTrait`) lives in the facade
 //! `nalgebra` (`geometry::point`); `Point2Index` / `Point2PartialOrd` (and the `Point3` ones) in

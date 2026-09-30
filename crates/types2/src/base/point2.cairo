@@ -1,3 +1,7 @@
+//! In `nalgebra_types2`: the `struct` `Point2`; its 11 impls, among them `Point2Neg`,
+//! `Point2AddAssign`, `Point2SubAssign` and 8 more. This module is split over packages; the other
+//! parts are in `nalgebra_geometry2`.
+//!
 //! `Point2`: a 2-dimensional point (upstream `nalgebra::Point2`, which lives in `geometry`).
 //!
 //! A point is an affine position, as opposed to a `Vector2` displacement: points cannot be added

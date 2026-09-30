@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry5`: the impl `Point5Impl`. This module is split over packages; the other
+//! parts are in `nalgebra_types5`.
+//!
 //! `Point5`: a 5-dimensional point (upstream `nalgebra::Point5`, i.e. `Point<T, 5>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

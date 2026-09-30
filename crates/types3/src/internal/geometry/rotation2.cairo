@@ -1,3 +1,6 @@
+//! In `nalgebra_types3`: the impl `Matrix3FromRotation2KernelImpl`. This module is split over
+//! packages; the other parts are in `nalgebra_geometry2`.
+//!
 //! Internal, no stability promise: the crate-private items of `geometry::rotation2` that the
 //! packages above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 

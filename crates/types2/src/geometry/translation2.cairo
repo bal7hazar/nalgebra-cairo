@@ -1,3 +1,7 @@
+//! In `nalgebra_types2`: the `struct` `Translation2`; its 9 impls, among them `Translation2Mul`,
+//! `Translation2FromVector`, `Translation2Div` and 6 more. This module is split over packages; the
+//! other parts are in `nalgebra_geometry2`.
+//!
 //! `Translation2`: a 2D translation (upstream `nalgebra::Translation2`, which is
 //! `Translation<T, 2>`).
 //!
