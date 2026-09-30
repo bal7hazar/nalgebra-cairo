@@ -15,7 +15,7 @@ cd "$worktree"
 task=$(basename "$worktree")
 
 framing='You are a sub-agent of an orchestrator, executing ONE work package of nalgebra-cairo in the git worktree you are started in (see docs/ORCHESTRATOR.md for the process, AGENTS.md for the rules). Hard rules:
-- Stay strictly inside the scope and file allowlist of the brief. Shared files (workspace Scarb.toml, lib.cairo beyond adding your own lines where the brief allows it, .github, scripts, docs, gas snapshots of other modules) belong to the orchestrator: list what you need from them in the "Escalations" section of REPORT.md instead of editing them.
+- Stay strictly inside the scope and file allowlist of the brief. Shared files (workspace Scarb.toml, lib.cairo beyond adding your own lines where the brief allows it, .github, scripts, docs, gas snapshots of other modules) belong to the orchestrator unless the allowlist of the brief names them explicitly: list what you need from the others in the "Escalations" section of REPORT.md instead of editing them.
 - Do not ask questions: decide, document the decision in doc comments, report it. Do not widen the scope. Do not stop before the deliverables are complete.
 - Work incrementally: compile early and often, keep changes small, never delete tests to make the gate pass. Watch the compile budget of test files (the first cause of CI failures).
 - Efficiency: no loops in static code, every sum of products through a fused `Real` kernel, `#[inline(always)]` on small ops only; when the cheapest formulation is not obvious, bench the variants (winner in the library, losers under `#[cfg(test)]` with their benches).

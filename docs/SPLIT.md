@@ -1116,7 +1116,7 @@ proof 9,289 / 0 / 0, `cratemap.py --anchors` 0 findings, gate 1 per crate, `Cons
 | PR | content | replaces | size |
 |---|---|---|---|
 | R1 | `core` (declarations + dimension 1), `types2..6`, `static_core`, `static2..5`, `static6_tall` / `_wide`, `geometry2..6`, `transform2` / `3`, `statistics2..6`; the 8 type-level kernels | `core`, `shapes5`, `shapes6`, `static3..5`, `static6_*`, `geometry4`, `geometry6`, `statistics` | ~300k lines (generator-driven: the shape files, `cg`, statistics) |
-| R2 | `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; `SvdRightTrait` split per dimension (2..6, today ≤4 / 5 / 6); `Cholesky2/3UpdateTrait` in `linalg3` / `linalg4` | the 12 `linalg*` crates | ~185k (linalggen-driven) |
+| R2 | `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; `SvdRightTrait` split per dimension (2..6, today ≤4 / 5 / 6); `Cholesky2/3UpdateTrait` in `linalg3` / `linalg4` | the 10 `linalg*` crates | ~185k (linalggen-driven) |
 | R3 | release plumbing on the new names: `consumer_cost.toml` (packages, closures of §18.2 with their budgets), `scripts/release.py` order (the map's order: 54 packages), one README per package (description = the one-line content above), facade README tables, `docs/PACKAGES.md`, CHANGELOG 0.1.1 | – | docs / scripts |
 
 `blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse` keep their content; R1 rewrites their

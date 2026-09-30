@@ -39,8 +39,9 @@ machine: shims, foreground only, crate-scoped checks) and, for a package-split m
 1. Files to read first (`AGENTS.md`, `docs/DESIGN.md`, style precedents on `main`, the reports of
    the previous lots).
 2. Strict scope: a file allowlist; everything else is forbidden. Shared files (`lib.cairo`,
-   `Scarb.toml`, CI, design docs, CHANGELOG, status) belong to the orchestrator: the agent lists
-   its needs in an "Escalations" section of the report instead of editing them.
+   `Scarb.toml`, CI, scripts, docs, CHANGELOG, status) belong to the orchestrator unless the
+   allowlist names them explicitly (the launcher's framing says the same): the agent lists its
+   other needs in an "Escalations" section of the report instead of editing them.
 3. Expected API (exact names from the source being ported), numeric semantics, what is
    explicitly deferred (DEFER).
 4. Efficiency rules and numeric targets (gas / steps); variants to bench when the formulation is
