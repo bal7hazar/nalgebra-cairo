@@ -18,15 +18,85 @@ the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). 
   less), the sub-crates keep upstream's module paths, and every benchmark keeps its step count (zero
   step change, `tools/split/gas_compare.py` on every move). A 0.1.0 consumer updates the version and
   nothing else.
-- **The sub-crates**: TODO (one line per crate: name, content).
+- **The 54 packages** (52 sub-crates, the facade and `nalgebra_glam`; a number in a name is exactly
+  that dimension, the dimension of a rectangular shape being max(rows, columns); docs/SPLIT.md §18.1),
+  lowest first:
+  - `nalgebra_core`: generic trait declarations (`MatrixMul`, `MatrixTrMul`, `MatrixIndex`, `Norm`, `Normed` / `Unit`, `MatrixSolve`, `PermuteRows`, `GivensRotate`, `LuSteps`, Householder / balancing, `TransformMul`), errors, fused kernels; the dimension-1 types (`Matrix1`, `Vector1`, `Point1`, `Translation1`, `Perm1`, `Reflection1`)
+  - `nalgebra_types2`: the types of dimension 2 (shapes with max(rows, cols) = 2, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); `Point2`, `Translation2`, `Perm2`, `Rotation2`, `Reflection2`
+  - `nalgebra_types3`: the types of dimension 3 (as `types2`); `Point3`, `Translation3`, `Perm3`, `Rotation3`, `Reflection3`
+  - `nalgebra_types4`: the types of dimension 4 (as `types2`); `Point4`, `Translation4`, `Perm4`, `Reflection4`
+  - `nalgebra_types5`: the types of dimension 5 (as `types2`); `Point5`, `Translation5`, `Perm5`
+  - `nalgebra_types6`: the types of dimension 6 (as `types2`, without the edit kernels); `Point6`, `Translation6`
+  - `nalgebra_static_core`: the methods of the dimension-1 shapes (`Matrix1`, `Vector1`, `RowVector1`, `UnitVector1`)
+  - `nalgebra_static2`: the methods of the dimension-2 shapes (`Matrix2`, `Vector2`, `RowVector2`, `Matrix1x2`...)
+  - `nalgebra_static3`: the methods of the dimension-3 shapes (`Matrix3`, `Vector3`, `Matrix2x3`, `Matrix3x2`...)
+  - `nalgebra_static4`: the methods of the dimension-4 shapes
+  - `nalgebra_static5`: the methods of the dimension-5 shapes
+  - `nalgebra_static6_tall`: the methods of the shapes with 6 rows and fewer columns (`Matrix6x1`..`Matrix6x5`, `Vector6`); dimension-6 edit kernels
+  - `nalgebra_static6_wide`: the methods of the shapes with 6 columns (`Matrix6`, `Matrix2x6`..`Matrix5x6`, `RowVector6`); `Lu6`, `Perm6`
+  - `nalgebra_geometry2`: the 1D / 2D geometry: `UnitComplex`, `Rotation2` methods, isometries, similarities, points / translations / scales 1-2 methods, swizzles, `Matrix2` / `Matrix3` homogeneous (`cg`)
+  - `nalgebra_geometry3`: the 3D geometry: quaternions, unit quaternions, `Rotation3` methods, isometries, similarities, dual quaternions, `AbstractRotation`, point / translation / scale / reflection 3 methods, `Matrix4` homogeneous
+  - `nalgebra_geometry4`: point / translation / scale 4 methods, `Matrix5` homogeneous
+  - `nalgebra_geometry5`: points, translations, scales, reflections of dimension 5 (`Reflection5` whole), `Matrix6` homogeneous
+  - `nalgebra_geometry6`: points, translations, scales, reflections of dimension 6 (`Reflection6` whole)
+  - `nalgebra_transform2`: `Transform2`, `Projective2`, `Affine2` and their products (upstream `geometry::transform`)
+  - `nalgebra_transform3`: `Transform3`, `Projective3`, `Affine3`, `Perspective3`, `Orthographic3` and their products
+  - `nalgebra_blocks`: row / column blocks, resize, pad / crop, Kronecker products
+  - `nalgebra_views`: `FixedView` and its 441 impls
+  - `nalgebra_norm`: the norm markers and every `Norm` impl
+  - `nalgebra_statistics2`: `base::statistics` of the dimension-2 shapes (one inherent trait per shape)
+  - `nalgebra_statistics3`: `base::statistics` of dimension 3
+  - `nalgebra_statistics4`: `base::statistics` of dimension 4
+  - `nalgebra_statistics5`: `base::statistics` of dimension 5
+  - `nalgebra_statistics6`: `base::statistics` of dimension 6
+  - `nalgebra_blas`: `base::blas` (`MatrixGemm` and its 216 impls, the per-shape BLAS traits)
+  - `nalgebra_linalg_core`: shared linalg kernels: Householder kernels and steps (`clear_column_unchecked`, `assemble_q`), `reflection_axis_mut`, balancing, Givens methods, the SVD right-vector kernel trait
+  - `nalgebra_linalg2`: LU, Cholesky, LDLᵀ / UDU, QR, inverse of dimension 2 (and 1)
+  - `nalgebra_linalg_svd_eigen2`: SVD and symmetric eigen of dimension 2 (and 1)
+  - `nalgebra_linalg_pivot2`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 2 (and 1)
+  - `nalgebra_linalg_spectral2`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 2 (and 1)
+  - `nalgebra_linalg3`: LU, Cholesky (+ the column updates of dimension 2), LDLᵀ / UDU, QR, inverse of dimension 3
+  - `nalgebra_linalg_svd_eigen3`: SVD and symmetric eigen of dimension 3
+  - `nalgebra_linalg_pivot3`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 3
+  - `nalgebra_linalg_spectral3`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 3
+  - `nalgebra_linalg4`: LU, Cholesky (+ the column updates of dimension 3), LDLᵀ / UDU, QR, inverse of dimension 4
+  - `nalgebra_linalg_svd_eigen4`: SVD and symmetric eigen of dimension 4
+  - `nalgebra_linalg_pivot4`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 4
+  - `nalgebra_linalg_spectral4`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 4
+  - `nalgebra_linalg5`: LU, Cholesky (+ the column updates of dimension 4), LDLᵀ / UDU, QR, inverse of dimension 5
+  - `nalgebra_linalg_svd_eigen5`: SVD and symmetric eigen of dimension 5
+  - `nalgebra_linalg_pivot5`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 5
+  - `nalgebra_linalg_spectral5`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 5
+  - `nalgebra_linalg6`: Cholesky, LDLᵀ / UDU, QR, inverse of dimension 6 (`Lu6` is in `static6_wide`)
+  - `nalgebra_linalg_svd_eigen6`: SVD and symmetric eigen of dimension 6
+  - `nalgebra_linalg_pivot6`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6
+  - `nalgebra_linalg_spectral6`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 6
+  - `nalgebra_dynamic`: `DMatrix`, `DVector`, the dynamic forms
+  - `nalgebra_sparse`: `sparse`, `io`
+  - `nalgebra`: the facade: root functions, macros, `LuInvert`, `MatrixInfSup` and the 0.1.0 module tree, re-exporting every package above at its 0.1.0 paths.
+  - `nalgebra_glam`: unchanged API
 - **Why**: a consumer that needs part of the library depends on the sub-crates it uses and pays
   only for them. Every sub-crate is at most 40,000 library lines and adds at most 5 s / 1 GB to a
   cold build of an empty consumer over its own dependencies; the typical closures cost at most
   15 s / 3 GB (package granularity rule, enforced by the CI job `Consumer cost`). Measured (GitHub
   runner, cold build over an empty consumer): the facade TODO s / TODO GB (0.1.0: 96.7 s / 10.4 GB
-  with the default features); typical closures TODO; `nalgebra_glam` TODO s / TODO GB (0.1.0 on
+  with the default features); typical closures TODO (the dimension 5-6 closures have their own budget, below); `nalgebra_glam` TODO s / TODO GB (0.1.0 on
   `nalgebra` + `glam`: 37 s / 5.5 GB).
-- **`nalgebra_glam` 0.1.1** depends on the sub-crates it converts (TODO: the crate list) and on
+- **Dimensions 5 and 6** (docs/SPLIT.md §19): dimension k builds on every dimension below it, so a
+  closure that includes dimension 5 or 6 costs more than all of dimensions 2-4. It has its own
+  budget, **20 s / 4.5 GB** on the runner (15 s / 3 GB up to dimension 4), declared and enforced in
+  `consumer_cost.toml`; gates 1 and 2 (40,000 lines, 5 s / 1 GB marginal) apply to every package.
+  `nalgebra_geometry6` and `nalgebra_static6_wide` are no longer exceptions: they are covered by that
+  budget. Two combined closures are documented in the README, not gated: static 6 + SVD / eigen 6 and
+  static 6 + spectral 6 (TODO s / TODO GB each; the decomposition closures themselves are declared
+  without the dimension-6 method crates). The README's "Dimensions 5 and 6" section has the figures of
+  each closure, and the comparison with 0.1.0 (96.7 s / 10.4 GB in one package).
+  `nalgebra_blocks`, `nalgebra_views` and `nalgebra_norm` (generic traits whose dimension 5-6 impls
+  cannot be cut per dimension) are advanced use: "static 2-4 + family" is documented, not gated;
+  the everyday methods (`norm()`, `normalize()`, `dot`, `transpose`...) do not need them.
+- **`nalgebra_glam` 0.1.1** depends on the sub-crates it converts (`nalgebra_core`, `nalgebra_types2`
+  .. `nalgebra_types4`, `nalgebra_static2`, `nalgebra_static3`, `nalgebra_geometry2`,
+  `nalgebra_geometry3`) and on
   `glam_core` instead of `nalgebra` and `glam`: it needs **`glam` ≥ 0.4.1** (which re-exports
   `glam_core`); with the monolithic `glam` 0.4.0 the glam types differ and `.into()` does not compile.
 
@@ -36,8 +106,9 @@ the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). 
   lives in sub-crates the facade always depends on (Scarb has no optional dependency), so leaving
   them out saves no compile work. They stay declared so that a manifest naming them keeps building
   (CI job `Facade features`), and they still gate the facade's re-exports as in 0.1.0. **They are
-  removed in 0.2.0.** Replacement: depend on the sub-crates that hold the code (TODO: the crate
-  names). `closures`, `macros` and the linalg features (`eigen`, `svd`, `qr`, `cholesky_update`,
+  removed in 0.2.0.** Replacement: depend on the sub-crates that hold the code: `statistics` ->
+  `nalgebra_statistics2` .. `nalgebra_statistics6`; `blas` -> `nalgebra_blas`; `dynamic` ->
+  `nalgebra_dynamic`; `sparse` and `io` -> `nalgebra_sparse` (with `nalgebra_dynamic`, which it pulls). `closures`, `macros` and the linalg features (`eigen`, `svd`, `qr`, `cholesky_update`,
   `full_piv_lu`, `col_piv_qr`, `lblt`, `hessenberg`, `bidiagonal`, `schur`, `exp`) keep gating code.
 
 ### Changed

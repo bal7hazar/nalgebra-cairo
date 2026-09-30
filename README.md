@@ -17,7 +17,7 @@ provable.
 > dual quaternions, isometries, similarities, scale, reflection, projections) and the
 > decompositions (LU, QR, Cholesky, SVD, eigen, Schur, ...). The one item left is upstream's
 > `io::cs_matrix_from_matrix_market(path)` (a Cairo program has no file system; the `_str` form is
-> there). Release 0.1.0 is being prepared ([CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)).
+> there). Release 0.1.1 (the package split, no API change) is being prepared ([CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)).
 
 ## Installation
 
@@ -29,11 +29,11 @@ simba = "0.2.0"          # `use simba::prelude::*;` for the scalar traits (`Real
 ```
 
 `nalgebra = "0.1.0"` has every feature on (`default`), the whole nalgebra-rs surface. A dependent
-that needs only a part of it compiles much less (a cold build of `nalgebra` peaks at 11.6 GB with
-the defaults and 6.1 GB without, see the [feature table](#features)):
+that needs only a part of it compiles much less by depending on the packages it uses instead of the
+facade (0.1.1, see [Packages](#packages)); the features are the [feature table](#features):
 
 ```toml
-nalgebra = { version = "0.1.0", default-features = false, features = ["statistics", "qr"] }
+nalgebra = { version = "0.1.0", default-features = false, features = ["qr"] }
 ```
 
 The glam-cairo conversions are a separate package (see [glam conversions](#glam-conversions)):
@@ -50,15 +50,116 @@ See the [CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGE
 
 ## Packages
 
-| Package | Content |
-|---|---|
-| [`nalgebra`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra) | `base` (vectors, matrices), `geometry` (rotations, isometries), `linalg` (decompositions), generic over `simba::scalar::Real` |
-| [`nalgebra_glam`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra_glam) | conversions between nalgebra-cairo and [glam-cairo](https://github.com/bal7hazar/glam-cairo) types (`Vec3` <-> `Vector3`, `Mat4` <-> `Isometry3`...), the Cairo counterpart of nalgebra-rs's `convert-glam` features ([DESIGN D11](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/DESIGN.md)) |
+The library is cut into 54 packages behind the `nalgebra` facade (docs/SPLIT.md §18): a number in a
+crate name is exactly that dimension (the dimension of a rectangular shape is max(rows, columns),
+dimension 1 is folded into `nalgebra_core` and `nalgebra_static_core`), and dimension k builds on every
+dimension below it. `nalgebra` re-exports every package at the 0.1.0 paths (9,289 paths, proved in CI),
+so a 0.1.0 consumer changes nothing; a consumer that needs part of the library depends on the packages
+it uses and pays only for them. Every package is at most 40,000 library lines and adds at most
+5 s / 1 GB to a cold build over its own dependencies (CI job `Consumer cost`).
+
+The costs below are cold builds over an empty consumer on a GitHub runner (medians of interleaved
+rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of a row is the cost of the whole set, not a sum. The per-package table is [`docs/PACKAGES.md`](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/PACKAGES.md).
+
+| What you need | Depend on | Measured cost |
+|---|---|---:|
+| the upstream API at upstream's paths | [`nalgebra`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra) | see [CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md) (0.1.0: 96.7 s / 10.4 GB) |
+| the types only (vectors, matrices, points, operators, products, indexing) | `nalgebra_core`, `nalgebra_types2` .. `nalgebra_types6` | marginal: `types2` 0.3 s, `types3` 0.5 s, `types4` 0.7 s, `types5` 1.6 s, `types6` 2.7 s |
+| the named methods of dimensions 2-4 (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*`...) | `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4` (`static4` pulls the two others and the types) | marginal of `static4`: 1.8 s / 0.32 GB |
+| 2D / 3D geometry (rotations, quaternions, isometries, similarities) | `nalgebra_static3`, `nalgebra_geometry2`, `nalgebra_geometry3` | 6.3 s / 1.43 GB (`static3_geometry`) |
+| geometry 2-4 with the transforms | `nalgebra_static4`, `nalgebra_geometry2` .. `nalgebra_geometry4`, `nalgebra_transform2`, `nalgebra_transform3` | 11.2 s / 2.44 GB (`static4_geometry`) |
+| conversions to glam-cairo | `nalgebra_glam` (needs `glam` >= 0.4.1) | 7.4 s / 1.77 GB (`nalgebra_glam`; `glam_core` alone 1.3 s / 0.56 GB) |
+| LU, Cholesky, LDL / UDU, QR, inverse of dimensions 2-4 | `nalgebra_static4`, `nalgebra_linalg2`, `nalgebra_linalg3`, `nalgebra_linalg4` | 8.9 s / 2.06 GB (`static4_factor`) |
+| SVD and symmetric eigen of dimensions 2-3 | `nalgebra_static3`, `nalgebra_linalg_svd_eigen2`, `nalgebra_linalg_svd_eigen3` | 5.8 s / 1.23 GB (`static3_svd`) |
+| SVD and symmetric eigen of dimensions 2-4 | `nalgebra_static4`, `nalgebra_linalg_svd_eigen2` .. `nalgebra_linalg_svd_eigen4` | 6.9 s / 2.11 GB (`static4_svd`) |
+| column-pivoting QR, full-pivoting LU, LBLT of dimensions 2-4 | `nalgebra_linalg_pivot2` .. `nalgebra_linalg_pivot4` (types only) | 3.5 s / 1.04 GB (`core_pivot`) |
+| bidiagonal, Schur, eigen, Hessenberg, `exp` / `pow` of dimensions 2-4 | `nalgebra_linalg_spectral2` .. `nalgebra_linalg_spectral4` | with the methods of dimension 4: see the packages' marginals in `docs/PACKAGES.md` |
+| statistics (`mean`, `variance`...) of dimensions 2-4 | `nalgebra_static4`, `nalgebra_statistics2` .. `nalgebra_statistics4` | 8.6 s / 1.91 GB (`static4_statistics`); the family whole, 2-6: 11.9 s / 2.79 GB (`static4_statistics_all`) |
+| BLAS (`gemm`, `gemv`, `axpy`, `ger`...) | `nalgebra_static4`, `nalgebra_blas` | 12.4 s / 2.88 GB (`static4_blas`) |
+| dynamic matrices (`DMatrix`, `DVector`) and sparse matrices | `nalgebra_dynamic`, `nalgebra_sparse` | marginal: `dynamic` 3.0 s / 0.47 GB, `sparse` 0.6 s / 0.10 GB (they pull every method crate) |
+| dimension 5 or 6 | see [Dimensions 5 and 6](#dimensions-5-and-6) | 9.4 - 21.5 s, 3.05 - 4.71 GB |
+| blocks, views, norms as generic traits | see [Blocks, views and norms](#blocks-views-and-norms) | 16.3 - 18.7 s, 3.74 - 4.06 GB with static 2-4 |
+
+Every package has a README (what it holds, its dependencies, when to depend on it). By family:
+- shared: [`nalgebra_core`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/core) (trait declarations, errors, dimension-1 types), `nalgebra_static_core` (dimension-1 methods), `nalgebra_linalg_core` (shared linalg kernels);
+- types: `nalgebra_types2` .. `nalgebra_types6`; methods: `nalgebra_static2` .. `nalgebra_static5`, `nalgebra_static6_tall`, `nalgebra_static6_wide` (the two halves of dimension 6, cut to stay under the line gate);
+- geometry: `nalgebra_geometry2` .. `nalgebra_geometry6`, `nalgebra_transform2`, `nalgebra_transform3`;
+- decompositions: `nalgebra_linalg2` .. `6` (LU, Cholesky, QR), `nalgebra_linalg_svd_eigen2` .. `6`, `nalgebra_linalg_pivot2` .. `6`, `nalgebra_linalg_spectral2` .. `6`;
+- families: `nalgebra_statistics2` .. `nalgebra_statistics6`, `nalgebra_blas`, `nalgebra_blocks`, `nalgebra_views`, `nalgebra_norm`, `nalgebra_dynamic`, `nalgebra_sparse`;
+- the facade `nalgebra` and the glam conversions `nalgebra_glam`.
 
 Its scalar layer is the registry package `simba = "0.2.0"`
 ([simba-cairo](https://github.com/bal7hazar/simba-cairo): `Real` / `Transcendental` implemented for
 fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.4.0, the scalar
 shared by the whole stack), like nalgebra-rs depends on simba-rs.
+
+A dependent that wants the light build names the packages instead of the facade:
+
+```toml
+[dependencies]
+nalgebra_static4 = "0.1.1"
+nalgebra_linalg_svd_eigen4 = "0.1.1"
+nalgebra_linalg_svd_eigen3 = "0.1.1"
+nalgebra_linalg_svd_eigen2 = "0.1.1"
+```
+
+### Dimensions 5 and 6
+
+Dimension k builds on every dimension below it: a shape of dimension 5 names the impls of dimensions
+2-4, and the types, the methods and the decompositions of dimension 6 pull everything under them. So
+a dimension-5 or 6 closure costs more than the whole of dimensions 2-4, and the library budgets it
+apart (docs/SPLIT.md §19): **15 s / 3 GB** for a declared closure of dimensions up to 4,
+**20 s / 4.5 GB** for one that includes dimension 5 or 6 (gates 1 and 2, 40,000 lines and 5 s / 1 GB,
+apply to every package). Cold builds over an empty consumer on a GitHub runner, median of 15
+interleaved rounds:
+
+| Closure | Packages (besides their types) | Time / memory | Budget |
+|---|---|---:|---|
+| `static5` | `static5` | 12.9 s / 3.05 GB | 20 s / 4.5 GB |
+| `static5_factor` | `static5`, `linalg5` | 10.9 s / 3.13 GB | 20 s / 4.5 GB |
+| `static5_svd` | `static5`, `linalg_svd_eigen5` | 10.4 s / 3.53 GB | 20 s / 4.5 GB |
+| `static5_pivot` | `static5`, `linalg_pivot5` | 9.4 s / 3.26 GB | 20 s / 4.5 GB |
+| `static5_spectral` | `static5`, `linalg_spectral5` | 14.8 s / 3.35 GB | 20 s / 4.5 GB |
+| `static5_geometry` | `static5`, `geometry5` | 13.3 s / 3.14 GB | 20 s / 4.5 GB |
+| `static6` | `static6_wide` (pulls `static6_tall`) | 17.3 s / 3.93 GB | 20 s / 4.5 GB |
+| `static6_factor` | `static6_wide`, `linalg6` | 17.7 s / 4.11 GB | 20 s / 4.5 GB |
+| `static6_pivot` | `static6_wide`, `linalg_pivot6` | 18.5 s / 4.30 GB | 20 s / 4.5 GB |
+| `static6_geometry` | `static6_wide`, `geometry6` | 18.0 s / 4.01 GB | 20 s / 4.5 GB |
+| `svd_eigen6` | `linalg_svd_eigen6` with its types, without the dimension-6 method crates | 12.1 s / 3.00 GB | 20 s / 4.5 GB |
+| `pivot6` | `linalg_pivot6` (pulls `static6_wide` for `Perm6`) | 12.8 s / 4.30 GB | 20 s / 4.5 GB |
+| `static6_svd` | `static6_wide`, `linalg_svd_eigen6` | 21.5 s / 4.70 GB | documented, not gated |
+| `static6_spectral` | `static6_wide`, `linalg_spectral6` | 21.5 s / 4.64 GB | documented, not gated |
+
+The two combined closures, **static 6 + SVD / eigen 6 (21.5 s / 4.70 GB) and static 6 + spectral 6
+(21.5 s / 4.64 GB)**, are a little over the 20 s / 4.5 GB budget on the runner; they are documented
+here and not gated (owner decision, docs/SPLIT.md §18.7). The decomposition itself does not need the
+dimension-6 methods (`Matrix6::svd()` and the products live in `nalgebra_types6` and
+`nalgebra_linalg_*6`): SVD / eigen 6 alone costs 12.1 s / 3.00 GB, and the overrun is the methods of
+every dimension-6 shape (`static6_tall` and `static6_wide`, 56,000 lines) on top.
+
+For comparison, 0.1.0 was one package: a cold build of `nalgebra` with the default features cost
+**97 s / 10.4 GB** whatever you used of it.
+
+### Blocks, views and norms
+
+`nalgebra_blocks`, `nalgebra_views` and `nalgebra_norm` are advanced use. They are the generic forms
+(`FixedView::fixed_view(m, i, j)` over any shape, the `Norm` markers with their generic impls, the
+block traits and Kronecker products); a generic trait's dimension 5-6 impls can only sit in its own
+crate, so they cannot be cut per dimension and each one pulls dimensions 5-6 (`blocks` pulls
+`static6_tall`, `norm` every method crate). "Static 2-4 + family" on the runner, documented and not
+gated (docs/SPLIT.md §18.4, §18.7):
+
+| Closure | Packages | Time / memory |
+|---|---|---:|
+| `static4_blocks` | `static4`, `blocks` | 16.3 s / 3.74 GB |
+| `static4_views` | `static4`, `views` | 16.7 s / 4.06 GB |
+| `static4_norm` | `static4`, `norm` | 18.7 s / 4.04 GB |
+
+**The everyday methods do not need them**: `norm()`, `normalize()`, `apply_norm`, `lp_norm`, `dot`,
+`cross`, `transpose`, the products, `fixed_rows` / `fixed_columns` / `fixed_view` as methods,
+`insert_*` / `remove_*` and `kronecker` are methods of the inherent traits (`Vector3Trait`...) of the
+`nalgebra_static*` packages. `nalgebra_blas` (12.4 s / 2.88 GB with static 2-4) and the per-dimension
+`nalgebra_statistics*` do fit the budget of dimensions up to 4.
 
 ### glam conversions
 
@@ -67,25 +168,28 @@ dependencies and `glam` costs every dependent +0.46 GB of cold compile, so the C
 a separate package: add `nalgebra_glam` next to `nalgebra` and `glam` and `use
 nalgebra_glam::prelude::*;` (upstream's `From` is `Into`, `TryFrom` is `TryInto` returning an
 `Option`; details in the [package README](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra_glam)).
+`nalgebra_glam` 0.1.1 depends on the sub-crates it converts and on `glam_core`, so it needs
+**`glam` >= 0.4.1** (which re-exports `glam_core`).
 
 ## Features
 
-`nalgebra = "x.y"` exposes the full nalgebra-rs surface: every Scarb feature is in `default`. The
-families that cost compile time and memory to every dependent, and that nothing else in the crate
-uses, can be turned off (a structural deviation from nalgebra-rs, [DESIGN D9](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/DESIGN.md)):
+`nalgebra = "x.y"` exposes the full nalgebra-rs surface: every Scarb feature is in `default`. A
+structural deviation from nalgebra-rs ([DESIGN D9](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/DESIGN.md)):
+since the split the facade depends on every package (Scarb has no optional dependency), so
+`default-features = false` no longer removes a family from the build, except where a feature still
+gates code **inside** a package: `closures` and the linalg families.
 
 ```toml
-nalgebra = { version = "x.y", default-features = false, features = ["statistics"] }
+nalgebra = { version = "x.y", default-features = false, features = ["qr"] }
 ```
+
+**Features that still save compile work** (they gate code in the packages and the facade's
+re-exports; the measured cost of the facade with `default-features = false` is in the
+[CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)):
 
 | Feature | Gates |
 |---|---|
-| `statistics` | `mean`, `variance`, `column_mean`... (`base::statistics`) |
-| `blas` | `gemm`, `gemv`, `axpy`, `ger`, `quadform`... (`base::blas`) |
-| `closures` | the methods that take a closure: `map`, `fold`, `apply`, `zip_map`, `fill_with`... |
-| `dynamic` | `DMatrix`, `DVector`, `RowDVector`, `Matrix3xX`...; the static `insert_columns`, `remove_fixed_rows`, `from_vec`...; `convolve_full` / `convolve_same` / `convolve_valid` (`base::dynamic`, [DESIGN D5](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/DESIGN.md)) |
-| `sparse` | `CsMatrix`, `CsVector`, `CsCholesky`, the sparse triangular solves, `axpy_cs`, `cumsum` (`nalgebra::sparse`; enables `dynamic`) |
-| `io` | `cs_matrix_from_matrix_market_str` (`nalgebra::io`, Matrix Market; enables `sparse`) |
+| `closures` | the methods that take a closure: `map`, `fold`, `apply`, `zip_map`, `fill_with`... (forwarded to every `nalgebra_static*` package and `nalgebra_dynamic`) |
 | `eigen` | `SymmetricEigen1..6`, `symmetric_eigen`, `symmetric_eigenvalues`, `wilkinson_shift` (`linalg::symmetric_eigen*`) |
 | `svd` | `Svd1..Svd6x5`, `svd`, `singular_values`, `rank`, `pseudo_inverse`, `polar`, `svd_ordered2/3` (`linalg::svd*`; enables `eigen`) |
 | `qr` | `Qr1..Qr6x5`, `qr` (`linalg::qr`) |
@@ -94,16 +198,23 @@ nalgebra = { version = "x.y", default-features = false, features = ["statistics"
 | `col_piv_qr` | `ColPivQr1..ColPivQr6x5`, `col_piv_qr` (`linalg::col_piv_qr`) |
 | `lblt` | `Lblt1..Lblt6`, `lblt` (`linalg::lblt`, Bunch-Kaufman) |
 | `macros` | `matrix!`, `vector!`, `point!`, `stack!`, and with `dynamic` `dmatrix!` / `dvector!` (`nalgebra::macros`, upstream's feature of the same name) |
-| `hessenberg` | `Hessenberg1..6`, `hessenberg`; `SymmetricTridiagonal1..6`, `symmetric_tridiagonalize`; `balance_parlett_reinsch`, `unbalance`; `clear_column_unchecked`, `clear_row_unchecked`, `assemble_q` (`linalg::hessenberg`, `linalg::symmetric_tridiagonal`, `linalg::balancing`, `linalg::householder_steps`; 0.19 GB) |
-| `bidiagonal` | `Bidiagonal1..Bidiagonal6x5`, `bidiagonalize` (`linalg::bidiagonal`; 0.37 GB) |
-| `schur` | `Schur1..6`, `schur`, `try_schur`, `eigenvalues`, `complex_eigenvalues`; `Eigen1..6` (`linalg::schur`, `linalg::eigen`; enables `hessenberg`; 0.40 GB more) |
-| `exp` | `exp` (Padé approximant with scaling and squaring) and `pow` / `pow_mut` on `Matrix1..6` (`linalg::exp`, `linalg::pow`; 0.03 GB) |
+| `hessenberg` | `Hessenberg1..6`, `hessenberg`; `SymmetricTridiagonal1..6`, `symmetric_tridiagonalize`; `balance_parlett_reinsch`, `unbalance`; `clear_column_unchecked`, `clear_row_unchecked`, `assemble_q` (`linalg::hessenberg`, `linalg::symmetric_tridiagonal`, `linalg::balancing`, `linalg::householder_steps`) |
+| `bidiagonal` | `Bidiagonal1..Bidiagonal6x5`, `bidiagonalize` (`linalg::bidiagonal`) |
+| `schur` | `Schur1..6`, `schur`, `try_schur`, `eigenvalues`, `complex_eigenvalues`; `Eigen1..6` (`linalg::schur`, `linalg::eigen`; enables `hessenberg`) |
+| `exp` | `exp` (Padé approximant with scaling and squaring) and `pow` / `pow_mut` on `Matrix1..6` (`linalg::exp`, `linalg::pow`) |
 
-Turning the first three off cuts a cold build of the library by about 16 % of the memory and 32 % of the
-CPU time ([measurements](https://github.com/bal7hazar/nalgebra-cairo/blob/main/tools/shapegen/DESIGN.md)); the test packages of this repository do it. `dynamic` adds about 0.55 GB to a cold build,
-`sparse` and `io` about 0.14 GB more, and nothing when they are off. The linalg families (WP 8.5-P15)
-add, to a cold build without the default features: `svd` + `eigen` 0.63 GB, `col_piv_qr` 0.43 GB,
-`full_piv_lu` 0.29 GB, `qr` 0.23 GB, `eigen` alone 0.11 GB, `lblt` 0.09 GB, `cholesky_update` 0.02 GB.
+**No-op features** (deprecated in 0.1.1, **removed in 0.2.0**): kept so that a manifest naming them
+keeps building; they save nothing since the split, because the code they used to leave out lives in
+packages the facade always depends on (they still gate the facade's re-exports, as in 0.1.0). To leave
+this code out, depend on the packages that hold it instead of the facade:
+
+| Feature | Gates | Depend on instead |
+|---|---|---|
+| `statistics` | `mean`, `variance`, `column_mean`... (`base::statistics`) | `nalgebra_statistics2` .. `nalgebra_statistics6` |
+| `blas` | `gemm`, `gemv`, `axpy`, `ger`, `quadform`... (`base::blas`) | `nalgebra_blas` |
+| `dynamic` | `DMatrix`, `DVector`, `RowDVector`, `Matrix3xX`...; the static `insert_columns`, `remove_fixed_rows`, `from_vec`...; `convolve_full` / `convolve_same` / `convolve_valid` (`base::dynamic`, [DESIGN D5](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/DESIGN.md)) | `nalgebra_dynamic` |
+| `sparse` | `CsMatrix`, `CsVector`, `CsCholesky`, the sparse triangular solves, `axpy_cs`, `cumsum` (`nalgebra::sparse`; enables `dynamic`) | `nalgebra_sparse` |
+| `io` | `cs_matrix_from_matrix_market_str` (`nalgebra::io`, Matrix Market; enables `sparse`) | `nalgebra_sparse` |
 
 ### Macros, crate-root functions, `Sum` / `Product`
 
