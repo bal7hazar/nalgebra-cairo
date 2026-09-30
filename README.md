@@ -136,7 +136,7 @@ The two combined closures, **static 6 + SVD / eigen 6 (21.5 s / 4.70 GB) and sta
 here and not gated (owner decision, docs/SPLIT.md §18.7). The decomposition itself does not need the
 dimension-6 methods (`Matrix6::svd()` and the products live in `nalgebra_types6` and
 `nalgebra_linalg_*6`): SVD / eigen 6 alone costs 12.1 s / 3.00 GB, and the overrun is the methods of
-every dimension-6 shape (`static6_tall` and `static6_wide`, 56,000 lines) on top.
+every dimension-6 shape (`static6_tall` and `static6_wide`, 55,932 lines) on top.
 
 For comparison, 0.1.0 was one package: a cold build of `nalgebra` with the default features cost
 **97 s / 10.4 GB** whatever you used of it.
