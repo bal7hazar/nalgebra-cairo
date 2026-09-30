@@ -1,8 +1,18 @@
 # PROPOSAL, WP 9-NS12b (docs/SPLIT.md §17, §18): `crates.recut.toml` with the `nalgebra_dynamic`
-# rows cut under gate 2. ATTRIBUTION STAGE: the dynamic crate in its four parts (the dynamic types,
-# the convolution, the dynamic forms of the static shapes, the fixed-size edition), each measured
-# on the runner (`split-measure.yml -f map=tools/split/crates.dyncut.toml`); the candidate cuts are
-# merges of these parts (`-f merges=...`). NOT the live map; same format as `crates.toml`.
+# rows cut under gate 2. NOT the live map; same format and semantics as `crates.toml`. The one
+# change: the fixed-size edition of the static shapes (`InsertFixedColumns` / `InsertFixedRows` /
+# `RemoveFixedColumns` / `RemoveFixedRows`, their 360 impls, the private `Canvas6Edit` kernels)
+# leaves `dynamic` for `blocks`, whose `Matrix6` canvas (`FixedResize`, `PadTo6` / `CropFrom6`)
+# they run on; they name no dynamic type. No new package (54 as in §18.1); `dynamic` keeps
+# `DMatrix` / `DVector` / `RowDVector`, their kernels, the convolution and the dynamic forms of the
+# 36 static shapes, and no longer depends on `blocks`. Every item keeps its module path
+# (`base::dynamic::shapes` becomes a module split over `blocks` and `dynamic`); the facade
+# re-exports both parts. Measured on the runner (`split-measure.yml -f
+# map=tools/split/crates.dyncut.toml -f source=a35e55b2d2d43176dc6b23fca585caaa92754bb0`); the
+# attribution and the alternative (the fixed-size edition in a package of its own) are in the WP
+# 9-NS12b report. Gate 2 on the real tree also needs `nalgebra_dynamic`'s `closures` feature to stop
+# forwarding to the static method crates (same report).
+
 
 facade = "facade"
 lift = true
@@ -36,7 +46,6 @@ geometry6 = "nalgebra_geometry6"
 transform2 = "nalgebra_transform2"
 transform3 = "nalgebra_transform3"
 blocks = "nalgebra_blocks"
-fixed_edition = "nalgebra_fixed_edition"
 views = "nalgebra_views"
 norm = "nalgebra_norm"
 statistics2 = "nalgebra_statistics2"
@@ -67,8 +76,6 @@ linalg_svd_eigen6 = "nalgebra_linalg_svd_eigen6"
 linalg_pivot6 = "nalgebra_linalg_pivot6"
 linalg_spectral6 = "nalgebra_linalg_spectral6"
 dynamic = "nalgebra_dynamic"
-dynamic_convolution = "nalgebra_dynamic_convolution"
-dynamic_forms = "nalgebra_dynamic_forms"
 sparse = "nalgebra_sparse"
 facade = "nalgebra"
 
@@ -470,30 +477,19 @@ crate = "types6"
 
 
 # WP 9-NS12b: the fixed-size edition of the static shapes (`InsertFixedColumns` / `InsertFixedRows`
-# / `RemoveFixedColumns` / `RemoveFixedRows`, one impl per (shape, D) pair, on the `Matrix6` canvas
-# of `FixedResize`: `PadTo6` / `CropFrom6` and the private `Canvas6Edit` kernels): the traits, their
-# impls and the kernels together (the anchor rule: the impls sit in the traits' crate); they name
-# no dynamic type
+# / `RemoveFixedColumns` / `RemoveFixedRows`, one impl per (shape, D) pair, and the private
+# `Canvas6Edit` kernels) on the `Matrix6` canvas of `FixedResize` (`PadTo6` / `CropFrom6`): with
+# that canvas in `blocks` (the traits and their impls together, the anchor rule); they name no
+# dynamic type, so `dynamic` no longer depends on `blocks`
 [[rule]]
 file = ["base/dynamic/shapes.cairo"]
 name = "InsertFixedColumns|InsertFixedRows|RemoveFixedColumns|RemoveFixedRows|Canvas6Edit"
-crate = "fixed_edition"
+crate = "blocks"
 
 [[rule]]
 file = ["base/dynamic/shapes.cairo"]
 trait = ["InsertFixedColumns", "InsertFixedRows", "RemoveFixedColumns", "RemoveFixedRows", "Canvas6Edit"]
-crate = "fixed_edition"
-
-# the dynamic forms of the 36 static shapes (`<S>DynamicTrait`: edition forms with a dynamic
-# result, `from_vec` / `from_iterator`, `len`, `compress_*`)
-[[rule]]
-file = ["base/dynamic/shapes.cairo"]
-crate = "dynamic_forms"
-
-# the convolutions of the column vectors (`Convolution`)
-[[rule]]
-file = ["base/dynamic/convolution.cairo"]
-crate = "dynamic_convolution"
+crate = "blocks"
 
 [[rule]]
 file = ["base/dynamic.cairo", "base/dynamic/*"]
