@@ -59,11 +59,11 @@ it uses and pays only for them. Every package is at most 40,000 library lines an
 5 s / 1 GB to a cold build over its own dependencies (CI job `Consumer cost`).
 
 The costs below are cold builds over an empty consumer on a GitHub runner (medians of interleaved
-rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of a row is the cost of the whole set, not a sum. The per-package table is [`docs/PACKAGES.md`](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/PACKAGES.md).
+rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of a row is the cost of the whole set, not a sum. The facade and `dynamic` figures are those of the last CI run (5 rounds, one runner per shard, so absolute figures move by several tens of percent from one run to another); the closure figures are the 15-round measurements of docs/SPLIT.md §18.2 (views / blocks: after the move of the fixed-size edition to `nalgebra_blocks`), and [`docs/PACKAGES.md`](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/PACKAGES.md) holds the last CI run.
 
 | What you need | Depend on | Measured cost |
 |---|---|---:|
-| the upstream API at upstream's paths | [`nalgebra`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra) | see [CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md) (0.1.0: 96.7 s / 10.4 GB) |
+| the upstream API at upstream's paths | [`nalgebra`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra) | 29.8 s / 9.96 GB (0.1.0: 96.7 s / 10.4 GB; [CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)) |
 | the types only (vectors, matrices, points, operators, products, indexing) | `nalgebra_core`, `nalgebra_types2` .. `nalgebra_types6` | marginal: `types2` 0.3 s, `types3` 0.5 s, `types4` 0.7 s, `types5` 1.6 s, `types6` 2.7 s |
 | the named methods of dimensions 2-4 (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*`...) | `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4` (`static4` pulls the two others and the types) | marginal of `static4`: 1.8 s / 0.32 GB |
 | 2D / 3D geometry (rotations, quaternions, isometries, similarities) | `nalgebra_static3`, `nalgebra_geometry2`, `nalgebra_geometry3` | 6.3 s / 1.43 GB (`static3_geometry`) |
@@ -76,7 +76,7 @@ rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of 
 | bidiagonal, Schur, eigen, Hessenberg, `exp` / `pow` of dimensions 2-4 | `nalgebra_linalg_spectral2` .. `nalgebra_linalg_spectral4` | with the methods of dimension 4: see the packages' marginals in `docs/PACKAGES.md` |
 | statistics (`mean`, `variance`...) of dimensions 2-4 | `nalgebra_static4`, `nalgebra_statistics2` .. `nalgebra_statistics4` | 8.6 s / 1.91 GB (`static4_statistics`); the family whole, 2-6: 11.9 s / 2.79 GB (`static4_statistics_all`) |
 | BLAS (`gemm`, `gemv`, `axpy`, `ger`...) | `nalgebra_static4`, `nalgebra_blas` | 12.4 s / 2.88 GB (`static4_blas`) |
-| dynamic matrices (`DMatrix`, `DVector`) and sparse matrices | `nalgebra_dynamic`, `nalgebra_sparse` | marginal: `dynamic` 2.5 s / 0.34 GB, `sparse` 0.6 s / 0.10 GB (they pull every method crate) |
+| dynamic matrices (`DMatrix`, `DVector`) and sparse matrices | `nalgebra_dynamic`, `nalgebra_sparse` | marginal: `dynamic` 2.6 s / 0.32 GB, `sparse` 0.6 s / 0.10 GB (they pull every method crate) |
 | dimension 5 or 6 | see [Dimensions 5 and 6](#dimensions-5-and-6) | 9.4 - 21.5 s, 3.05 - 4.71 GB |
 | blocks, views, norms as generic traits | see [Blocks, views and norms](#blocks-views-and-norms) | 17.4 - 18.7 s, 3.87 - 4.18 GB with static 2-4 |
 
@@ -131,7 +131,8 @@ interleaved rounds:
 | `static6_spectral` | `static6_wide`, `linalg_spectral6` | 21.5 s / 4.64 GB | documented, not gated |
 
 The two combined closures, **static 6 + SVD / eigen 6 (21.5 s / 4.70 GB) and static 6 + spectral 6
-(21.5 s / 4.64 GB)**, are a little over the 20 s / 4.5 GB budget on the runner; they are documented
+(21.5 s / 4.64 GB)**, are a little over the 20 s / 4.5 GB budget in the 15-round measurement (11.6 s / 4.38 GB and
+15.2 s / 4.13 GB in the last CI run, whose runners were faster); they are documented
 here and not gated (owner decision, docs/SPLIT.md §18.7). The decomposition itself does not need the
 dimension-6 methods (`Matrix6::svd()` and the products live in `nalgebra_types6` and
 `nalgebra_linalg_*6`): SVD / eigen 6 alone costs 12.1 s / 3.00 GB, and the overrun is the methods of

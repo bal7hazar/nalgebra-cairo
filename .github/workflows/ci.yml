@@ -33,7 +33,7 @@ jobs:
       - name: Library lines of the published crates (gate 1, enforced on the sub-crates)
         # The facade `nalgebra` is judged on gate 3 only (docs/SPLIT.md §12) and still hosts the
         # families not moved yet; every other published crate must stay at or under 40,000 lines,
-        # so a generator change that grows `nalgebra_shapes6` (9.5 % margin) fails here.
+        # so a generator change that grows `nalgebra_types6` (6.4 % margin: 37,436 lines) fails here.
         run: |
           python3 scripts/consumer_cost.py --lines-only --report-only --json lines.json
           python3 - <<'PY'

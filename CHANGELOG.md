@@ -79,16 +79,22 @@ the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). 
   only for them. Every sub-crate is at most 40,000 library lines and adds at most 5 s / 1 GB to a
   cold build of an empty consumer over its own dependencies; the typical closures cost at most
   15 s / 3 GB (package granularity rule, enforced by the CI job `Consumer cost`). Measured (GitHub
-  runner, cold build over an empty consumer): the facade TODO s / TODO GB (0.1.0: 96.7 s / 10.4 GB
-  with the default features); typical closures TODO (the dimension 5-6 closures have their own budget, below); `nalgebra_glam` TODO s / TODO GB (0.1.0 on
-  `nalgebra` + `glam`: 37 s / 5.5 GB).
+  runner, cold build over an empty consumer): the facade 29.8 s / 9.96 GB (0.1.0: 96.7 s / 10.4 GB
+  with the default features); typical closures 3.5 - 10.4 s / 1.0 - 2.4 GB (static 2-3 + SVD 5.5 s,
+  static 2-4 + factorisations 8.3 s, static 2-4 + geometry 10.4 s; the dimension 5-6 closures have
+  their own budget, below); `nalgebra_glam` 7.6 s / 1.69 GB (0.1.0 on `nalgebra` + `glam`: 37 s /
+  5.5 GB). Figures of [CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070) (5 interleaved rounds, one runner per shard); the per-package
+  table of that run is [docs/PACKAGES.md](docs/PACKAGES.md). The highest package marginal is 2.6 s /
+  0.77 GB (`nalgebra_dynamic`, `nalgebra_linalg_svd_eigen6`), under the gate of 5 s / 1 GB.
 - **Dimensions 5 and 6** (docs/SPLIT.md §19): dimension k builds on every dimension below it, so a
   closure that includes dimension 5 or 6 costs more than all of dimensions 2-4. It has its own
   budget, **20 s / 4.5 GB** on the runner (15 s / 3 GB up to dimension 4), declared and enforced in
   `consumer_cost.toml`; gates 1 and 2 (40,000 lines, 5 s / 1 GB marginal) apply to every package.
   `nalgebra_geometry6` and `nalgebra_static6_wide` are no longer exceptions: they are covered by that
   budget. Two combined closures are documented in the README, not gated: static 6 + SVD / eigen 6 and
-  static 6 + spectral 6 (TODO s / TODO GB each; the decomposition closures themselves are declared
+  static 6 + spectral 6 (11.6 s / 4.38 GB and 15.2 s / 4.13 GB in [CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070); 21.5 s / 4.70 GB and
+  21.5 s / 4.64 GB in the 15-round measurement of docs/SPLIT.md §18.2, the runners of two CI jobs
+  differing by up to a factor of two in speed; the decomposition closures themselves are declared
   without the dimension-6 method crates). The README's "Dimensions 5 and 6" section has the figures of
   each closure, and the comparison with 0.1.0 (96.7 s / 10.4 GB in one package).
   `nalgebra_blocks`, `nalgebra_views` and `nalgebra_norm` (generic traits whose dimension 5-6 impls
@@ -113,8 +119,8 @@ the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). 
 
 ### Changed
 
-- **The cost of `default-features = false` on the facade**: 28.7 s / 5.2 GB with 0.1.0 → TODO s /
-  TODO GB (CI `Consumer cost`, closure `facade_no_default_features`). The facade depends on every
+- **The cost of `default-features = false` on the facade**: 28.7 s / 5.2 GB with 0.1.0 → 26.7 s /
+  6.29 GB ([CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070), `Consumer cost`, closure `facade_no_default_features`). The facade depends on every
   sub-crate unconditionally (Scarb has no optional dependency), so turning its features off no
   longer removes the code of the families from the build. Accepted by the programme session
   (docs/SPLIT.md §12.1): the facade is for parity with nalgebra-rs's paths; a light build depends on
