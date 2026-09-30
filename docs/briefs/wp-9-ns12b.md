@@ -59,7 +59,8 @@ the crate is cut. Two phases:
    plans ONE map, and its `crates` input selects crates of that map only): push the branch, then
    (a) the proposal: `gh workflow run split-measure.yml --ref feat/wp-9-ns12b
    -f map=tools/split/crates.dyncut.toml -f source=a35e55b2d2d43176dc6b23fca585caaa92754bb0
-   -f crates=<the new crates> -f closures=none -f label="WP 9-NS12b proposal"`, and (b) the
+   -f crates=<every crate the cut leaves, nalgebra_dynamic included if it stays> -f closures=none
+   -f label="WP 9-NS12b proposal"`, and (b) the
    reference: the same with `-f map=tools/split/crates.recut.toml -f crates=nalgebra_dynamic
    -f label="WP 9-NS12b reference"`; `gh run watch` each and read the job summaries / artifacts.
    Every marginal is its own job on its own runner, and runners differ by up to about 30 % between
