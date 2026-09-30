@@ -550,6 +550,12 @@ bands = { "2" = "geometry2", "3" = "geometry3", "4" = "geometry4", "5" = "geomet
 default = "geometry2"
 
 # linalg: family x dimension (dimension 1 folded into 2); what no dimension names: `linalg_core`
+# the methods of `Perm1` (generated with `Perm5` in `linalg/lu/perm1_5.cairo`, whose file band is
+# 5): dimension 1 folds into the crates of dimension 2 (WP 9-R2)
+[[rule]]
+name = "Perm1Trait"
+crate = "linalg2"
+
 [[rule]]
 file = ["linalg/lu/lu6*"]
 crate = "static6_wide"

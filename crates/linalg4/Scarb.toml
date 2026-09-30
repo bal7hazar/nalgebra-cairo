@@ -1,35 +1,32 @@
 [package]
 name = "nalgebra_linalg4"
-description = "LU, Cholesky, LDLᵀ / UDU, Cholesky update, QR up to 4x4; Householder reflections, LU steps."
+description = "LU, Cholesky (+ the column updates of dimension 3), LDLᵀ / UDU, QR, inverse of dimension 4; the `Perm4` methods."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "linalg", "lu", "cholesky", "qr", "householder"]
+keywords = ["linear-algebra", "fixed-point", "linalg", "cholesky", "cholesky-update", "inverse", "lu", "qr", "udu"]
 readme = "README.md"
 
-# `qr`, `cholesky_update`, `hessenberg` (as in `nalgebra`, whose features of the same names forward
-# to these): `linalg::qr` up to 4x4, `linalg::cholesky_update` up to 4x4, and
-# `linalg::householder_steps` (`clear_column_unchecked`, `clear_row_unchecked`, `assemble_q`, grouped
-# with the Hessenberg reductions in 0.1.0). On by default; `nalgebra` depends on this package with
-# `default-features = false`, so `nalgebra` without its default features still leaves them out
-# (features unify per compilation unit, docs/SPLIT.md §1).
+# `qr`, `cholesky_update` (as in `nalgebra`, whose features of the same names forward to these):
+# `qr` gates `linalg::qr`; `cholesky_update` gates `linalg::cholesky_update`. On by default;
+# `nalgebra` depends on this package with `default-features = false`, so `nalgebra` without its
+# default features still leaves them out (features unify per compilation unit, docs/SPLIT.md §1).
 [features]
-default = ["qr", "cholesky_update", "hessenberg"]
-qr = []
-cholesky_update = []
-hessenberg = []
+default = ["qr", "cholesky_update"]
+qr = ["nalgebra_linalg2/qr", "nalgebra_linalg3/qr"]
+cholesky_update = ["nalgebra_linalg3/cholesky_update"]
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
 nalgebra_types2 = { path = "../types2", version = "0.1.0" }
 nalgebra_types3 = { path = "../types3", version = "0.1.0" }
 nalgebra_types4 = { path = "../types4", version = "0.1.0" }
-nalgebra_static2 = { path = "../static2", version = "0.1.0", default-features = false }
-nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
 nalgebra_static4 = { path = "../static4", version = "0.1.0", default-features = false }
+nalgebra_linalg2 = { path = "../linalg2", version = "0.1.0", default-features = false }
+nalgebra_linalg3 = { path = "../linalg3", version = "0.1.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

@@ -25,5 +25,6 @@
 //! and the scalar's square-root error when a downdate makes the matrix indefinite (upstream
 //! produces NaN in both cases); `nalgebra: index out of bounds` for a column index out of range.
 
+pub use nalgebra_linalg3::linalg::cholesky_update::*;
 pub use nalgebra_linalg4::linalg::cholesky_update::*;
 pub use nalgebra_linalg6::linalg::cholesky_update::*;

@@ -9,5 +9,7 @@
 //! `LDLᵀ` `l`, `solve`, `inverse` and `determinant`, which upstream's `UDU` does not have, are
 //! crate-internal).
 
+pub use nalgebra_linalg2::linalg::udu::*;
+pub use nalgebra_linalg3::linalg::udu::*;
 pub use nalgebra_linalg4::linalg::udu::*;
 pub use nalgebra_linalg6::linalg::udu::*;

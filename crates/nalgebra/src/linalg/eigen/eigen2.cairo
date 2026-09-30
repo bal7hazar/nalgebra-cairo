@@ -2,4 +2,4 @@
 //! `Eigen2`: the eigen decomposition of a `Matrix2` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U2>`), WP 8.5-P16.
 
-pub use nalgebra_linalg_spectral4::linalg::eigen::eigen2::*;
+pub use nalgebra_linalg_spectral2::linalg::eigen::eigen2::*;

@@ -4,6 +4,8 @@
 //! the completion of `k` orthonormal `R`-vectors by one more (`complete`), the fallback of the
 //! Gram-Schmidt of the left singular vectors when a column vanishes EXACTLY.
 
-pub use nalgebra_linalg5::linalg::svd::kernels::*;
-pub use nalgebra_linalg6::linalg::svd::kernels::*;
+pub use nalgebra_linalg_svd_eigen2::linalg::svd::kernels::*;
+pub use nalgebra_linalg_svd_eigen3::linalg::svd::kernels::*;
 pub use nalgebra_linalg_svd_eigen4::linalg::svd::kernels::*;
+pub use nalgebra_linalg_svd_eigen5::linalg::svd::kernels::*;
+pub use nalgebra_linalg_svd_eigen6::linalg::svd::kernels::*;

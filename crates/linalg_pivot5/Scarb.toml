@@ -11,10 +11,10 @@ keywords = ["linear-algebra", "fixed-point", "linalg", "col-piv-qr", "full-piv-l
 readme = "README.md"
 
 # `full_piv_lu`, `col_piv_qr`, `lblt` (as in `nalgebra`, whose features of the same names forward to
-# these): `linalg::full_piv_lu`, `linalg::col_piv_qr` and `linalg::lblt` of dimension 5. On by
-# default; `nalgebra` depends on this package with `default-features = false`, so `nalgebra` without
-# its default features still leaves them out (features unify per compilation unit, docs/SPLIT.md
-# §1).
+# these): `full_piv_lu` gates `linalg::full_piv_lu`; `col_piv_qr` gates `linalg::col_piv_qr`; `lblt`
+# gates `linalg::lblt`. On by default; `nalgebra` depends on this package with `default-features =
+# false`, so `nalgebra` without its default features still leaves them out (features unify per
+# compilation unit, docs/SPLIT.md §1).
 [features]
 default = ["full_piv_lu", "col_piv_qr", "lblt"]
 full_piv_lu = []

@@ -1,24 +1,21 @@
 [package]
 name = "nalgebra_linalg6"
-description = "QR / Cholesky / symmetric eigen / SVD of dimension 6 (`Lu6` is in `static6_wide`)."
+description = "Cholesky (+ its column updates), LDLᵀ / UDU, QR, inverse of dimension 6 (`Lu6` is in `static6_wide`)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "linalg", "qr", "cholesky", "svd", "symmetric-eigen"]
+keywords = ["linear-algebra", "fixed-point", "linalg", "cholesky", "cholesky-update", "inverse", "qr", "udu"]
 readme = "README.md"
 
-# `eigen`, `svd`, `qr`, `cholesky_update` (as in `nalgebra`, whose features of the same names
-# forward to these): `linalg::symmetric_eigen6`, `linalg::svd*` of the shapes of dimension 6 (`svd`
-# builds on `eigen`), `linalg::qr*` and `linalg::cholesky_update` of dimension 6. On by default;
+# `qr`, `cholesky_update` (as in `nalgebra`, whose features of the same names forward to these):
+# `qr` gates `linalg::qr`; `cholesky_update` gates `linalg::cholesky_update`. On by default;
 # `nalgebra` depends on this package with `default-features = false`, so `nalgebra` without its
 # default features still leaves them out (features unify per compilation unit, docs/SPLIT.md §1).
 [features]
-default = ["eigen", "svd", "qr", "cholesky_update"]
-eigen = ["nalgebra_linalg5/eigen"]
-svd = ["eigen", "nalgebra_linalg5/svd"]
+default = ["qr", "cholesky_update"]
 qr = []
 cholesky_update = []
 
@@ -30,8 +27,6 @@ nalgebra_types4 = { path = "../types4", version = "0.1.0" }
 nalgebra_types5 = { path = "../types5", version = "0.1.0" }
 nalgebra_types6 = { path = "../types6", version = "0.1.0" }
 nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.0", default-features = false }
-nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.0", default-features = false }
-nalgebra_linalg5 = { path = "../linalg5", version = "0.1.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

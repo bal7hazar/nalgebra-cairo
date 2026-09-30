@@ -6,6 +6,8 @@
 //! too: not ported (the D5 dynamic types have no LU; `SquareMatrix` only requires the static
 //! squares, `docs/API_PARITY.md`).
 
+pub use nalgebra_linalg_spectral2::linalg::exp::*;
+pub use nalgebra_linalg_spectral3::linalg::exp::*;
 pub use nalgebra_linalg_spectral4::linalg::exp::*;
 pub use nalgebra_linalg_spectral5::linalg::exp::*;
 pub use nalgebra_linalg_spectral6::linalg::exp::*;

@@ -41,9 +41,11 @@
 // through `crate::linalg::...`) here (WP 9-NS9)
 
 #[cfg(test)]
-pub(crate) use nalgebra_linalg4::internal::linalg::ldlt::{
-    Ldlt2, Ldlt2Trait, Ldlt3, Ldlt3Trait, Ldlt4, Ldlt4Trait,
-};
+pub(crate) use nalgebra_linalg2::internal::linalg::ldlt::{Ldlt2, Ldlt2Trait};
+#[cfg(test)]
+pub(crate) use nalgebra_linalg3::internal::linalg::ldlt::{Ldlt3, Ldlt3Trait};
+#[cfg(test)]
+pub(crate) use nalgebra_linalg4::internal::linalg::ldlt::{Ldlt4, Ldlt4Trait};
 #[cfg(test)]
 pub(crate) use nalgebra_linalg6::internal::linalg::ldlt::{Ldlt6, Ldlt6Trait};
 

@@ -3,4 +3,4 @@
 //! `nalgebra::linalg::ColPivQR<T, U3, U2>`) by Householder reflections, fully unrolled
 //! (WP 8.5-P15).
 
-pub use nalgebra_linalg_pivot4::linalg::col_piv_qr::col_piv_qr3x2::*;
+pub use nalgebra_linalg_pivot3::linalg::col_piv_qr::col_piv_qr3x2::*;

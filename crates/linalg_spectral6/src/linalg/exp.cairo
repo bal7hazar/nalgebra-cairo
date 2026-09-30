@@ -7,7 +7,7 @@
 //! squares, `docs/API_PARITY.md`).
 
 use nalgebra_core::base::matrix_mul::MatrixMul;
-use nalgebra_linalg_spectral4::internal::linalg::exp::SINGULAR_PADE;
+use nalgebra_linalg_core::internal::linalg::exp::SINGULAR_PADE;
 use nalgebra_static6_wide::base::matrix6::Matrix6Trait;
 use nalgebra_static6_wide::linalg::lu::lu6::Lu6Trait;
 use nalgebra_types6::base::matrix6::Matrix6;

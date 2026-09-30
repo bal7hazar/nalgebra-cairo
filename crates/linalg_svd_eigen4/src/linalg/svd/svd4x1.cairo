@@ -7,11 +7,11 @@ use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
+use nalgebra_linalg_core::internal::linalg::svd::kernels::SvdRightImpl;
 use nalgebra_types4::base::matrix4::Matrix4;
 use nalgebra_types4::base::row_vector4::RowVector4;
 use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
-use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use crate::linalg::svd::kernels::SvdComplete4Impl;
 
 /// The singular value decomposition `M = u · diag(singular_values) · v_t` of a `Vector4<T>`:
