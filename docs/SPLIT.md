@@ -1140,6 +1140,14 @@ their dimension's content, 11 are new); `SvdRightTrait` split per dimension (`Sv
 `linalg2..5` (`Perm1Trait` by a new rule, dimension 1 folded into 2), `Cholesky2/3UpdateTrait` in
 `linalg3` / `linalg4`; `gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0. Next:
 R3.
+NS12b done in one PR (WP 9-NS12b): `nalgebra_dynamic` cut under gate 2 with no new package (54 as
+above): the fixed-size edition of the static shapes (`InsertFixedColumns` / `InsertFixedRows` /
+`RemoveFixedColumns` / `RemoveFixedRows`, their 360 impls, the private `Canvas6Edit` kernels; the
+module `base::dynamic::shapes` split over two packages) moved to `blocks`, whose `Matrix6` canvas it
+runs on, and `dynamic` no longer depends on `blocks`; `dynamic`'s `closures` no longer forwards to
+the static method crates (decision D1: the forwarding charged their closure methods, about 3.5 s, to
+its marginal); `--report-only-marginals` dropped from `ci.yml`, gate 2 enforced; `gas_compare`
+0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0.
 
 ### 18.7 Owner decisions on the re-cut (2026-09-29, validated in the orchestrator session)
 
