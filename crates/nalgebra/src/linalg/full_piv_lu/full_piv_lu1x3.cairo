@@ -2,4 +2,4 @@
 //! `FullPivLu1x3`: the LU factorisation with full pivoting of a `RowVector3` (upstream
 //! `nalgebra::linalg::FullPivLU<T, U1, U3>`), fully unrolled (WP 8.5-P15).
 
-pub use nalgebra_linalg_pivot4::linalg::full_piv_lu::full_piv_lu1x3::*;
+pub use nalgebra_linalg_pivot3::linalg::full_piv_lu::full_piv_lu1x3::*;

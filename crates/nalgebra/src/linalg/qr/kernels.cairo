@@ -3,6 +3,8 @@
 //! orthonormal `R`-vectors by one more (`complete{k}`, the SVD's completion), which builds the
 //! full orthogonal `Q` that `q_tr_mul` applies.
 
+pub use nalgebra_linalg2::linalg::qr::kernels::*;
+pub use nalgebra_linalg3::linalg::qr::kernels::*;
 pub use nalgebra_linalg4::linalg::qr::kernels::*;
 pub use nalgebra_linalg5::linalg::qr::kernels::*;
 pub use nalgebra_linalg6::linalg::qr::kernels::*;

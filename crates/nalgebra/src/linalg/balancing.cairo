@@ -2,4 +2,4 @@
 //! Matrix balancing (upstream `nalgebra::linalg::balancing`, WP 8.5-P16):
 //! `balance_parlett_reinsch` and `unbalance` on the static squares `Matrix1` .. `Matrix6`.
 
-pub use nalgebra_linalg_spectral4::linalg::balancing::*;
+pub use nalgebra_linalg_core::linalg::balancing::*;

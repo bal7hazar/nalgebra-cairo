@@ -15,8 +15,8 @@ the crate is cut. Two phases:
   the files of §3.1; **no local `scarb` / `snforge` build or measurement** (they would compete with
   R2 for the shared build lock and make every timing noisy): measurements run on the GitHub runner.
   At its end: push the branch, write `REPORT.md` (section "Phase 1"), end your turn.
-- **Phase 2**: the orchestrator resumes you after R2 is merged and the project manager has approved
-  the new crate names; the message gives the merge commit and the approved names. Then the move,
+- **Phase 2**: the orchestrator resumes you after R2 is merged (and, only if the cut adds a package,
+  after the project manager has approved its name); the message gives the merge commit. Then the move,
   under `docs/briefs/_move_common.md`.
 
 ## 1. Read first
@@ -73,13 +73,26 @@ the crate is cut. Two phases:
    the run links, what phase 2 will change (map rows, generator, packages, facade, `ci.yml`), and the
    risks.
 
-### Phase 2 (when resumed with R2's merge commit and the approved names)
+### Phase 2 (when resumed with R2's merge commit)
+
+Decided by the orchestrator on phase 1's report (`~/orchestrator/nalgebra-cairo/reports/wp-9-ns12b-phase1.md`,
+2026-09-30): **cut A** (the fixed-size edition, i.e. the four traits `InsertFixedColumns` /
+`InsertFixedRows` / `RemoveFixedColumns` / `RemoveFixedRows`, their impls and the private
+`Canvas6Edit` kernels, moves to `nalgebra_blocks`; `nalgebra_dynamic` no longer depends on
+`nalgebra_blocks`; no new package, so no new name) and **D1 (ii)** (`nalgebra_dynamic`'s `closures`
+feature gates its own closure-taking methods only, `closures = []`: it no longer forwards to the
+static crates, which the facade forwards to itself). What would reverse it: the phase-2 CI showing
+`nalgebra_dynamic` above 4 s after D1; then cut B's layout (its new names go to the project manager
+first).
 
 1. `git fetch origin && git merge origin/main` (no rebase, no force push).
 2. The move, as `_move_common.md` says, with its proofs: switch the live map to the approved cut
    (and mirror it into `crates.recut.toml`; `crates.dyncut.toml` is then deleted), the generator
-   (`tools/shapegen/dynamic.py`) through the map, the new packages (minimal README as R1's; the full
-   READMEs are WP 9-R3's), the facade and `nalgebra_sparse` on their new dependencies.
+   (`tools/shapegen/dynamic.py`) through the map, `nalgebra_blocks` receiving the fixed-size edition
+   and `nalgebra_dynamic` losing it (manifests: `blocks`' description / keywords, `dynamic`'s
+   dependencies and D1's `closures = []`; READMEs are WP 9-R3's), the facade and `nalgebra_sparse` on
+   their dependencies. Only under the fallback cut B: the new package (minimal README as R1's), with
+   the name the project manager approved.
 3. **Every package passes gate 2 on the CI medians**; then drop `--report-only-marginals` from
    `.github/workflows/ci.yml`, so that the enforcing `Consumer cost` job gates the marginals (and
    update its comment and `docs/ORCHESTRATOR.md`'s sentence about the switch).
@@ -97,7 +110,10 @@ be editing it): report the fix under Escalations, with a workaround if one exist
 
 ### 3.2 Phase 2
 
-Allowed: `crates/dynamic/**` and the new packages it becomes; `crates/sparse/**`, `crates/nalgebra/**`
+Allowed: `crates/dynamic/**` (and, under cut B only, the new package); `crates/blocks/**` for cut A
+(the `base::dynamic` module files it receives, its manifest `description` / `keywords`; not its
+README);
+`crates/sparse/**`, `crates/nalgebra/**`
 (manifests, re-exports; not the root `README.md`) and test packages' imports only where the cut forces
 them (`rewrite_imports.py`, reported); `tools/split/**`, `tools/shapegen/**` (the dynamic template and
 routing); workspace `Scarb.toml`, `Scarb.lock`; `gas/**`; `.github/workflows/ci.yml` (the switch and
@@ -105,8 +121,9 @@ its comment; shards only if a package with in-crate tests appears); `.github/wor
 `consumer_cost.toml` (only if a closure names `nalgebra_dynamic`); `docs/SPLIT.md` (§18.5 progress
 line); `docs/ORCHESTRATOR.md` (the one sentence about `--report-only-marginals`).
 
-Forbidden in both phases: behaviour changes, test code beyond forced imports, READMEs other than the
-new packages' minimal ones, `CHANGELOG.md`, `docs/PACKAGES.md`, publishing.
+Forbidden in both phases: behaviour changes (D1's feature change is the one decided exception), test
+code beyond forced imports, READMEs (except a
+cut-B package's minimal one), `CHANGELOG.md`, `docs/PACKAGES.md`, publishing.
 
 ## 4. Definition of done
 

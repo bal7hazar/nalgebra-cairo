@@ -3,7 +3,7 @@
 //! `nalgebra::linalg::Schur<T, U4>`), WP 8.5-P16.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_linalg_core::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use nalgebra_types4::base::matrix4::Matrix4;
 use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;

@@ -2,4 +2,4 @@
 //! `Eigen3`: the eigen decomposition of a `Matrix3` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U3>`), WP 8.5-P16.
 
-pub use nalgebra_linalg_spectral4::linalg::eigen::eigen3::*;
+pub use nalgebra_linalg_spectral3::linalg::eigen::eigen3::*;

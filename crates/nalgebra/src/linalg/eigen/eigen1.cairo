@@ -2,4 +2,4 @@
 //! `Eigen1`: the eigen decomposition of a `Matrix1` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U1>`), WP 8.5-P16.
 
-pub use nalgebra_linalg_spectral4::linalg::eigen::eigen1::*;
+pub use nalgebra_linalg_spectral2::linalg::eigen::eigen1::*;

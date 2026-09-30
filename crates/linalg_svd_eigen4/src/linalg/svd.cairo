@@ -1,13 +1,6 @@
 pub mod kernels;
-pub mod svd1;
-pub mod svd1x2;
-pub mod svd1x3;
 pub mod svd1x4;
-pub mod svd2x1;
-pub mod svd2x3;
 pub mod svd2x4;
-pub mod svd3x1;
-pub mod svd3x2;
 pub mod svd3x4;
 pub mod svd4;
 pub mod svd4x1;

@@ -1,16 +1,13 @@
-//! The decompositions of `nalgebra_linalg4` (upstream `nalgebra::linalg`) up to 4x4: `lu` (`Lu2`
-//! .. `Lu4`), `cholesky`, `cholesky_update`, `ldlt` / `udu`, `qr`, `inverse`, and the building
-//! blocks `householder` and `householder_steps` (the kernels of the Householder reductions are
-//! under `internal`); the rest of the module is in the other `nalgebra_linalg*` crates and in the
-//! facade `nalgebra`, which re-exports every item at its 0.1.0 path. Features (docs/SPLIT.md §4):
-//! `qr`, `cholesky_update`, `hessenberg` (`householder_steps`), as in `nalgebra`.
+//! The decompositions of `nalgebra_linalg4` (upstream `nalgebra::linalg`) of dimension 4:
+//! `cholesky`, `cholesky_update`, `inverse`, `lu`, `qr`, `udu`; the crate-internal kernels are
+//! under `internal`; the rest of the module is in the other `nalgebra_linalg*` crates,
+//! `nalgebra_types*`, `nalgebra_static6_wide` (`Lu6`) and the facade `nalgebra`, which re-exports
+//! every item at its 0.1.0 path. Features (docs/SPLIT.md §4): `qr` (`linalg::qr`);
+//! `cholesky_update` (`linalg::cholesky_update`), as in `nalgebra`.
 
 pub mod cholesky;
 #[cfg(feature: 'cholesky_update')]
 pub mod cholesky_update;
-pub mod householder;
-#[cfg(feature: 'hessenberg')]
-pub mod householder_steps;
 pub mod inverse;
 pub mod lu;
 #[cfg(feature: 'qr')]

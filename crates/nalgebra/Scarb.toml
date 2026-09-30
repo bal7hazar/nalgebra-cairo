@@ -54,8 +54,12 @@ experimental-features = ["associated_item_constraints", "user_defined_inline_mac
 # gates only this package's re-exports of its family and forwards to the features of the same name
 # of the sub-crates that hold it, so `default-features = false` exposes and compiles exactly what it
 # did before; their fate is decided in NS11 with the other forward-only features
-# (docs/SPLIT.md §12.1). WP 9-NS11a: `dynamic` lives in `nalgebra_dynamic`, `sparse` and `io` in
-# `nalgebra_sparse`, which this package always depends on (`nalgebra_dynamic` with
+# (docs/SPLIT.md §12.1). WP 9-R2: the decompositions are cut per dimension (docs/SPLIT.md §18.1:
+# `nalgebra_linalg_core`, `nalgebra_linalg2`..`6`, `nalgebra_linalg_svd_eigen2`..`6`,
+# `nalgebra_linalg_pivot2`..`6`, `nalgebra_linalg_spectral2`..`6`, same scheme): each linalg
+# feature forwards to the feature of the same name of every one of them that declares it.
+# WP 9-NS11a: `dynamic` lives in `nalgebra_dynamic`, `sparse` and `io` in `nalgebra_sparse`,
+# which this package always depends on (`nalgebra_dynamic` with
 # `default-features = false`, its `closures` forwarded by `closures`): like `statistics` / `blas`,
 # the three features now gate this package's re-exports only (`dmatrix!` / `dvector!` still need
 # `dynamic`), so `default-features = false` still exposes no dynamic / sparse / io item as in 0.1.0;
@@ -88,34 +92,57 @@ sparse = ["dynamic"]
 # kept for manifest compatibility; saves nothing since the split; removed in 0.2.0
 io = ["sparse"]
 eigen = [
-    "nalgebra_linalg_svd_eigen4/eigen", "nalgebra_linalg5/eigen", "nalgebra_linalg6/eigen",
+    "nalgebra_linalg_svd_eigen2/eigen", "nalgebra_linalg_svd_eigen3/eigen",
+    "nalgebra_linalg_svd_eigen4/eigen", "nalgebra_linalg_svd_eigen5/eigen",
+    "nalgebra_linalg_svd_eigen6/eigen",
 ]
-svd = ["eigen", "nalgebra_linalg_svd_eigen4/svd", "nalgebra_linalg5/svd", "nalgebra_linalg6/svd"]
-qr = ["nalgebra_linalg4/qr", "nalgebra_linalg5/qr", "nalgebra_linalg6/qr"]
-cholesky_update = ["nalgebra_linalg4/cholesky_update", "nalgebra_linalg6/cholesky_update"]
+svd = [
+    "eigen", "nalgebra_linalg_core/svd", "nalgebra_linalg_svd_eigen2/svd",
+    "nalgebra_linalg_svd_eigen3/svd", "nalgebra_linalg_svd_eigen4/svd",
+    "nalgebra_linalg_svd_eigen5/svd", "nalgebra_linalg_svd_eigen6/svd",
+]
+qr = [
+    "nalgebra_linalg2/qr", "nalgebra_linalg3/qr", "nalgebra_linalg4/qr", "nalgebra_linalg5/qr",
+    "nalgebra_linalg6/qr",
+]
+cholesky_update = [
+    "nalgebra_linalg3/cholesky_update", "nalgebra_linalg4/cholesky_update",
+    "nalgebra_linalg6/cholesky_update",
+]
 full_piv_lu = [
-    "nalgebra_linalg_pivot4/full_piv_lu", "nalgebra_linalg_pivot5/full_piv_lu", "nalgebra_linalg_pivot6/full_piv_lu",
+    "nalgebra_linalg_pivot2/full_piv_lu", "nalgebra_linalg_pivot3/full_piv_lu",
+    "nalgebra_linalg_pivot4/full_piv_lu", "nalgebra_linalg_pivot5/full_piv_lu",
+    "nalgebra_linalg_pivot6/full_piv_lu",
 ]
 col_piv_qr = [
-    "nalgebra_linalg_pivot4/col_piv_qr", "nalgebra_linalg_pivot5/col_piv_qr", "nalgebra_linalg_pivot6/col_piv_qr",
+    "nalgebra_linalg_pivot2/col_piv_qr", "nalgebra_linalg_pivot3/col_piv_qr",
+    "nalgebra_linalg_pivot4/col_piv_qr", "nalgebra_linalg_pivot5/col_piv_qr",
+    "nalgebra_linalg_pivot6/col_piv_qr",
 ]
 lblt = [
-    "nalgebra_linalg_pivot4/lblt", "nalgebra_linalg_pivot5/lblt", "nalgebra_linalg_pivot6/lblt",
+    "nalgebra_linalg_pivot2/lblt", "nalgebra_linalg_pivot3/lblt", "nalgebra_linalg_pivot4/lblt",
+    "nalgebra_linalg_pivot5/lblt", "nalgebra_linalg_pivot6/lblt",
 ]
 macros = []
 hessenberg = [
-    "nalgebra_linalg4/hessenberg", "nalgebra_linalg_spectral4/hessenberg",
+    "nalgebra_linalg_core/hessenberg", "nalgebra_linalg_spectral2/hessenberg",
+    "nalgebra_linalg_spectral3/hessenberg", "nalgebra_linalg_spectral4/hessenberg",
     "nalgebra_linalg_spectral5/hessenberg", "nalgebra_linalg_spectral6/hessenberg",
 ]
 bidiagonal = [
-    "nalgebra_linalg_spectral4/bidiagonal", "nalgebra_linalg_spectral5/bidiagonal", "nalgebra_linalg_spectral6/bidiagonal",
+    "nalgebra_linalg_spectral2/bidiagonal", "nalgebra_linalg_spectral3/bidiagonal",
+    "nalgebra_linalg_spectral4/bidiagonal", "nalgebra_linalg_spectral5/bidiagonal",
+    "nalgebra_linalg_spectral6/bidiagonal",
 ]
 schur = [
-    "hessenberg", "nalgebra_linalg_spectral4/schur", "nalgebra_linalg_spectral5/schur",
+    "hessenberg", "nalgebra_linalg_spectral2/schur", "nalgebra_linalg_spectral3/schur",
+    "nalgebra_linalg_spectral4/schur", "nalgebra_linalg_spectral5/schur",
     "nalgebra_linalg_spectral6/schur",
 ]
 exp = [
-    "nalgebra_linalg_spectral4/exp", "nalgebra_linalg_spectral5/exp", "nalgebra_linalg_spectral6/exp",
+    "nalgebra_linalg_core/exp", "nalgebra_linalg_spectral2/exp", "nalgebra_linalg_spectral3/exp",
+    "nalgebra_linalg_spectral4/exp", "nalgebra_linalg_spectral5/exp",
+    "nalgebra_linalg_spectral6/exp",
 ]
 
 [dependencies]
@@ -148,14 +175,25 @@ nalgebra_statistics4 = { path = "../statistics4", version = "0.1.0" }
 nalgebra_statistics5 = { path = "../statistics5", version = "0.1.0" }
 nalgebra_statistics6 = { path = "../statistics6", version = "0.1.0" }
 nalgebra_blas = { path = "../blas", version = "0.1.0" }
+nalgebra_linalg_core = { path = "../linalg_core", version = "0.1.0", default-features = false }
+nalgebra_linalg2 = { path = "../linalg2", version = "0.1.0", default-features = false }
+nalgebra_linalg_svd_eigen2 = { path = "../linalg_svd_eigen2", version = "0.1.0", default-features = false }
+nalgebra_linalg_pivot2 = { path = "../linalg_pivot2", version = "0.1.0", default-features = false }
+nalgebra_linalg_spectral2 = { path = "../linalg_spectral2", version = "0.1.0", default-features = false }
+nalgebra_linalg3 = { path = "../linalg3", version = "0.1.0", default-features = false }
+nalgebra_linalg_svd_eigen3 = { path = "../linalg_svd_eigen3", version = "0.1.0", default-features = false }
+nalgebra_linalg_pivot3 = { path = "../linalg_pivot3", version = "0.1.0", default-features = false }
+nalgebra_linalg_spectral3 = { path = "../linalg_spectral3", version = "0.1.0", default-features = false }
 nalgebra_linalg4 = { path = "../linalg4", version = "0.1.0", default-features = false }
 nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.0", default-features = false }
 nalgebra_linalg_pivot4 = { path = "../linalg_pivot4", version = "0.1.0", default-features = false }
 nalgebra_linalg_spectral4 = { path = "../linalg_spectral4", version = "0.1.0", default-features = false }
 nalgebra_linalg5 = { path = "../linalg5", version = "0.1.0", default-features = false }
+nalgebra_linalg_svd_eigen5 = { path = "../linalg_svd_eigen5", version = "0.1.0", default-features = false }
 nalgebra_linalg_pivot5 = { path = "../linalg_pivot5", version = "0.1.0", default-features = false }
 nalgebra_linalg_spectral5 = { path = "../linalg_spectral5", version = "0.1.0", default-features = false }
 nalgebra_linalg6 = { path = "../linalg6", version = "0.1.0", default-features = false }
+nalgebra_linalg_svd_eigen6 = { path = "../linalg_svd_eigen6", version = "0.1.0", default-features = false }
 nalgebra_linalg_pivot6 = { path = "../linalg_pivot6", version = "0.1.0", default-features = false }
 nalgebra_linalg_spectral6 = { path = "../linalg_spectral6", version = "0.1.0", default-features = false }
 nalgebra_dynamic = { path = "../dynamic", version = "0.1.0", default-features = false }

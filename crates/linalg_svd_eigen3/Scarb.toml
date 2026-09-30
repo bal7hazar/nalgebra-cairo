@@ -1,0 +1,38 @@
+[package]
+name = "nalgebra_linalg_svd_eigen3"
+description = "SVD and symmetric eigen of dimension 3."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "linalg", "svd", "symmetric-eigen"]
+readme = "README.md"
+
+# `eigen`, `svd` (as in `nalgebra`, whose features of the same names forward to these): `eigen`
+# gates `linalg::symmetric_eigen*`; `svd` gates `linalg::svd*` (on `eigen`). On by default;
+# `nalgebra` depends on this package with `default-features = false`, so `nalgebra` without its
+# default features still leaves them out (features unify per compilation unit, docs/SPLIT.md §1).
+[features]
+default = ["eigen", "svd"]
+eigen = ["nalgebra_linalg_svd_eigen2/eigen"]
+svd = ["eigen", "nalgebra_linalg_core/svd", "nalgebra_linalg_svd_eigen2/svd"]
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
+nalgebra_linalg_core = { path = "../linalg_core", version = "0.1.0", default-features = false }
+nalgebra_linalg_svd_eigen2 = { path = "../linalg_svd_eigen2", version = "0.1.0", default-features = false }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

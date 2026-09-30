@@ -2,4 +2,4 @@
 //! `SymmetricEigen1`: the (trivial) eigen decomposition of a `Matrix1` (WP 8.5-P14b), for the
 //! completeness of upstream's `SquareMatrix::symmetric_eigen` over the static sizes.
 
-pub use nalgebra_linalg_svd_eigen4::linalg::symmetric_eigen1::*;
+pub use nalgebra_linalg_svd_eigen2::linalg::symmetric_eigen1::*;

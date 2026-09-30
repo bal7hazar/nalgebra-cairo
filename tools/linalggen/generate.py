@@ -1037,8 +1037,14 @@ use crate::linalg::symmetric_eigen6::{{Sym6, SymmetricEigen6InternalTrait}};
 use crate::base::matrix1::Matrix1;
 """]
     # right vectors
+    # docs/SPLIT.md §3.3.2, §18.1 (WP 9-NS9, per dimension since WP 9-R2): `rightC` / `try_rightC`
+    # in one crate-internal trait per column count (`SvdRightTrait2` .. `SvdRightTrait6`), so each
+    # lives with the decompositions of its dimension (`linalg_svd_eigen2` .. `6`); the filters
+    # shared by every dimension (`inverted`, `divided`) stay in `SvdRightTrait` (`linalg_core`);
+    # same bodies, callers renamed
     body = []
-    body.append("""    /// The eigenvectors of the 2x2 Gram matrix, as the columns of a `Matrix2` (ascending
+    banded = {}
+    banded.setdefault(2, []).append("""    /// The eigenvectors of the 2x2 Gram matrix, as the columns of a `Matrix2` (ascending
     /// eigenvalue order), renormalised exactly like `Svd2::new` does: the first column divided by
     /// its own norm, the second its direct perpendicular.
     fn right2(g: SymMatrix2<T>) -> Matrix2<T> {
@@ -1046,8 +1052,8 @@ use crate::base::matrix1::Matrix1;
         let nv = R::norm2(e.m11, e.m21);
         let (x, y) = (R::div(e.m11, nv), R::div(e.m21, nv));
         Matrix2 { m11: x, m21: y, m12: -y, m22: x }
-    }
-    /// `right3` with `Svd3::new`'s renormalisation (columns 1 and 2 divided by their norms, the
+    }""")
+    banded.setdefault(3, []).append("""    /// `right3` with `Svd3::new`'s renormalisation (columns 1 and 2 divided by their norms, the
     /// third their cross product).
     fn right3(g: SymMatrix3<T>) -> Matrix3<T> {
         Self::renormalise3(SymmetricEigen3InternalTrait::new_sym(g).eigenvectors)
@@ -1078,12 +1084,8 @@ use crate::base::matrix1::Matrix1;
             m33: R::diff_prod(a1, b2, a2, b1),
         }
     }""")
-    banded = {}
     for c in (4, 5, 6):
-        # docs/SPLIT.md §3.3.2 (WP 9-NS9): `right5` / `right6` in one crate-internal trait per
-        # band (`SvdRightTrait5` / `SvdRightTrait6`), so each lives with the decompositions of its
-        # dimension (`linalg5` / `linalg6`); same bodies, callers renamed
-        (body if c == 4 else banded.setdefault(c, [])).append(f"""    /// The eigenvectors of the {c}x{c} Gram matrix (`SymmetricEigen{c}`, already renormalised and
+        banded.setdefault(c, []).append(f"""    /// The eigenvectors of the {c}x{c} Gram matrix (`SymmetricEigen{c}`, already renormalised and
     /// signed), as the columns of a `Matrix{c}`, ascending eigenvalue order.
     #[inline(always)]
     fn right{c}(g: Sym{c}<T>) -> Matrix{c}<T> {{
@@ -1115,7 +1117,7 @@ use crate::base::matrix1::Matrix1;
             R::zero()
         }
     }""")
-    parts.append(f"""/// The right singular vectors of a matrix with 2..6 columns (crate-internal).
+    parts.append(f"""/// The singular-value filters shared by the SVDs of every static shape (crate-internal).
 #[generate_trait]
 pub(crate) impl SvdRightImpl<
 {BOUNDS}
@@ -1275,7 +1277,7 @@ def svd_tall_kernel(r: int, c: int) -> str:
     if c == 1:
         right, try_right, gram = f"{MC} {{ x: R::one() }}", f"Some({MC} {{ x: R::one() }})", ""
     else:
-        band = "" if c <= 4 else str(c)
+        band = str(c)
         right = f"SvdRightImpl{band}::<T>::right{c}(Self::gram(Self::normalised(m)))"
         if c == 2:
             try_right = f"Some({right})"
@@ -1538,7 +1540,7 @@ def render_svd(r: int, c: int) -> str:
         elif c >= 4:
             uses.append(f"use crate::linalg::symmetric_eigen{c}::Sym{c};")
         uses.append("use core::internal::revoke_ap_tracking;")
-        kern = ["SvdRightImpl", f"SvdComplete{r}Impl"] + ([f"SvdRightImpl{c}"] if c >= 5 else [])
+        kern = ["SvdRightImpl", f"SvdComplete{r}Impl"] + ([f"SvdRightImpl{c}"] if c >= 2 else [])
         uses.append(f"use super::kernels::{{{', '.join(kern)}}};")
     else:
         uses.append(f"use super::{svd_mod(c, r)}::{{{svd_name(c, r)}InternalTrait, {svd_name(c, r)}Trait}};")

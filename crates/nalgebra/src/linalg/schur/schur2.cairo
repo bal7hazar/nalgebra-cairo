@@ -2,4 +2,4 @@
 //! `Schur2`: the real Schur decomposition of a `Matrix2` (upstream
 //! `nalgebra::linalg::Schur<T, U2>`), WP 8.5-P16.
 
-pub use nalgebra_linalg_spectral4::linalg::schur::schur2::*;
+pub use nalgebra_linalg_spectral2::linalg::schur::schur2::*;

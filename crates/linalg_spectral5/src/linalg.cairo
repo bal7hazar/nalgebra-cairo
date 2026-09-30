@@ -1,9 +1,11 @@
-//! The spectral decompositions of `nalgebra_linalg_spectral5` (upstream `nalgebra::linalg`) of
-//! dimension 5: `bidiagonal`, `hessenberg`, `symmetric_tridiagonal`, `schur`, `eigen`, `exp` and
-//! `pow` (the balancing and Householder building blocks of dimension 5 sit with their types in
-//! `nalgebra_shapes5`); the rest of the module is in the other `nalgebra_linalg*` crates (the
-//! facade `nalgebra` re-exports every item at its 0.1.0 path). Features (docs/SPLIT.md §4):
-//! `hessenberg`, `bidiagonal`, `schur` (on `hessenberg`), `exp`, as in `nalgebra`.
+//! The decompositions of `nalgebra_linalg_spectral5` (upstream `nalgebra::linalg`) of dimension 5:
+//! `bidiagonal`, `eigen`, `exp`, `hessenberg`, `pow`, `schur`, `symmetric_tridiagonal`; the rest of
+//! the module is in the other `nalgebra_linalg*` crates, `nalgebra_types*`, `nalgebra_static6_wide`
+//! (`Lu6`) and the facade `nalgebra`, which re-exports every item at its 0.1.0 path. Features
+//! (docs/SPLIT.md §4): `hessenberg` (`linalg::hessenberg`, `linalg::symmetric_tridiagonal`,
+//! `linalg::balancing`, `linalg::householder_steps`); `bidiagonal` (`linalg::bidiagonal`); `schur`
+//! (`linalg::schur`, `linalg::eigen` (on `hessenberg`)); `exp` (`linalg::exp`, `linalg::pow`), as
+//! in `nalgebra`.
 
 #[cfg(feature: 'bidiagonal')]
 pub mod bidiagonal;

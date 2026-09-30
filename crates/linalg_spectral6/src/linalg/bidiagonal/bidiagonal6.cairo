@@ -4,7 +4,7 @@
 //! (WP 8.5-P16).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_linalg_core::internal::linalg::householder_kernels::HouseholderKernelTrait;
 use nalgebra_types5::base::vector5::Vector5;
 use nalgebra_types6::base::matrix6::Matrix6;
 use nalgebra_types6::base::vector6::Vector6;

@@ -6,4 +6,4 @@
 //! `SymmetricTridiagonal`); these functions reproduce them bit for bit. `reflection_axis_mut` is
 //! `linalg::householder`'s.
 
-pub use nalgebra_linalg4::linalg::householder_steps::*;
+pub use nalgebra_linalg_core::linalg::householder_steps::*;

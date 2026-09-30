@@ -3,4 +3,4 @@
 //! `nalgebra::linalg::SVD<T, U3, U2>`), its pseudo-inverse, least-squares solve, rank and polar
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
-pub use nalgebra_linalg_svd_eigen4::linalg::svd::svd3x2::*;
+pub use nalgebra_linalg_svd_eigen3::linalg::svd::svd3x2::*;

@@ -2,4 +2,4 @@
 //! `FullPivLu1`: the LU factorisation with full pivoting of a `Matrix1` (upstream
 //! `nalgebra::linalg::FullPivLU<T, U1, U1>`), fully unrolled (WP 8.5-P15).
 
-pub use nalgebra_linalg_pivot4::linalg::full_piv_lu::full_piv_lu1::*;
+pub use nalgebra_linalg_pivot2::linalg::full_piv_lu::full_piv_lu1::*;
