@@ -21,8 +21,9 @@ and its dated status in `docs/SPLIT.md`.
 
 ## Models
 
-By kind of task, as `OPERATIONS.md` §2 says. The launcher takes a claude CLI model name
-(`claude-opus-5-5`, or the alias `sonnet` for mechanical lots). The model that ran is read, never
+By kind of task, as `OPERATIONS.md` §2 says. The launcher takes a claude CLI model id:
+`claude-opus-5-5`, or `claude-sonnet-5-5` for mechanical lots (what the alias `sonnet` ran in the
+transcripts of 2026-09-28 .. 30). The model that ran is read, never
 assumed, from the agent's session transcript, and titles its unit, the orchestrator's background
 task and the records:
 `grep -oh '"model":"[^"]*"' ~/.claude/projects/-home-claude-orchestrator-nalgebra-cairo-wt-<wp>/*.jsonl | sort | uniq -c`.
