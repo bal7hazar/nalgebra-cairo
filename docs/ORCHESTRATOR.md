@@ -135,8 +135,8 @@ systemctl --user set-property --runtime nalgebra-$wp MemoryMax=14G
   automatically) and the ENFORCING job `Consumer cost` that merges them into one verdict (the
   required check; `report_only` entries of `consumer_cost.toml`, the facade among them, are shown and
   never gated; `--report-only-marginals` is the transition switch that gates lines and closures
-  only: ON in `ci.yml` until `nalgebra_dynamic` is cut under gate 2, owner decision 2026-09-29 and
-  `docs/SPLIT.md` §20; `--merge` accepts it too, to re-judge downloaded shard files). A deeper
+  only: OFF in `ci.yml` since WP 9-NS12b cut `nalgebra_dynamic` under gate 2, so the marginals are
+  gated; `--merge` accepts it too, to re-judge downloaded shard files). A deeper
   measurement of a few crates: `--package A --package B --no-closures --repeat 9 --interleave`.
 - `scripts/facade_features.py` (CI job `Facade features`): consumers of the workspace facade naming
   its five no-op features (`statistics`, `blas`, `dynamic`, `sparse`, `io`; docs/SPLIT.md §17) build,

@@ -1,13 +1,13 @@
 [package]
 name = "nalgebra_blocks"
-description = "Row / column blocks, resize, pad / crop, Kronecker products (upstream base::edition, base::blocks)."
+description = "Row / column blocks, resize, pad / crop, Kronecker products, the fixed-size edition of the static shapes (upstream base::edition, base::blocks)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "base", "edition"]
+keywords = ["linear-algebra", "fixed-point", "base", "edition", "blocks"]
 readme = "README.md"
 
 [dependencies]

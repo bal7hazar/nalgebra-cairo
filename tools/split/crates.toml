@@ -4,7 +4,9 @@
 # R2 state (WP 9-R2): the live map is the approved re-cut (`tools/split/crates.recut.toml`,
 # docs/SPLIT.md §18.1) for every crate, the decompositions included (`linalg_core`, `linalg2`..
 # `linalg6`, `linalg_svd_eigen2`..`6`, `linalg_pivot2`..`6`, `linalg_spectral2`..`6`); the two
-# files differ by this header only.
+# files differ by this header only. WP 9-NS12b: the fixed-size edition of the static shapes
+# (`base::dynamic::shapes`: `InsertFixedColumns`..`RemoveFixedRows`, `Canvas6Edit`) in `blocks`
+# (docs/SPLIT.md §18.5).
 #
 # Read by `tools/split/cratemap.py`, hence by the generators (`tools/shapegen`, `tools/linalggen`),
 # `scripts/api_parity.py`, `tools/split/public_paths.py` and `tools/split/rewrite_imports.py`.
@@ -503,6 +505,21 @@ crate = "geometry6"
 file = ["geometry/point6.cairo"]
 crate = "types6"
 
+
+# WP 9-NS12b: the fixed-size edition of the static shapes (`InsertFixedColumns` / `InsertFixedRows`
+# / `RemoveFixedColumns` / `RemoveFixedRows`, one impl per (shape, D) pair, and the private
+# `Canvas6Edit` kernels) on the `Matrix6` canvas of `FixedResize` (`PadTo6` / `CropFrom6`): with
+# that canvas in `blocks` (the traits and their impls together, the anchor rule); they name no
+# dynamic type, so `dynamic` no longer depends on `blocks`
+[[rule]]
+file = ["base/dynamic/shapes.cairo"]
+name = "InsertFixedColumns|InsertFixedRows|RemoveFixedColumns|RemoveFixedRows|Canvas6Edit"
+crate = "blocks"
+
+[[rule]]
+file = ["base/dynamic/shapes.cairo"]
+trait = ["InsertFixedColumns", "InsertFixedRows", "RemoveFixedColumns", "RemoveFixedRows", "Canvas6Edit"]
+crate = "blocks"
 
 [[rule]]
 file = ["base/dynamic.cairo", "base/dynamic/*"]

@@ -8,10 +8,12 @@ name: Split measurement
 # `runner_report.py` then writes the tables of docs/SPLIT.md §3.1 / §6.2 (job summary + artifact).
 # `compare=true` with merges also measures every closure on the map without them, interleaved in the
 # same job (a paired comparison: runners differ by up to ~30 % between jobs).
-# `map` measures another crate map (the per-dimension re-cut proposal, WP 9-NS13); `source` takes the
-# library from a ref whose `crates/nalgebra` still holds all of it (the tree is split since WP 9-NS11a).
+# `map` measures another crate map (a proposal such as WP 9-NS13's re-cut or WP 9-NS12b's cut of
+# `dynamic`); `source` takes the library from a ref whose `crates/nalgebra` still holds all of it.
+# The tree is split since WP 9-NS11a, so both default to the final map (`tools/split/crates.toml`,
+# the 54 packages since WP 9-NS12b) on the pre-split tree a35e55b (WP 9-NS12b).
 # Manual only: `gh workflow run split-measure.yml --ref <branch> [-f merges="new=a+b ..."]
-# [-f map=tools/split/crates.recut.toml -f source=a35e55b]`.
+# [-f map=tools/split/<proposal>.toml] [-f source=<full SHA>]`.
 
 run-name: Split measurement ${{ inputs.label }}
 
@@ -47,13 +49,13 @@ on:
         type: string
         default: "false"
       map:
-        description: Crate map (empty = tools/split/crates.toml; the re-cut proposal is tools/split/crates.recut.toml)
+        description: Crate map (empty = tools/split/crates.toml, the final map)
         type: string
         default: ""
       source:
-        description: Git ref whose crates/nalgebra holds the whole library (empty = this ref; after the moves, the full SHA of the pre-split a35e55b)
+        description: Full SHA of a ref whose crates/nalgebra holds the whole library (default the pre-split a35e55b; empty = this ref)
         type: string
-        default: ""
+        default: a35e55b2d2d43176dc6b23fca585caaa92754bb0
 
 permissions:
   contents: read
