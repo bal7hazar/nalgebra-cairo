@@ -1306,7 +1306,7 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
 (retired, not reopened). Figures are the commands' outputs at the time given.
 
 **Done.**
-- **R1 merged** (#80, squash `8636c4f`, 15:3x UTC): Codex review `slingfall/review-9-r1` (gpt-6-sol)
+- **R1 merged** (#80, squash `8636c4f`, 15:21 UTC): Codex review `slingfall/review-9-r1` (gpt-6-sol)
   **PASS** on `d03e3a8`, no finding; the proofs checked in CI run 36623801109 (Path proof 9,289 /
   9,289, 0 missing, 0 extra; gate 1, largest `types6` 37,428 lines; API parity and generators up to
   date; Gas snapshot green; the reviewer's own `gas_compare` 3,758 / 0 / 0 and anchors 0). The
