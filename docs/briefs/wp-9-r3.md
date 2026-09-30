@@ -80,7 +80,10 @@ never edit the same file, this lot has two phases:
 2. The READMEs of the 21 decomposition packages (`linalg_core`, `linalg2` .. `6`,
    `linalg_svd_eigen2` .. `6`, `linalg_pivot2` .. `6`, `linalg_spectral2` .. `6`) and of the packages
    WP 9-NS12b made of `nalgebra_dynamic`, same style; the phase-1 files updated for the final package
-   list (the CHANGELOG list, the facade README's rows, the closure sentences of the READMEs).
+   list (the CHANGELOG list, the facade README's rows, the closure sentences of the READMEs) and for
+   NS12b's cut (`nalgebra_blocks` holds the fixed-size edition; `nalgebra_dynamic` no longer pulls
+   `nalgebra_blocks` nor forwards `closures`; the "static 2-4 + blocks / views" figures of NS12b's
+   report, and the `dynamic` row from the final run).
 3. The module docs (`//!` lines only, no code) of the modules split over several packages: each
    package's part says what that package holds of the module, instead of its lowest part's doc (R1
    Deviation 8, and the same after R2).

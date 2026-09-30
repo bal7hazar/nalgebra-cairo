@@ -75,6 +75,16 @@ the crate is cut. Two phases:
 
 ### Phase 2 (when resumed with R2's merge commit and the approved names)
 
+Decided by the orchestrator on phase 1's report (`~/orchestrator/nalgebra-cairo/reports/wp-9-ns12b-phase1.md`,
+2026-09-30): **cut A** (the fixed-size edition, i.e. the four traits `InsertFixedColumns` /
+`InsertFixedRows` / `RemoveFixedColumns` / `RemoveFixedRows`, their impls and the private
+`Canvas6Edit` kernels, moves to `nalgebra_blocks`; `nalgebra_dynamic` no longer depends on
+`nalgebra_blocks`; no new package, so no new name) and **D1 (ii)** (`nalgebra_dynamic`'s `closures`
+feature gates its own closure-taking methods only, `closures = []`: it no longer forwards to the
+static crates, which the facade forwards to itself). What would reverse it: the phase-2 CI showing
+`nalgebra_dynamic` above 4 s after D1; then cut B's layout (its new names go to the project manager
+first).
+
 1. `git fetch origin && git merge origin/main` (no rebase, no force push).
 2. The move, as `_move_common.md` says, with its proofs: switch the live map to the approved cut
    (and mirror it into `crates.recut.toml`; `crates.dyncut.toml` is then deleted), the generator
@@ -97,7 +107,9 @@ be editing it): report the fix under Escalations, with a workaround if one exist
 
 ### 3.2 Phase 2
 
-Allowed: `crates/dynamic/**` and the new packages it becomes; `crates/sparse/**`, `crates/nalgebra/**`
+Allowed: `crates/dynamic/**` and the new packages it becomes; `crates/blocks/**` for cut A (the
+`base::dynamic` module files it receives, its manifest `description` / `keywords`; not its README);
+`crates/sparse/**`, `crates/nalgebra/**`
 (manifests, re-exports; not the root `README.md`) and test packages' imports only where the cut forces
 them (`rewrite_imports.py`, reported); `tools/split/**`, `tools/shapegen/**` (the dynamic template and
 routing); workspace `Scarb.toml`, `Scarb.lock`; `gas/**`; `.github/workflows/ci.yml` (the switch and
