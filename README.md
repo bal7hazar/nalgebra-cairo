@@ -17,30 +17,30 @@ provable.
 > dual quaternions, isometries, similarities, scale, reflection, projections) and the
 > decompositions (LU, QR, Cholesky, SVD, eigen, Schur, ...). The one item left is upstream's
 > `io::cs_matrix_from_matrix_market(path)` (a Cairo program has no file system; the `_str` form is
-> there). Release 0.1.1 (the package split, no API change) is being prepared ([CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)).
+> there). Release 0.1.1 is the package split, with no API change ([CHANGELOG](https://github.com/bal7hazar/nalgebra-cairo/blob/main/CHANGELOG.md)).
 
 ## Installation
 
 ```toml
 [dependencies]
-nalgebra = "0.1.0"
+nalgebra = "0.1.1"
 fixed = "0.4.0"          # the scalar: `Vector3<Fixed>`, `Matrix4<Fixed>`...
 simba = "0.2.0"          # `use simba::prelude::*;` for the scalar traits (`Real`, `Transcendental`)
 ```
 
-`nalgebra = "0.1.0"` has every feature on (`default`), the whole nalgebra-rs surface. A dependent
+`nalgebra = "0.1.1"` has every feature on (`default`), the whole nalgebra-rs surface. A dependent
 that needs only a part of it compiles much less by depending on the packages it uses instead of the
-facade (0.1.1, see [Packages](#packages)); the features are the [feature table](#features):
+facade (see [Packages](#packages)); the features are the [feature table](#features):
 
 ```toml
-nalgebra = { version = "0.1.0", default-features = false, features = ["qr"] }
+nalgebra = { version = "0.1.1", default-features = false, features = ["qr"] }
 ```
 
 The glam-cairo conversions are a separate package (see [glam conversions](#glam-conversions)):
 
 ```toml
-nalgebra_glam = "0.1.0"
-glam = "0.4.0"
+nalgebra_glam = "0.1.1"
+glam = "0.4.1"          # nalgebra_glam 0.1.1 needs glam >= 0.4.1
 ```
 
 Versioning (pre-1.0): **numeric results are part of the API**. Any change of a result, down to the

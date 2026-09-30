@@ -11,12 +11,12 @@ keywords = ["linear-algebra", "fixed-point", "geometry", "cg"]
 readme = "README.md"
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_types2 = { path = "../types2", version = "0.1.0" }
-nalgebra_types3 = { path = "../types3", version = "0.1.0" }
-nalgebra_types4 = { path = "../types4", version = "0.1.0" }
-nalgebra_static3 = { path = "../static3", version = "0.1.0", default-features = false }
-nalgebra_geometry2 = { path = "../geometry2", version = "0.1.0" }
+nalgebra_core = { path = "../core", version = "0.1.1" }
+nalgebra_types2 = { path = "../types2", version = "0.1.1" }
+nalgebra_types3 = { path = "../types3", version = "0.1.1" }
+nalgebra_types4 = { path = "../types4", version = "0.1.1" }
+nalgebra_static3 = { path = "../static3", version = "0.1.1", default-features = false }
+nalgebra_geometry2 = { path = "../geometry2", version = "0.1.1" }
 simba.workspace = true
 
 [dev-dependencies]

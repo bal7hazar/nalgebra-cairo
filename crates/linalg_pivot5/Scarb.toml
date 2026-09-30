@@ -22,11 +22,11 @@ col_piv_qr = []
 lblt = []
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_types2 = { path = "../types2", version = "0.1.0" }
-nalgebra_types3 = { path = "../types3", version = "0.1.0" }
-nalgebra_types4 = { path = "../types4", version = "0.1.0" }
-nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+nalgebra_core = { path = "../core", version = "0.1.1" }
+nalgebra_types2 = { path = "../types2", version = "0.1.1" }
+nalgebra_types3 = { path = "../types3", version = "0.1.1" }
+nalgebra_types4 = { path = "../types4", version = "0.1.1" }
+nalgebra_types5 = { path = "../types5", version = "0.1.1" }
 simba.workspace = true
 
 [dev-dependencies]
