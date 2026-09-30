@@ -1062,7 +1062,11 @@ def cairo_files() -> list[Path]:
 # types (`linalg/lu/perm1_5.cairo`), not in `linalg/permutation_sequence.cairo`.
 # WP 8.6-P21: `MatrixInfSup<M>` (`root.cairo`, the kernel of `nalgebra::inf` / `sup` /
 # `inf_sup`), implemented in each shape's module as its `inf` / `sup` / `inf_sup`.
-CROSS_FILE_TRAITS = {"Norm", "PermuteRows", "PermuteColumns", "MatrixInfSup"}
+# WP 9-R1: `TransformMul` / `TransformDiv` / `TransformSetCategory` (`geometry/transform.cairo`),
+# declared in `nalgebra_core` and implemented in `nalgebra_transform2` / `nalgebra_transform3`
+# (docs/SPLIT.md §18.1).
+CROSS_FILE_TRAITS = {"Norm", "PermuteRows", "PermuteColumns", "MatrixInfSup", "TransformMul",
+                     "TransformDiv", "TransformSetCategory"}
 
 
 def parse_cairo() -> list[Item]:

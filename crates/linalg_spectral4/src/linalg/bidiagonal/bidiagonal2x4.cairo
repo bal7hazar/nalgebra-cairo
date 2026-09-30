@@ -5,10 +5,10 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix2x4::Matrix2x4;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types4::base::matrix2x4::Matrix2x4;
 use simba::scalar::Real;
 
 /// The bidiagonalisation `A = U D Vᵀ` of a `Matrix2x4<T>`: `D` 2x2 LOWER bidiagonal (`2 < 4`),

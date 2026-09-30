@@ -11,9 +11,10 @@
 //! difference here is the choice of the eigenvector row, made on the sign of `(m11 - m22) / 2` so
 //! that no cancellation can occur, and the fixed-point kernels (one rounding per output scalar).
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::internal::base::sym_matrix2::{SymMatrix2, SymMatrix2Trait};
+use nalgebra_static2::internal::base::sym_matrix2::SymMatrix2Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::internal::base::sym_matrix2::SymMatrix2;
 use simba::scalar::Real;
 use crate::internal::linalg::symmetric_eigen2::SymmetricEigen2InternalTrait;
 

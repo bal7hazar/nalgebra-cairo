@@ -27,7 +27,7 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::errors::NOT_POSITIVE_DEFINITE;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 use crate::linalg::cholesky::Cholesky6;
 

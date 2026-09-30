@@ -2,7 +2,7 @@
 //! the packages above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade
 //! `nalgebra`.
 
-use nalgebra_core::linalg::givens::GivensRotationTrait;
+use nalgebra_types2::linalg::givens::GivensRotationTrait;
 use simba::scalar::Real;
 
 /// The Householder axis kernels (methods of a generic impl, not free functions: AGENTS.md).

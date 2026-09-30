@@ -36,14 +36,18 @@ report_only = true
 nalgebra_with_glam = { members = ["nalgebra", "nalgebra_glam"], report_only = true }
 facade_no_default_features = { members = ["nalgebra"], default_features = false, report_only = true }
 # WP 9-NS4: `nalgebra_glam` on the sub-crates (docs/SPLIT.md §8)
-# (WP 9-NS5: `glam_int` dropped, docs/SPLIT.md §15)
-nalgebra_glam = ["nalgebra_glam", "nalgebra_core", "nalgebra_static3", "glam_core@0.4.1"]
-# WP 9-NS5: static 1-4 + geometry (docs/SPLIT.md §6.2, §12.4)
-static4_geometry = ["nalgebra_core", "nalgebra_static3", "nalgebra_shapes5", "nalgebra_static4",
-    "nalgebra_geometry4"]
+# (WP 9-NS5: `glam_int` dropped, docs/SPLIT.md §15; WP 9-R1: its direct dependencies on the
+# per-dimension map, docs/SPLIT.md §18.1)
+nalgebra_glam = ["nalgebra_glam", "nalgebra_core", "nalgebra_types2", "nalgebra_types3", "nalgebra_types4",
+    "nalgebra_static2", "nalgebra_static3", "nalgebra_geometry2", "nalgebra_geometry3", "glam_core@0.4.1"]
+# WP 9-NS5: static 1-4 + geometry (docs/SPLIT.md §6.2, §12.4); WP 9-R1: static 2-4 + geometry 2-4
+# + transforms 2-3 on the per-dimension map (docs/SPLIT.md §18.2; the budgets of §18.2 / §19 come
+# with move R3)
+static4_geometry = ["nalgebra_static4", "nalgebra_geometry2", "nalgebra_geometry3", "nalgebra_geometry4",
+    "nalgebra_transform2", "nalgebra_transform3"]
 
-# WP 9-NS9: the SVD / eigen, pivoting and factorisation closures (docs/SPLIT.md §6.2, §12.4)
-static3_svd = ["nalgebra_core", "nalgebra_static3", "nalgebra_linalg_svd_eigen4"]
+# WP 9-NS9: the SVD / eigen, pivoting and factorisation closures (docs/SPLIT.md §6.2, §12.4); WP 9-R1:
+# on the per-dimension types / methods, the decomposition crates unchanged until move R2
+static3_svd = ["nalgebra_static3", "nalgebra_linalg_svd_eigen4"]
 core_pivot = ["nalgebra_core", "nalgebra_linalg_pivot4"]
-static4_factor = ["nalgebra_core", "nalgebra_static3", "nalgebra_shapes5", "nalgebra_static4",
-    "nalgebra_linalg4"]
+static4_factor = ["nalgebra_static4", "nalgebra_linalg4"]

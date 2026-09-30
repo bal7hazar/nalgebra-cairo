@@ -15,5 +15,10 @@
 //!
 //! Numeric contract (AGENTS.md): every sum of products is one fused `Real` kernel (one floor per
 //! output scalar), every quotient correctly rounded; overflow panics.
-
-pub use nalgebra_geometry4::geometry::affine3::*;
+pub use nalgebra_transform3::geometry::affine3::{
+    Affine3, Affine3Default, Affine3Div, Affine3FromIsometry3, Affine3FromIsometryMatrix3,
+    Affine3FromRotation3, Affine3FromScale3, Affine3FromSimilarity3, Affine3FromSimilarityMatrix3,
+    Affine3FromTranslation3, Affine3FromUnitDualQuaternion, Affine3FromUnitQuaternion, Affine3Impl,
+    Affine3Index, Affine3Mul, Affine3One, Affine3Trait, Affine3TryFromMatrix4,
+    Affine3TryFromProjective3, Affine3TryFromTransform3, Matrix4FromAffine3,
+};

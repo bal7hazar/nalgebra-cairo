@@ -8,12 +8,12 @@
 
 use fixed::Fixed;
 use glam_core::{Vec2, Vec3, Vec4};
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
-use nalgebra_core::geometry::translation4::Translation4;
-use nalgebra_static3::geometry::translation2::Translation2;
-use nalgebra_static3::geometry::translation3::Translation3;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::translation2::Translation2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::geometry::translation3::Translation3;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types4::geometry::translation4::Translation4;
 
 /// The `Translation2<Fixed>` by `Vec2`. Exact. Upstream: `From<Vec2> for Translation2<f32>`.
 pub impl Translation2FromVec2 of Into<Vec2, Translation2<Fixed>> {

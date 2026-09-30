@@ -11,8 +11,8 @@
 //! of margin; see `SymmetricEigen4Trait::new` for the figures.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::vector4::Vector4;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::internal::linalg::symmetric_eigen4::Sym4;
 

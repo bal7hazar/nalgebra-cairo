@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_views"
-description = "FixedView and its 441 impls."
+description = "FixedView and its impls: fixed-size views of the static shapes (upstream base::matrix_view)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -11,10 +11,13 @@ keywords = ["linear-algebra", "fixed-point", "base", "matrix-view"]
 readme = "README.md"
 
 [dependencies]
-nalgebra_blocks = { path = "../blocks", version = "0.1.0" }
 nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
-nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
+nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+nalgebra_types6 = { path = "../types6", version = "0.1.0" }
+nalgebra_blocks = { path = "../blocks", version = "0.1.0" }
 simba.workspace = true
 
 [dev-dependencies]

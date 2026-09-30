@@ -2,8 +2,8 @@
 //! `Eigen5`: the eigen decomposition of a `Matrix5` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U5>`), WP 8.5-P16.
 
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 use crate::linalg::schur::schur5::Schur5Trait;
 

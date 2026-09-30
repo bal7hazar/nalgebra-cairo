@@ -19,12 +19,12 @@
 
 use fixed::Fixed;
 use glam_core::{Mat2, Quat};
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_static3::geometry::quaternion::Quaternion;
-use nalgebra_static3::geometry::rotation2::Rotation2;
-use nalgebra_static3::geometry::rotation3::Rotation3;
-use nalgebra_static3::geometry::unit_complex::UnitComplexTrait;
-use nalgebra_static3::geometry::unit_quaternion::UnitQuaternionTrait;
+use nalgebra_geometry2::geometry::unit_complex::UnitComplexTrait;
+use nalgebra_geometry3::geometry::quaternion::Quaternion;
+use nalgebra_geometry3::geometry::unit_quaternion::UnitQuaternionTrait;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::rotation2::Rotation2;
+use nalgebra_types3::geometry::rotation3::Rotation3;
 use crate::glam_matrix::Matrix2IntoMat2;
 
 /// The rotation matrix of a `Rotation2<Fixed>` as a `Mat2` (its columns are the axes). Exact.

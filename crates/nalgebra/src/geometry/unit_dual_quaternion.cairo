@@ -34,5 +34,4 @@
 //! of `from_parts` (`dual = t · real / 2`) and the doubling of `translation` (`t = 2 · dual ·
 //! real*`) are folded into their accumulations (`Real::wide_mul_scalar`), so each output component
 //! is floored ONCE for the whole expression.
-
-pub use nalgebra_static3::geometry::unit_dual_quaternion::*;
+pub use nalgebra_geometry3::geometry::unit_dual_quaternion::*;

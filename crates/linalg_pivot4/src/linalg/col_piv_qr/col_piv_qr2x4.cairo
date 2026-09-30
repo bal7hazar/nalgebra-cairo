@@ -4,11 +4,11 @@
 //! (WP 8.5-P15).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix2x4::Matrix2x4;
-use nalgebra_core::base::vector2::Vector2;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_core::linalg::lu::Perm4;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types4::base::matrix2x4::Matrix2x4;
+use nalgebra_types4::linalg::lu::Perm4;
 use simba::scalar::Real;
 
 /// The QR factorisation with column pivoting of a `Matrix2x4<T>`: `A P = Q R` (`P` = `p`, applied

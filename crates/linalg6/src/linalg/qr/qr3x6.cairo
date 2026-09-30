@@ -4,10 +4,10 @@
 //! alternatives), generated for the shapes P14a did not cover (WP 8.5-P14b).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_shapes6::base::matrix3x6::Matrix3x6;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types6::base::matrix3x6::Matrix3x6;
 use simba::scalar::Real;
 
 /// The QR factorisation `A = q * r` of a `Matrix3x6<T>`: `q` is 3x3, `r` is 3x6

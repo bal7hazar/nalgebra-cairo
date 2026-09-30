@@ -39,15 +39,13 @@
 mod benches;
 #[cfg(test)]
 mod tests;
-// an explicit list: the conversions and products of the shapes into this module's type (0.1.0:
-// `base::matrix*`, `base::row_vector*`) sit in this module of `nalgebra_static3`, the module of
-// their geometry type (docs/SPLIT.md §3.2, §12.6)
-pub use nalgebra_static3::geometry::isometry2::{
+pub use nalgebra_geometry2::geometry::isometry2::{
     Isometry2, Isometry2AngleImpl, Isometry2AngleTrait, Isometry2Default, Isometry2Div,
     Isometry2DivAssign, Isometry2FromArray, Isometry2FromPoint2, Isometry2FromTranslation,
     Isometry2FromVector2, Isometry2Impl, Isometry2Mul, Isometry2MulAssign,
     Isometry2MulAssignTranslation2, Isometry2One, Isometry2Trait, Similarity2FromIsometry2,
 };
+
 // the crate-private helpers the in-crate tests use (`nalgebra_static3::internal`)
 #[cfg(test)]
-use nalgebra_static3::internal::geometry::isometry2::{Isometry2InternalTrait};
+use nalgebra_geometry2::internal::geometry::isometry2::Isometry2InternalTrait;

@@ -5,10 +5,10 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::solve::SolveKernel;
 use nalgebra_core::linalg::lu::perm1_5::Perm1;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
 use simba::scalar::Real;
 
 /// The QR factorisation with column pivoting of a `Vector3<T>`: `A P = Q R` (`P` = `p`, applied to

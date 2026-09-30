@@ -18,16 +18,26 @@ pub use nalgebra_blocks::base::matrix_view::{
     RowVector3FixedColumnsMatrix1, RowVector3FixedColumnsRowVector2,
     RowVector3FixedColumnsRowVector3, RowVector3FixedRowsRowVector3,
 };
-pub use nalgebra_core::base::row_vector3::*;
 pub use nalgebra_norm::base::norm::{
     RowVector3EuclideanNorm, RowVector3LpNorm, RowVector3OneNorm, RowVector3UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix3x5::RowVector3MulMatrix3x5;
-pub use nalgebra_shapes5::base::row_vector5::RowVector3TrMulRowVector5;
-pub use nalgebra_shapes6::base::matrix3x6::RowVector3MulMatrix3x6;
-pub use nalgebra_shapes6::base::row_vector6::RowVector3TrMulRowVector6;
 pub use nalgebra_static3::base::row_vector3::*;
-pub use nalgebra_static3::geometry::rotation3::RowVector3MulRotation3;
+pub use nalgebra_types3::base::row_vector3::{
+    Matrix1x3, RowVector3, RowVector3Add, RowVector3AddAssign, RowVector3Bounded,
+    RowVector3DivAssignScalar, RowVector3FromArray, RowVector3FromColumnArrays,
+    RowVector3IndexLinear, RowVector3IndexPair, RowVector3IntoArray, RowVector3IntoColumnArrays,
+    RowVector3MatrixIndexLinear, RowVector3MatrixIndexPair, RowVector3MulAssignScalar,
+    RowVector3MulMatrix3, RowVector3MulMatrix3x2, RowVector3MulRotation3, RowVector3MulVector3,
+    RowVector3Neg, RowVector3PartialOrd, RowVector3Sub, RowVector3SubAssign, RowVector3Sum,
+    RowVector3SumSnapshot, RowVector3TrMulMatrix1, RowVector3TrMulRowVector2,
+    RowVector3TrMulRowVector3,
+};
+pub use nalgebra_types4::base::matrix3x4::RowVector3MulMatrix3x4;
+pub use nalgebra_types4::base::row_vector4::RowVector3TrMulRowVector4;
+pub use nalgebra_types5::base::matrix3x5::RowVector3MulMatrix3x5;
+pub use nalgebra_types5::base::row_vector5::RowVector3TrMulRowVector5;
+pub use nalgebra_types6::base::matrix3x6::RowVector3MulMatrix3x6;
+pub use nalgebra_types6::base::row_vector6::RowVector3TrMulRowVector6;
 pub use nalgebra_views::base::matrix_view::{
     RowVector3FixedViewMatrix1, RowVector3FixedViewRowVector2, RowVector3FixedViewRowVector3,
 };

@@ -20,7 +20,8 @@ pub use nalgebra_blocks::base::matrix_view::{
 pub use nalgebra_norm::base::norm::{
     RowVector5EuclideanNorm, RowVector5LpNorm, RowVector5OneNorm, RowVector5UniformNorm,
 };
-pub use nalgebra_shapes5::base::row_vector5::{
+pub use nalgebra_static5::base::row_vector5::*;
+pub use nalgebra_types5::base::row_vector5::{
     Matrix1x5, RowVector5, RowVector5Add, RowVector5AddAssign, RowVector5Bounded,
     RowVector5DivAssignScalar, RowVector5FromArray, RowVector5FromColumnArrays,
     RowVector5IndexLinear, RowVector5IndexPair, RowVector5IntoArray, RowVector5IntoColumnArrays,
@@ -30,9 +31,8 @@ pub use nalgebra_shapes5::base::row_vector5::{
     RowVector5Sum, RowVector5SumSnapshot, RowVector5TrMulMatrix1, RowVector5TrMulRowVector2,
     RowVector5TrMulRowVector3, RowVector5TrMulRowVector4, RowVector5TrMulRowVector5,
 };
-pub use nalgebra_shapes6::base::matrix5x6::RowVector5MulMatrix5x6;
-pub use nalgebra_shapes6::base::row_vector6::RowVector5TrMulRowVector6;
-pub use nalgebra_static5::base::row_vector5::*;
+pub use nalgebra_types6::base::matrix5x6::RowVector5MulMatrix5x6;
+pub use nalgebra_types6::base::row_vector6::RowVector5TrMulRowVector6;
 pub use nalgebra_views::base::matrix_view::{
     RowVector5FixedViewMatrix1, RowVector5FixedViewRowVector2, RowVector5FixedViewRowVector3,
     RowVector5FixedViewRowVector4, RowVector5FixedViewRowVector5,

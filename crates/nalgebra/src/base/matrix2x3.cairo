@@ -16,16 +16,25 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix2x3FixedColumnsMatrix2, Matrix2x3FixedColumnsMatrix2x3, Matrix2x3FixedColumnsVector2,
     Matrix2x3FixedRowsMatrix2x3, Matrix2x3FixedRowsRowVector3,
 };
-pub use nalgebra_core::base::matrix2x3::*;
 pub use nalgebra_norm::base::norm::{
     Matrix2x3EuclideanNorm, Matrix2x3LpNorm, Matrix2x3OneNorm, Matrix2x3UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix2x5::Matrix2x3TrMulMatrix2x5;
-pub use nalgebra_shapes5::base::matrix3x5::Matrix2x3MulMatrix3x5;
-pub use nalgebra_shapes6::base::matrix2x6::Matrix2x3TrMulMatrix2x6;
-pub use nalgebra_shapes6::base::matrix3x6::Matrix2x3MulMatrix3x6;
 pub use nalgebra_static3::base::matrix2x3::*;
-pub use nalgebra_static3::geometry::rotation3::Matrix2x3MulRotation3;
+pub use nalgebra_types3::base::matrix2x3::{
+    Matrix2x3, Matrix2x3Add, Matrix2x3AddAssign, Matrix2x3Bounded, Matrix2x3DivAssignScalar,
+    Matrix2x3FromColumnArrays, Matrix2x3IndexLinear, Matrix2x3IndexPair, Matrix2x3IntoColumnArrays,
+    Matrix2x3MatrixIndexLinear, Matrix2x3MatrixIndexPair, Matrix2x3MulAssignScalar,
+    Matrix2x3MulMatrix3, Matrix2x3MulMatrix3x2, Matrix2x3MulPoint, Matrix2x3MulRotation3,
+    Matrix2x3MulVector3, Matrix2x3Neg, Matrix2x3PartialOrd, Matrix2x3Sub, Matrix2x3SubAssign,
+    Matrix2x3Sum, Matrix2x3SumSnapshot, Matrix2x3TrMulMatrix2, Matrix2x3TrMulMatrix2x3,
+    Matrix2x3TrMulVector2,
+};
+pub use nalgebra_types4::base::matrix2x4::Matrix2x3TrMulMatrix2x4;
+pub use nalgebra_types4::base::matrix3x4::Matrix2x3MulMatrix3x4;
+pub use nalgebra_types5::base::matrix2x5::Matrix2x3TrMulMatrix2x5;
+pub use nalgebra_types5::base::matrix3x5::Matrix2x3MulMatrix3x5;
+pub use nalgebra_types6::base::matrix2x6::Matrix2x3TrMulMatrix2x6;
+pub use nalgebra_types6::base::matrix3x6::Matrix2x3MulMatrix3x6;
 pub use nalgebra_views::base::matrix_view::{
     Matrix2x3FixedViewMatrix1, Matrix2x3FixedViewMatrix2, Matrix2x3FixedViewMatrix2x3,
     Matrix2x3FixedViewRowVector2, Matrix2x3FixedViewRowVector3, Matrix2x3FixedViewVector2,

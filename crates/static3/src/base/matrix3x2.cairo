@@ -9,23 +9,23 @@
 //! and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 use nalgebra_core::base::errors;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix2x3::Matrix2x3;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix3x2::Matrix3x2;
-use nalgebra_core::base::matrix4x2::Matrix4x2;
 use nalgebra_core::base::matrix_index::MatrixIndex;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::norm::Norm;
-use nalgebra_core::base::row_vector2::RowVector2;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
 use nalgebra_core::internal::base::kernels::Powi;
-use nalgebra_core::internal::base::matrix3x2::Matrix3x2EditTrait;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::row_vector2::RowVector2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::rotation2::Rotation2;
+use nalgebra_types3::base::matrix2x3::Matrix2x3;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::matrix3x2::Matrix3x2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::internal::base::matrix3x2::Matrix3x2EditTrait;
+use nalgebra_types4::base::matrix4x2::Matrix4x2;
 use simba::scalar::{Real, Transcendental};
-use crate::base::matrix2::Matrix2Trait;
-use crate::geometry::Rotation2;
 
 /// Methods of `Matrix3x2<T>` for any `Real` scalar.
 #[generate_trait]

@@ -4,10 +4,10 @@
 //! decomposition (WP 8.5-P14b, DESIGN D6).
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
-use nalgebra_core::base::vector4::Vector4;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::internal::linalg::svd::kernels::SvdRightImpl;
 use crate::internal::linalg::symmetric_eigen4::Sym4;

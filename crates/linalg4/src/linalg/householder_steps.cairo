@@ -7,7 +7,7 @@
 //! `linalg::householder`'s.
 
 use nalgebra_core::base::errors::{DIMENSION_MISMATCH, INDEX_OUT_OF_BOUNDS};
-use nalgebra_shapes5::internal::linalg::householder_steps::ColumnMajor;
+use nalgebra_core::internal::linalg::householder_steps::ColumnMajor;
 use simba::scalar::Real;
 
 /// The loops of the building blocks (methods of a generic impl: AGENTS.md).

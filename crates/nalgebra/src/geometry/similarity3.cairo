@@ -8,11 +8,7 @@
 //! scale-plus-translation is fused into one wide accumulation per component. This preserves
 //! upstream's fixed-point-observable order (`rotate`, then `scale`, then `translate`) while
 //! avoiding a checked scalar addition after the scale.
-
-// an explicit list: the conversions and products of the shapes into this module's type (0.1.0:
-// `base::matrix*`, `base::row_vector*`) sit in this module of `nalgebra_static3`, the module of
-// their geometry type (docs/SPLIT.md §3.2, §12.6)
-pub use nalgebra_static3::geometry::similarity3::{
+pub use nalgebra_geometry3::geometry::similarity3::{
     Similarity3, Similarity3AngleImpl, Similarity3AngleTrait, Similarity3Default, Similarity3Div,
     Similarity3DivAssign, Similarity3DivAssignIsometry3, Similarity3Impl, Similarity3Mul,
     Similarity3MulAssign, Similarity3MulAssignIsometry3, Similarity3MulAssignTranslation3,

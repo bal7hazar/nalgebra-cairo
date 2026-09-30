@@ -26,12 +26,12 @@ mod benches;
 mod oracle;
 #[cfg(test)]
 mod tests;
-// an explicit list: `Point3Index` / `Point3PartialOrd` (0.1.0: `geometry::point`) now sit in
-// `nalgebra_core::base::point3`, the module of their type (docs/SPLIT.md §3.2, §12.6)
-pub use nalgebra_core::base::point3::{
-    Point3, Point3AddAssign, Point3DivAssign, Point3FromArray, Point3FromVector, Point3Impl,
-    Point3IntoArray, Point3IntoVector, Point3MulAssign, Point3Neg, Point3SubAssign, Point3Trait,
-};
+pub use nalgebra_geometry3::base::point3::*;
+
 // the crate-private by-value helpers the in-crate tests use (`nalgebra_core::internal`)
 #[cfg(test)]
-use nalgebra_core::internal::base::point3::Point3InternalTrait;
+use nalgebra_geometry3::internal::base::point3::Point3InternalTrait;
+pub use nalgebra_types3::base::point3::{
+    Point3, Point3AddAssign, Point3DivAssign, Point3FromArray, Point3FromVector, Point3IntoArray,
+    Point3IntoVector, Point3MulAssign, Point3Neg, Point3SubAssign,
+};

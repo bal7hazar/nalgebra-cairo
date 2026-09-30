@@ -4,9 +4,9 @@
 //! full orthogonal `Q` that `q_tr_mul` applies.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 
 /// The completions of orthonormal families of 2-vectors (crate-internal).

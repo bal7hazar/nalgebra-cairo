@@ -11,8 +11,8 @@
 //! of margin; see `SymmetricEigen6Trait::new` for the figures.
 
 use core::internal::revoke_ap_tracking;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::Real;
 
 /// The eigendecomposition `S = V * diag(eigenvalues) * Vᵀ` of a symmetric 6x6 matrix.

@@ -25,20 +25,7 @@
 //! cost a full matrix product to use.
 
 use nalgebra_core::base::errors::{INDEX_OUT_OF_BOUNDS, PERMUTATION_ORDER};
-use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
-use nalgebra_shapes6::base::matrix2x6::Matrix2x6;
-use nalgebra_shapes6::base::matrix3x6::Matrix3x6;
-use nalgebra_shapes6::base::matrix4x6::Matrix4x6;
-use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::matrix6x2::Matrix6x2;
-use nalgebra_shapes6::base::matrix6x3::Matrix6x3;
-use nalgebra_shapes6::base::matrix6x4::Matrix6x4;
-use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
-use nalgebra_shapes6::base::row_vector6::RowVector6;
-use nalgebra_shapes6::base::vector6::Vector6;
 use simba::scalar::Real;
-pub mod lu6;
 
 /// The row permutation of a 6x6 factorisation: the transpositions of steps 1 to 5.
 ///
@@ -169,6 +156,20 @@ pub impl Perm6Impl of Perm6Trait {
         }
     }
 }
+
+pub mod lu6;
+use nalgebra_core::linalg::permutation_sequence::{PermuteColumns, PermuteRows};
+use nalgebra_types6::base::matrix2x6::Matrix2x6;
+use nalgebra_types6::base::matrix3x6::Matrix3x6;
+use nalgebra_types6::base::matrix4x6::Matrix4x6;
+use nalgebra_types6::base::matrix5x6::Matrix5x6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6x2::Matrix6x2;
+use nalgebra_types6::base::matrix6x3::Matrix6x3;
+use nalgebra_types6::base::matrix6x4::Matrix6x4;
+use nalgebra_types6::base::matrix6x5::Matrix6x5;
+use nalgebra_types6::base::row_vector6::RowVector6;
+use nalgebra_types6::base::vector6::Vector6;
 
 // crate-map: generated items (tools/split/cratemap.py) [shapegen]
 // crate-map: from linalg/permutation_sequence.cairo

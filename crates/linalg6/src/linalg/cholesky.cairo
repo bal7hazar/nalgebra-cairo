@@ -33,8 +33,8 @@
 
 use nalgebra_core::base::errors::NOT_POSITIVE_DEFINITE;
 use nalgebra_core::internal::base::solve::SolveKernel;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::vector6::Vector6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::vector6::Vector6;
 use simba::scalar::{Real, Transcendental};
 
 /// The Cholesky factorisation `a = l * lᵀ` of a symmetric positive-definite 6x6 matrix:

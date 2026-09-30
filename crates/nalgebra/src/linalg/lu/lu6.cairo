@@ -27,7 +27,6 @@ mod tests;
 #[cfg(test)]
 use nalgebra_static6_wide::internal::linalg::lu::lu6::Lu6InternalTrait;
 
-pub use nalgebra_static6_wide::linalg::lu::lu6::*;
 // the test-only `PartialEq` of `Perm6` (`linalg::lu`, not `Perm6`'s module since the split)
 #[cfg(test)]
 use super::Perm6PartialEq;
@@ -40,3 +39,4 @@ impl Lu6PartialEq<T, +PartialEq<T>> of PartialEq<Lu6<T>> {
         lhs.lu == rhs.lu && lhs.p == rhs.p
     }
 }
+pub use nalgebra_static6_wide::linalg::lu::lu6::*;

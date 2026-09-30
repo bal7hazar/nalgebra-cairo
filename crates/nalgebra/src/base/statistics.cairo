@@ -10,4 +10,8 @@
 //! variance are summed exactly and floored once. Overflow panics. Methods need their trait in
 //! scope (`use nalgebra::Matrix2x3StatisticsTrait;`).
 
-pub use nalgebra_statistics::base::statistics::*;
+pub use nalgebra_statistics2::base::statistics::*;
+pub use nalgebra_statistics3::base::statistics::*;
+pub use nalgebra_statistics4::base::statistics::*;
+pub use nalgebra_statistics5::base::statistics::*;
+pub use nalgebra_statistics6::base::statistics::*;

@@ -1,10 +1,10 @@
 //! Internal, no stability promise: the crate-private items of `linalg::svd2` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::internal::base::sym_matrix2::SymMatrix2;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::internal::base::sym_matrix2::SymMatrix2;
 use simba::scalar::Real;
 
 /// Crate-internal kernels of `Svd2<T>` (WP 8.0: the public API is strictly upstream's): the Gram

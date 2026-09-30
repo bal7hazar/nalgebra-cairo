@@ -2,8 +2,8 @@
 //! `src/linalg/inverse.rs`), on the sizes that have an inverse: the closed forms of
 //! `Matrix2/3/4::try_inverse` and the LU inverse of `Matrix6` (`Matrix6LuTrait::try_inverse`).
 
-use nalgebra_shapes6::base::matrix6::Matrix6;
 use nalgebra_static6_wide::linalg::lu::lu6::Matrix6LuTrait;
+use nalgebra_types6::base::matrix6::Matrix6;
 use simba::scalar::Real;
 
 /// `SquareMatrix::try_inverse_mut` on `Matrix6<T>`.

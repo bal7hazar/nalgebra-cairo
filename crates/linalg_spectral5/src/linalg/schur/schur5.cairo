@@ -4,8 +4,8 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_linalg4::internal::linalg::householder_kernels::HouseholderKernelTrait;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::vector5::Vector5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::vector5::Vector5;
 use simba::scalar::Real;
 use crate::linalg::hessenberg::hessenberg5::Hessenberg5Trait;
 

@@ -1,13 +1,13 @@
 [package]
 name = "nalgebra_static6_wide"
-description = "Methods of the shapes with 6 columns (Matrix6, Matrix2x6..Matrix5x6, RowVector6); Lu6, Perm6 (Matrix6::is_invertible runs Lu6)."
+description = "The methods of the shapes with 6 columns (Matrix6, Matrix2x6..Matrix5x6, RowVector6); Lu6, Perm6."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "base", "linalg"]
+keywords = ["linear-algebra", "fixed-point", "base"]
 readme = "README.md"
 
 # `closures` (as in `nalgebra`, which forwards its own feature of that name here): the methods of
@@ -20,8 +20,11 @@ closures = []
 
 [dependencies]
 nalgebra_core = { path = "../core", version = "0.1.0" }
-nalgebra_shapes5 = { path = "../shapes5", version = "0.1.0" }
-nalgebra_shapes6 = { path = "../shapes6", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
+nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+nalgebra_types6 = { path = "../types6", version = "0.1.0" }
 nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.0", default-features = false }
 simba.workspace = true
 

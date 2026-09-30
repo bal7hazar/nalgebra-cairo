@@ -11,5 +11,4 @@
 //! Numeric contract: the rotations go through the `Rotation2` fused kernels, the final
 //! scale-plus-translation is one wide accumulation per component (`scale_translate`, shared with
 //! `Similarity2`), preserving upstream's order (rotate, then scale, then translate).
-
-pub use nalgebra_static3::geometry::similarity_matrix2::*;
+pub use nalgebra_geometry2::geometry::similarity_matrix2::*;

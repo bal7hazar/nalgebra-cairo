@@ -7,16 +7,16 @@
 //! squares, `docs/API_PARITY.md`).
 
 use nalgebra_core::base::matrix1::Matrix1;
-use nalgebra_core::base::matrix2::Matrix2;
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::matrix4::Matrix4;
 use nalgebra_core::base::matrix_mul::MatrixMul;
 use nalgebra_linalg4::linalg::lu::lu2::Lu2Trait;
 use nalgebra_linalg4::linalg::lu::lu3::Lu3Trait;
 use nalgebra_linalg4::linalg::lu::lu4::Lu4Trait;
-use nalgebra_static3::base::matrix2::Matrix2Trait;
+use nalgebra_static2::base::matrix2::Matrix2Trait;
 use nalgebra_static3::base::matrix3::Matrix3Trait;
 use nalgebra_static4::base::matrix4::Matrix4Trait;
+use nalgebra_types2::base::matrix2::Matrix2;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types4::base::matrix4::Matrix4;
 use simba::scalar::{Real, Transcendental};
 use crate::internal::linalg::exp::SINGULAR_PADE;
 

@@ -1,7 +1,7 @@
 //! Internal, no stability promise: the crate-private items of `linalg::svd::kernels` that the
 //! packages above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_shapes6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6::Matrix6;
 use simba::scalar::Real;
 use crate::linalg::symmetric_eigen6::{Sym6, SymmetricEigen6InternalTrait};
 

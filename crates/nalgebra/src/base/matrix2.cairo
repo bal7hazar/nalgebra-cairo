@@ -9,7 +9,7 @@
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
 #[cfg(test)]
-use nalgebra_static3::internal::base::matrix2::Matrix2InternalTrait;
+use nalgebra_static2::internal::base::matrix2::Matrix2InternalTrait;
 
 #[cfg(test)]
 mod tests;
@@ -22,16 +22,25 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix2FixedColumnsMatrix2, Matrix2FixedColumnsVector2, Matrix2FixedRowsMatrix2,
     Matrix2FixedRowsRowVector2,
 };
-
-pub use nalgebra_core::base::matrix2::*;
+pub use nalgebra_geometry2::geometry::unit_complex::Matrix2FromUnitComplex;
 pub use nalgebra_norm::base::norm::{
     Matrix2EuclideanNorm, Matrix2LpNorm, Matrix2OneNorm, Matrix2UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix2x5::{Matrix2MulMatrix2x5, Matrix2TrMulMatrix2x5};
-pub use nalgebra_shapes6::base::matrix2x6::{Matrix2MulMatrix2x6, Matrix2TrMulMatrix2x6};
-pub use nalgebra_static3::base::matrix2::*;
-pub use nalgebra_static3::geometry::rotation2::{Matrix2FromRotation2, Matrix2MulRotation2};
-pub use nalgebra_static3::geometry::unit_complex::Matrix2FromUnitComplex;
+pub use nalgebra_static2::base::matrix2::*;
+
+pub use nalgebra_types2::base::matrix2::{
+    Matrix2, Matrix2Add, Matrix2AddAssign, Matrix2Bounded, Matrix2DivAssignScalar,
+    Matrix2FromColumnArrays, Matrix2FromRotation2, Matrix2FromTranslation1, Matrix2IndexLinear,
+    Matrix2IndexPair, Matrix2IntoColumnArrays, Matrix2MatrixIndexLinear, Matrix2MatrixIndexPair,
+    Matrix2Mul, Matrix2MulAssign, Matrix2MulAssignScalar, Matrix2MulMatrix2, Matrix2MulPoint,
+    Matrix2MulRotation2, Matrix2MulVector2, Matrix2Neg, Matrix2One, Matrix2PartialOrd,
+    Matrix2ProductSnapshot, Matrix2Sub, Matrix2SubAssign, Matrix2Sum, Matrix2SumSnapshot,
+    Matrix2TrMulMatrix2, Matrix2TrMulVector2,
+};
+pub use nalgebra_types3::base::matrix2x3::{Matrix2MulMatrix2x3, Matrix2TrMulMatrix2x3};
+pub use nalgebra_types4::base::matrix2x4::{Matrix2MulMatrix2x4, Matrix2TrMulMatrix2x4};
+pub use nalgebra_types5::base::matrix2x5::{Matrix2MulMatrix2x5, Matrix2TrMulMatrix2x5};
+pub use nalgebra_types6::base::matrix2x6::{Matrix2MulMatrix2x6, Matrix2TrMulMatrix2x6};
 pub use nalgebra_views::base::matrix_view::{
     Matrix2FixedViewMatrix1, Matrix2FixedViewMatrix2, Matrix2FixedViewRowVector2,
     Matrix2FixedViewVector2,

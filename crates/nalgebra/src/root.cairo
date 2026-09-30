@@ -21,8 +21,8 @@
 //!   corelib does not have).
 
 use core::num::traits::{One, Zero};
-use nalgebra_core::internal::base::point2::Point2InternalTrait;
-use nalgebra_core::internal::base::point3::Point3InternalTrait;
+use nalgebra_geometry2::internal::base::point2::Point2InternalTrait;
+use nalgebra_geometry3::internal::base::point3::Point3InternalTrait;
 use simba::scalar::Real;
 use crate::base::point2::Point2;
 use crate::base::point3::Point3;

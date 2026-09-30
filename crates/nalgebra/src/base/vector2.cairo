@@ -29,14 +29,25 @@ pub use nalgebra_blocks::base::matrix_kronecker::{
 pub use nalgebra_blocks::base::matrix_view::{
     Vector2FixedColumnsVector2, Vector2FixedRowsMatrix1, Vector2FixedRowsVector2,
 };
-pub use nalgebra_core::base::vector2::*;
 pub use nalgebra_norm::base::norm::{
     Vector2EuclideanNorm, Vector2LpNorm, Vector2OneNorm, Vector2UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix2x5::Vector2TrMulMatrix2x5;
-pub use nalgebra_shapes5::base::row_vector5::Vector2MulRowVector5;
-pub use nalgebra_shapes6::base::matrix2x6::Vector2TrMulMatrix2x6;
-pub use nalgebra_shapes6::base::row_vector6::Vector2MulRowVector6;
-pub use nalgebra_static3::base::vector2::*;
+pub use nalgebra_static2::base::vector2::*;
+pub use nalgebra_types2::base::vector2::{
+    Matrix2x1, UnitVector2, Vector2, Vector2Add, Vector2AddAssign, Vector2Bounded, Vector2DivAssign,
+    Vector2FromArray, Vector2FromColumnArrays, Vector2IndexLinear, Vector2IndexPair,
+    Vector2IntoArray, Vector2IntoColumnArrays, Vector2MatrixIndexLinear, Vector2MatrixIndexPair,
+    Vector2MulAssign, Vector2MulMatrix1, Vector2MulRowVector2, Vector2Neg, Vector2PartialOrd,
+    Vector2Sub, Vector2SubAssign, Vector2Sum, Vector2SumSnapshot, Vector2TrMulMatrix2,
+    Vector2TrMulVector2,
+};
+pub use nalgebra_types3::base::matrix2x3::Vector2TrMulMatrix2x3;
+pub use nalgebra_types3::base::row_vector3::Vector2MulRowVector3;
+pub use nalgebra_types4::base::matrix2x4::Vector2TrMulMatrix2x4;
+pub use nalgebra_types4::base::row_vector4::Vector2MulRowVector4;
+pub use nalgebra_types5::base::matrix2x5::Vector2TrMulMatrix2x5;
+pub use nalgebra_types5::base::row_vector5::Vector2MulRowVector5;
+pub use nalgebra_types6::base::matrix2x6::Vector2TrMulMatrix2x6;
+pub use nalgebra_types6::base::row_vector6::Vector2MulRowVector6;
 pub use nalgebra_views::base::matrix_view::{Vector2FixedViewMatrix1, Vector2FixedViewVector2};
 pub use crate::root::matrix_inf_sup::Vector2InfSup;

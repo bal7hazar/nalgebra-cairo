@@ -1,0 +1,31 @@
+[package]
+name = "nalgebra_types6"
+description = "The types of dimension 6 (shapes with max(rows, cols) = 6, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls, without the edit kernels); Point6, Translation6."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["linear-algebra", "fixed-point", "base", "geometry", "linalg"]
+readme = "README.md"
+# `associated_item_constraints`: the `core::iter::Sum` / `Product` impls of the shapes
+# (`+Iterator<I>[Item: A]`, DESIGN D10), as in `nalgebra`.
+experimental-features = ["associated_item_constraints"]
+
+[dependencies]
+nalgebra_core = { path = "../core", version = "0.1.0" }
+nalgebra_types2 = { path = "../types2", version = "0.1.0" }
+nalgebra_types3 = { path = "../types3", version = "0.1.0" }
+nalgebra_types4 = { path = "../types4", version = "0.1.0" }
+nalgebra_types5 = { path = "../types5", version = "0.1.0" }
+simba.workspace = true
+
+[dev-dependencies]
+fixed.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

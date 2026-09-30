@@ -1,9 +1,9 @@
 //! Internal, no stability promise: the crate-private items of `base::matrix3` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::internal::base::sym_matrix3::SymMatrix3;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
 use simba::scalar::Real;
 
 /// Crate-internal kernels of `Matrix3<T>` with no upstream method of that name or shape (WP 8.0:

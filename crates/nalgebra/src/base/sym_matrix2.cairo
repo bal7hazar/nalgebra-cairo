@@ -5,7 +5,8 @@
 //! `from_outer_self`, `Matrix2::mul_transpose`) compute only the 3 independent components, and are
 //! bit-identical to the upper triangle of the generic `Matrix2` expression they replace.
 
-pub use nalgebra_core::internal::base::sym_matrix2::*;
+pub use nalgebra_static2::internal::base::sym_matrix2::*;
+pub use nalgebra_types2::internal::base::sym_matrix2::*;
 
 #[cfg(test)]
 mod tests {

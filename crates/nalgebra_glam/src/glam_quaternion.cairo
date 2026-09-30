@@ -18,8 +18,8 @@
 
 use fixed::Fixed;
 use glam_core::Quat;
-use nalgebra_static3::geometry::quaternion::Quaternion;
-use nalgebra_static3::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
+use nalgebra_geometry3::geometry::quaternion::Quaternion;
+use nalgebra_geometry3::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
 
 /// The `Quaternion<Fixed>` of a `Quat`: `Quaternion { i: x, j: y, k: z, w }`, exact. Upstream:
 /// `From<Quat> for Quaternion<f32>` (`Quaternion::new(e.w, e.x, e.y, e.z)`).

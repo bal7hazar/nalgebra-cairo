@@ -6,7 +6,7 @@
 //! `clear_row_unchecked` and `assemble_q` belong to the Householder reductions of P16
 //! (`Bidiagonal`, `Hessenberg`, `SymmetricTridiagonal`) and come with them.
 
-use nalgebra_shapes5::internal::linalg::householder::HouseholderAxis;
+use nalgebra_core::internal::linalg::householder::HouseholderAxis;
 
 /// Turns `column` into the unit axis of the Householder reflection that maps it onto `-r e_0`,
 /// and returns `(r, true)` with `r = -sign(column[0]) * |column|` (`sign(0) = 1`), or leaves it

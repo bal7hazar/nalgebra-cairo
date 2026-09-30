@@ -27,9 +27,9 @@
 
 use core::internal::revoke_ap_tracking;
 use nalgebra_core::base::errors::{INDEX_OUT_OF_BOUNDS, NOT_POSITIVE_DEFINITE};
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::linalg::cholesky::{Cholesky2, Cholesky3, Cholesky4};
 

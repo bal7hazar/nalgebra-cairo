@@ -1,6 +1,6 @@
 [package]
 name = "nalgebra_core"
-description = "The structs of the 36 static shapes and their core-trait impls; products, transposed products, indexing, solve kernels, permutations and Givens impls of the shapes up to 4x4; the declarations of every generic trait (MatrixMul, MatrixTrMul, MatrixIndex, Norm, views, MatrixSolve, PermuteRows, GivensRotate, LuSteps); Point1..4, Translation1, Translation4, Unit, errors, kernels."
+description = "The generic trait declarations (MatrixMul, MatrixTrMul, MatrixIndex, Norm, Normed / Unit, MatrixSolve, PermuteRows, GivensRotate, LuSteps, Householder / balancing, TransformMul), errors, fused kernels, and the dimension-1 types (Matrix1, Vector1, Point1, Translation1, Perm1, Reflection1 with its constructors and accessors)."
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

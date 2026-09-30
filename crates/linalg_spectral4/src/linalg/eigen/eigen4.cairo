@@ -2,8 +2,8 @@
 //! `Eigen4`: the eigen decomposition of a `Matrix4` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U4>`), WP 8.5-P16.
 
-use nalgebra_core::base::matrix4::Matrix4;
-use nalgebra_core::base::vector4::Vector4;
+use nalgebra_types4::base::matrix4::Matrix4;
+use nalgebra_types4::base::vector4::Vector4;
 use simba::scalar::Real;
 use crate::linalg::schur::schur4::Schur4Trait;
 

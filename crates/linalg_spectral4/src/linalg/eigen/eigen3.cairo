@@ -2,8 +2,8 @@
 //! `Eigen3`: the eigen decomposition of a `Matrix3` with real eigenvalues (upstream
 //! `nalgebra::linalg::Eigen<T, U3>`), WP 8.5-P16.
 
-use nalgebra_core::base::matrix3::Matrix3;
-use nalgebra_core::base::vector3::Vector3;
+use nalgebra_types3::base::matrix3::Matrix3;
+use nalgebra_types3::base::vector3::Vector3;
 use simba::scalar::Real;
 use crate::linalg::schur::schur3::Schur3Trait;
 

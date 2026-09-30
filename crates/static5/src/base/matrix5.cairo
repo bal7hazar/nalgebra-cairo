@@ -14,15 +14,15 @@ use nalgebra_core::base::matrix_tr_mul::MatrixTrMul;
 use nalgebra_core::base::norm::Norm;
 use nalgebra_core::internal::base::kernels::Powi;
 use nalgebra_core::internal::geometry::quaternion::ApproxEqTrait;
-use nalgebra_shapes5::base::matrix4x5::Matrix4x5;
-use nalgebra_shapes5::base::matrix5::Matrix5;
-use nalgebra_shapes5::base::matrix5x4::Matrix5x4;
-use nalgebra_shapes5::base::row_vector5::RowVector5;
-use nalgebra_shapes5::base::vector5::Vector5;
-use nalgebra_shapes5::internal::base::matrix5::Matrix5EditTrait;
-use nalgebra_shapes6::base::matrix5x6::Matrix5x6;
-use nalgebra_shapes6::base::matrix6::Matrix6;
-use nalgebra_shapes6::base::matrix6x5::Matrix6x5;
+use nalgebra_types5::base::matrix4x5::Matrix4x5;
+use nalgebra_types5::base::matrix5::Matrix5;
+use nalgebra_types5::base::matrix5x4::Matrix5x4;
+use nalgebra_types5::base::row_vector5::RowVector5;
+use nalgebra_types5::base::vector5::Vector5;
+use nalgebra_types5::internal::base::matrix5::Matrix5EditTrait;
+use nalgebra_types6::base::matrix5x6::Matrix5x6;
+use nalgebra_types6::base::matrix6::Matrix6;
+use nalgebra_types6::base::matrix6x5::Matrix6x5;
 use simba::scalar::{Real, Transcendental};
 
 /// Methods of `Matrix5<T>` for any `Real` scalar.

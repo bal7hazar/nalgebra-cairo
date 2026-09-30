@@ -1,7 +1,7 @@
 use fixed::Fixed;
 use glam_core::Quat;
-use nalgebra_static3::geometry::quaternion::Quaternion;
-use nalgebra_static3::geometry::unit_quaternion::UnitQuaternion;
+use nalgebra_geometry3::geometry::quaternion::Quaternion;
+use nalgebra_geometry3::geometry::unit_quaternion::UnitQuaternion;
 use crate::black_box;
 use crate::glam_quaternion::*;
 use super::{int, near};

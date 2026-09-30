@@ -1,11 +1,11 @@
 use fixed::Fixed;
 use glam_core::{Vec2, Vec3, Vec4};
-use nalgebra_core::base::vector2::Vector2;
-use nalgebra_core::base::vector3::Vector3;
-use nalgebra_core::base::vector4::Vector4;
-use nalgebra_core::geometry::translation4::Translation4;
-use nalgebra_static3::geometry::translation2::Translation2;
-use nalgebra_static3::geometry::translation3::Translation3;
+use nalgebra_types2::base::vector2::Vector2;
+use nalgebra_types2::geometry::translation2::Translation2;
+use nalgebra_types3::base::vector3::Vector3;
+use nalgebra_types3::geometry::translation3::Translation3;
+use nalgebra_types4::base::vector4::Vector4;
+use nalgebra_types4::geometry::translation4::Translation4;
 use crate::black_box;
 use crate::glam_translation::*;
 use super::int;

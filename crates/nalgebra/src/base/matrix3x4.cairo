@@ -16,15 +16,23 @@ pub use nalgebra_blocks::base::matrix_view::{
     Matrix3x4FixedColumnsVector3, Matrix3x4FixedRowsMatrix2x4, Matrix3x4FixedRowsMatrix3x4,
     Matrix3x4FixedRowsRowVector4,
 };
-pub use nalgebra_core::base::matrix3x4::*;
 pub use nalgebra_norm::base::norm::{
     Matrix3x4EuclideanNorm, Matrix3x4LpNorm, Matrix3x4OneNorm, Matrix3x4UniformNorm,
 };
-pub use nalgebra_shapes5::base::matrix3x5::Matrix3x4TrMulMatrix3x5;
-pub use nalgebra_shapes5::base::matrix4x5::Matrix3x4MulMatrix4x5;
-pub use nalgebra_shapes6::base::matrix3x6::Matrix3x4TrMulMatrix3x6;
-pub use nalgebra_shapes6::base::matrix4x6::Matrix3x4MulMatrix4x6;
 pub use nalgebra_static4::base::matrix3x4::*;
+pub use nalgebra_types4::base::matrix3x4::{
+    Matrix3x4, Matrix3x4Add, Matrix3x4AddAssign, Matrix3x4Bounded, Matrix3x4DivAssignScalar,
+    Matrix3x4FromColumnArrays, Matrix3x4IndexLinear, Matrix3x4IndexPair, Matrix3x4IntoColumnArrays,
+    Matrix3x4MatrixIndexLinear, Matrix3x4MatrixIndexPair, Matrix3x4MulAssignScalar,
+    Matrix3x4MulMatrix4, Matrix3x4MulMatrix4x2, Matrix3x4MulMatrix4x3, Matrix3x4MulVector4,
+    Matrix3x4Neg, Matrix3x4PartialOrd, Matrix3x4Sub, Matrix3x4SubAssign, Matrix3x4Sum,
+    Matrix3x4SumSnapshot, Matrix3x4TrMulMatrix3, Matrix3x4TrMulMatrix3x2, Matrix3x4TrMulMatrix3x4,
+    Matrix3x4TrMulVector3,
+};
+pub use nalgebra_types5::base::matrix3x5::Matrix3x4TrMulMatrix3x5;
+pub use nalgebra_types5::base::matrix4x5::Matrix3x4MulMatrix4x5;
+pub use nalgebra_types6::base::matrix3x6::Matrix3x4TrMulMatrix3x6;
+pub use nalgebra_types6::base::matrix4x6::Matrix3x4MulMatrix4x6;
 pub use nalgebra_views::base::matrix_view::{
     Matrix3x4FixedViewMatrix1, Matrix3x4FixedViewMatrix2, Matrix3x4FixedViewMatrix2x3,
     Matrix3x4FixedViewMatrix2x4, Matrix3x4FixedViewMatrix3, Matrix3x4FixedViewMatrix3x2,

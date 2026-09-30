@@ -64,6 +64,14 @@ GEOMETRY_INTO = {
     (5, 5): [("Translation4", "Translation4Trait::to_homogeneous(self)", "the homogeneous matrix")],
     (6, 6): [("Translation5", "Translation5Trait::to_homogeneous(self)", "the homogeneous matrix")],
 }
+# the library body of the conversions that sit with the matrix's types while the geometry methods sit
+# above them (docs/SPLIT.md §18.3, WP 9-R1): the type-level kernel that the method runs too, same
+# body through `#[inline(always)]` (no step change); the generated tests keep the method form above
+GEOMETRY_INTO_KERNEL = {
+    (src, s): f"Matrix{s}From{src}KernelTrait::to_homogeneous(self)"
+    for src, s in (("Translation1", 2), ("Rotation2", 3), ("Translation2", 3), ("Rotation3", 4),
+                   ("Translation3", 4), ("Translation4", 5), ("Translation5", 6))
+}
 DIV_SIZES = (16, 9, 6, 5, 4, 3, 1)  # `Real::divN` (1 = `Real::div`)
 
 ANGLE_BOUNDS = ["T", "impl R: Real<T>", "impl Tr: Transcendental<T>", "+Copy<T>", "+Drop<T>",
@@ -720,6 +728,7 @@ def items(s: Shape) -> list[str]:
             f"fn div_assign(ref self: {T}, rhs: T) {{\n{quotients(s, 'self', 'rhs')}\n"
             f"self = {shorthand(s)};\n}}\n}}"))
     for src, how, what in GEOMETRY_INTO.get((s.r, s.c), []):
+        how = GEOMETRY_INTO_KERNEL.get((src, s.r), how) if s.is_square else how
         out.append(item(
             f"`{src.lower()}.into()`: {what}. Exact (no arithmetic). Upstream: `From<{src}> for "
             f"{S}`.",
@@ -851,11 +860,17 @@ def uses(s: Shape) -> list[str]:
     if s.c in (2, 3):
         out += ["super::matrix_mul::MatrixMul", f"crate::geometry::Rotation{s.c}"]
     geo = [src for src, how, _ in GEOMETRY_INTO.get((s.r, s.c), [])]
-    traits = sorted({m.group(1) for _, how, _ in GEOMETRY_INTO.get((s.r, s.c), [])
-                     for m in [re.match(r"(\w+Trait)::", how)] if m})
+    kernels = {src: GEOMETRY_INTO_KERNEL[(src, s.r)] for src in geo
+               if s.is_square and (src, s.r) in GEOMETRY_INTO_KERNEL}
+    traits = sorted({m.group(1) for src, how, _ in GEOMETRY_INTO.get((s.r, s.c), [])
+                     for m in [re.match(r"(\w+Trait)::", kernels.get(src, how))] if m}
+                    - {k.split("::")[0] for k in kernels.values()})
     if geo:
         names = sorted(set(geo) | set(traits))
         out.append(f"crate::geometry::{{{', '.join(names)}}}")
+    for src, k in sorted(kernels.items()):
+        # the kernel's defining module (its `internal` module in the split packages)
+        out.append(f"crate::geometry::{src.lower()}::{k.split('::')[0]}")
     return out
 
 

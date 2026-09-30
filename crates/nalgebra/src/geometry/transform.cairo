@@ -37,4 +37,49 @@
 //! only measured candidate within the oracle tolerance on every distribution (see
 //! `Affine3::try_inverse`). Overflow panics.
 
-pub use nalgebra_geometry4::geometry::transform::*;
+pub use nalgebra_core::geometry::transform::*;
+pub use nalgebra_transform2::geometry::affine2::{
+    Affine2DivAffine2, Affine2DivProjective2, Affine2MulAffine2, Affine2MulProjective2,
+    Affine2MulTransform2, Affine2SetCategoryAffine2, Affine2SetCategoryProjective2,
+    Affine2SetCategoryTransform2, Isometry2MulAffine2, IsometryMatrix2MulAffine2,
+    Projective2DivAffine2, Projective2MulAffine2, Rotation2DivAffine2, Rotation2MulAffine2,
+    Similarity2MulAffine2, SimilarityMatrix2MulAffine2, Transform2DivAffine2, Transform2MulAffine2,
+    Translation2DivAffine2, Translation2MulAffine2, UnitComplexMulAffine2,
+};
+pub use nalgebra_transform2::geometry::projective2::{
+    Isometry2MulProjective2, IsometryMatrix2MulProjective2, Projective2DivProjective2,
+    Projective2MulProjective2, Projective2MulTransform2, Projective2SetCategoryProjective2,
+    Projective2SetCategoryTransform2, Rotation2DivProjective2, Rotation2MulProjective2,
+    Similarity2MulProjective2, SimilarityMatrix2MulProjective2, Transform2DivProjective2,
+    Transform2MulProjective2, Translation2DivProjective2, Translation2MulProjective2,
+    UnitComplexMulProjective2,
+};
+pub use nalgebra_transform2::geometry::transform2::{
+    Isometry2MulTransform2, IsometryMatrix2MulTransform2, Rotation2DivTransform2,
+    Rotation2MulTransform2, Similarity2MulTransform2, SimilarityMatrix2MulTransform2,
+    Transform2MulTransform2, Transform2SetCategoryTransform2, Translation2DivTransform2,
+    Translation2MulTransform2, UnitComplexMulTransform2,
+};
+pub use nalgebra_transform3::geometry::affine3::{
+    Affine3DivAffine3, Affine3DivProjective3, Affine3MulAffine3, Affine3MulProjective3,
+    Affine3MulTransform3, Affine3SetCategoryAffine3, Affine3SetCategoryProjective3,
+    Affine3SetCategoryTransform3, Isometry3MulAffine3, IsometryMatrix3MulAffine3,
+    Projective3DivAffine3, Projective3MulAffine3, Rotation3DivAffine3, Rotation3MulAffine3,
+    Similarity3MulAffine3, SimilarityMatrix3MulAffine3, Transform3DivAffine3, Transform3MulAffine3,
+    Translation3DivAffine3, Translation3MulAffine3, UnitQuaternionDivAffine3,
+    UnitQuaternionMulAffine3,
+};
+pub use nalgebra_transform3::geometry::projective3::{
+    Isometry3MulProjective3, IsometryMatrix3MulProjective3, Projective3DivProjective3,
+    Projective3MulProjective3, Projective3MulTransform3, Projective3SetCategoryProjective3,
+    Projective3SetCategoryTransform3, Rotation3DivProjective3, Rotation3MulProjective3,
+    Similarity3MulProjective3, SimilarityMatrix3MulProjective3, Transform3DivProjective3,
+    Transform3MulProjective3, Translation3DivProjective3, Translation3MulProjective3,
+    UnitQuaternionDivProjective3, UnitQuaternionMulProjective3,
+};
+pub use nalgebra_transform3::geometry::transform3::{
+    Isometry3MulTransform3, IsometryMatrix3MulTransform3, Rotation3DivTransform3,
+    Rotation3MulTransform3, Similarity3MulTransform3, SimilarityMatrix3MulTransform3,
+    Transform3MulTransform3, Transform3SetCategoryTransform3, Translation3DivTransform3,
+    Translation3MulTransform3, UnitQuaternionDivTransform3, UnitQuaternionMulTransform3,
+};
