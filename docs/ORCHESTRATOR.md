@@ -47,9 +47,11 @@ machine: shims, foreground only, crate-scoped checks) and, for a package-split m
    explicitly deferred (DEFER).
 4. Efficiency rules and numeric targets (gas / steps); variants to bench when the formulation is
    not obvious (the winner in the library, the losers in `benches::alt` with their benches).
-5. Tests: table-driven, compile budget (max file size, max number of fuzz tests; the compile budget
-   of the test crates is the first cause of CI failure observed), golden vectors from the reference
-   oracle, panics with exact messages.
+5. Tests: where they live (`AGENTS.md`: a module's unit tests in its file under `#[cfg(test)] mod
+   tests`, public-API tests in the test packages; a file the lot touches moves its tests),
+   table-driven, compile budget (max file size, max number of fuzz tests; the compile budget of the
+   test crates is the first cause of CI failure observed), golden vectors from the reference oracle,
+   panics with exact messages.
 6. Definition of done: crate-scoped checks (the touched packages; never the whole-workspace gate on
    the shared machine, the pull-request CI is the full gate) run in the **foreground** (never a
    background command followed by the end of the turn: in headless mode the session stops), gas

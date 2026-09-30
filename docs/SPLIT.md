@@ -1391,3 +1391,37 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
 **Capacity at the start** (15:09 UTC): `~/orchestrator/capacity.json` `can_launch` true, `free_slots`
 4, `oom_kills_30min` 0; `nexus resources`: vps 0 / 2 jobs, 26.6 GB free; `nexus accounts`: claude:b7r
 2 % of its 5-hour window, 0 % of its week. Two nalgebra agents at a time (project manager's context).
+
+**Update 21:40 UTC: the re-cut is complete (objectives 3 and 4).**
+- **R2** merged (#85, squash `8fa6c72`, 18:40 UTC): 21 decomposition packages; Codex
+  `slingfall/review-9-r2` PASS (3,131 function bodies identical after the `SvdRightTrait` renames).
+- **NS12b** merged (#86, squash `1a8b38f`, 19:19 UTC): cut A + D1; `nalgebra_dynamic` 2.5 s / 0.34 GB
+  on the CI medians (6.4 s after R1, 7.7 s after R2), confirming phase 1's explanation; marginals
+  gated (`--report-only-marginals` dropped); Codex `slingfall/review-9-ns12b` PASS.
+- **R3** merged (#82, squash `4b9c8e3`, 21:24 UTC): the 54 READMEs, the facade README, every §18.2
+  closure with its §19 budget, `docs/PACKAGES.md` (CI run 36767869070), CHANGELOG 0.1.1; two fix loops
+  on documentation figures, then Codex `slingfall/review-9-r3-3` PASS.
+- Reports archived under `~/orchestrator/nalgebra-cairo/reports/`: `wp-9-r2.md`, `wp-9-ns12b-phase1.md`,
+  `wp-9-ns12b.md`, `wp-9-r3.md`.
+
+## 22. Release 0.1.1: readiness (2026-09-30, orchestrator)
+
+The conditions of the release go (§17, §19, `slingfall/OPERATIONS.md` §6-§7) and where each is met.
+
+| condition | evidence |
+|---|---|
+| the final name list, for the owner | 54 packages: `docs/PACKAGES.md`, CHANGELOG 0.1.1, `scripts/release.py`'s order (dependencies first, the facade 53rd, `nalgebra_glam` last) |
+| gates 1 and 2 on every sub-crate | `docs/PACKAGES.md`: largest `nalgebra_types6` 37,436 lines (6.4 % margin); highest marginal 2.6 s; the enforcing `Consumer cost` job gates lines, marginals and closures; the facade `nalgebra` is report-only (it re-exports every sub-crate and fails gate 3 by construction, §12.1) |
+| the declared closures and the dimension 5-6 budget (§19) | `consumer_cost.toml` (every §18.2 closure, 15 s / 3 GB up to dimension 4, 20 s / 4.5 GB with dimension 5 or 6); the facade README's "Dimensions 5 and 6" (the combined static 6 + SVD / eigen 6 and static 6 + spectral 6, documented, not gated: §18.7.1) |
+| the end-of-split table (§16.2, §17) | the facade README: packages table (what you need → crates → cost), "Dimensions 5 and 6", "Blocks, views and norms" (the base families with static 2-4, advanced use, and the everyday methods already in the light crates, §18.4 / §18.7.3); `nalgebra_reflections6` (§16) is superseded: the re-cut places reflections per dimension and the dimension-6 closures have their budget |
+| no path, API or result change | every move: `gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0, API parity unchanged (R1 #80, R2 #85, NS12b #86) |
+| facade features kept (§17) | the five no-op features, the CI job `Facade features`, the CHANGELOG's Deprecated section |
+| `nalgebra_glam` 0.1.1 needs `glam` ≥ 0.4.1 | CHANGELOG 0.1.1, README's glam lines |
+| the release PR | #87: workspace version and every path requirement 0.1.1, CHANGELOG dated |
+| CI green on `main` at the release commit, package dry run | after #87: `python3 scripts/release.py` (dry run) on `main`, sent with the go request |
+
+Known after the release, not blocking it: the generated split modules (`internal/base/*`,
+`internal/linalg/svd/kernels.cairo`, the generated shape files) keep the lowest part's module doc
+(R3's escalation: the generator templates would need package-specific docs); §18.1 / §18.2 keep the
+plan's prototype figures, the final ones being `docs/PACKAGES.md`.
+

@@ -72,11 +72,17 @@ machine is CPU-capped (programme rule, 2026-09-25).
 
 - Upstream names and semantics wherever the operation exists upstream (`try_inverse`,
   `transform_point`, `Matrix3::new` row-major). Deviations are documented in the doc comment.
-- One type per file. Tests of the PUBLIC API live in the test-only package of the module
-  (`crates/tests_base`, `crates/tests_geometry`, `crates/tests_linalg`, generated shape tests in
-  `crates/shapes_tests_*`; helpers in `crates/tests_utils`), mirroring the module tree; only tests
-  of crate-internal items stay in-crate (`#[cfg(test)] mod tests;`). Keep each test package's
-  `scarb build --test` peak under ~7 GB (split it and add a CI shard when it grows).
+- One type per file. Unit tests of a module (its functions, kernels, checks, oracle vectors of its
+  internal items) live in that module's file under `#[cfg(test)] mod tests`, not in separate files,
+  unless a measured performance reason is written above the test (owner's rule for every Cairo
+  library, 2026-09-30, `slingfall/OPERATIONS.md` §5; applied from the lots after 0.1.1: an existing
+  file moves its tests when a lot touches it, never in a migration of its own; `#[cfg(test)]` lines
+  do not count as library lines). Tests of the PUBLIC API go through the facade, across packages, and stay in the
+  test-only packages (`crates/tests_base`, `crates/tests_geometry`, `crates/tests_linalg`, generated
+  shape tests in `crates/shapes_tests_*`; helpers in `crates/tests_utils`), mirroring the module tree:
+  they need several packages, and their split has a measured reason (WP 8.1c: the `nalgebra` test
+  build fell from 14.7 GB to 5.3 GB; DESIGN D9). Keep each test package's `scarb build --test` peak
+  under ~7 GB (split it and add a CI shard when it grows).
 - Errors are `felt252` constants in an `errors` module; panic messages are stable API.
 - Pure library: no `starknet` dependency, no storage, no proc macros; the only dependency is
   fixed-cairo's `fixed` (registry, pinned version).
