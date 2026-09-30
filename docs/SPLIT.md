@@ -1116,7 +1116,7 @@ proof 9,289 / 0 / 0, `cratemap.py --anchors` 0 findings, gate 1 per crate, `Cons
 | PR | content | replaces | size |
 |---|---|---|---|
 | R1 | `core` (declarations + dimension 1), `types2..6`, `static_core`, `static2..5`, `static6_tall` / `_wide`, `geometry2..6`, `transform2` / `3`, `statistics2..6`; the 8 type-level kernels | `core`, `shapes5`, `shapes6`, `static3..5`, `static6_*`, `geometry4`, `geometry6`, `statistics` | ~300k lines (generator-driven: the shape files, `cg`, statistics) |
-| R2 | `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; `SvdRightTrait` split per dimension (2..6, today ≤4 / 5 / 6); `Cholesky2/3UpdateTrait` in `linalg3` / `linalg4` | the 12 `linalg*` crates | ~185k (linalggen-driven) |
+| R2 | `linalg_core`, `linalg2..6`, `linalg_svd_eigen2..6`, `linalg_pivot2..6`, `linalg_spectral2..6`; `SvdRightTrait` split per dimension (2..6, today ≤4 / 5 / 6); `Cholesky2/3UpdateTrait` in `linalg3` / `linalg4` | the 10 `linalg*` crates | ~185k (linalggen-driven) |
 | R3 | release plumbing on the new names: `consumer_cost.toml` (packages, closures of §18.2 with their budgets), `scripts/release.py` order (the map's order: 54 packages), one README per package (description = the one-line content above), facade README tables, `docs/PACKAGES.md`, CHANGELOG 0.1.1 | – | docs / scripts |
 
 `blocks`, `views`, `norm`, `blas`, `dynamic`, `sparse` keep their content; R1 rewrites their
@@ -1299,3 +1299,34 @@ never Fable; reviews and audits go through `nexus`.
 **Open decisions.** None with the owner: §18.7 and §19 settled the re-cut and its budgets. The
 orchestrator chooses where `nalgebra_dynamic` is cut (its report-only marginal, above) when it
 writes that lot's brief; the names of any new crate go to the PM before the move.
+
+## 21. Status of the track (2026-09-30, orchestrator session "[Opus 5.5] Orchestrateur nalgebra — slingfall")
+
+A new orchestrator session, created by the project manager on 2026-09-30, replaces the one of §20
+(retired, not reopened). Figures are the commands' outputs at the time given.
+
+**Done.**
+- **R1 merged** (#80, squash `8636c4f`, 15:21 UTC): Codex review `slingfall/review-9-r1` (gpt-6-sol)
+  **PASS** on `d03e3a8`, no finding; the proofs checked in CI run 36623801109 (Path proof 9,289 /
+  9,289, 0 missing, 0 extra; gate 1, largest `types6` 37,428 lines; API parity and generators up to
+  date; Gas snapshot green; the reviewer's own `gas_compare` 3,758 / 0 / 0 and anchors 0). The
+  review ran without `--brief` (`nexus` reads a brief from the pull request's branch, and R1's was
+  not committed); its acceptance criteria went in `--instructions`.
+- **Objective 1** (this PR): `docs/ORCHESTRATOR.md` aligned with the Nexus standard and
+  `slingfall/OPERATIONS.md`; briefs committed under `docs/briefs/` from now on (the standard's
+  "committed brief"; the `nalgebra` row of `OPERATIONS.md` §4 still names
+  `~/orchestrator/nalgebra-cairo/briefs/`, the project manager's file).
+
+**Next, in order.**
+- **R2** (`docs/briefs/wp-9-r2.md`, Opus 5.5) and **R3** (`docs/briefs/wp-9-r3.md`, the `sonnet`
+  alias) launched together once this PR is on `main`, each as a `nalgebra-wp-9-r<n>` unit. R3 has two
+  phases so that its files never overlap R2's: phase 1 now (non-decomposition READMEs, the facade
+  README, CHANGELOG), phase 2 on resume after R2's merge (linalg READMEs, split-module docs, the
+  closures with their §18.2 / §19 budgets, the release order, `docs/PACKAGES.md`).
+- Then the `nalgebra_dynamic` cut under gate 2 (its new crate names to the project manager before the
+  move), `--report-only-marginals` dropped, `split-measure.yml` repointed or retired; then the
+  release 0.1.1 on the project manager's written go.
+
+**Capacity at the start** (15:09 UTC): `~/orchestrator/capacity.json` `can_launch` true, `free_slots`
+4, `oom_kills_30min` 0; `nexus resources`: vps 0 / 2 jobs, 26.6 GB free; `nexus accounts`: claude:b7r
+2 % of its 5-hour window, 0 % of its week. Two nalgebra agents at a time (project manager's context).
