@@ -17,7 +17,7 @@ It depends on [`nalgebra_core`](../core/README.md), [`nalgebra_types2`](../types
 
 ## When to depend on it
 
-It is also pulled in by 18 other declared closures, the cheapest being `static5_pivot` (9.4 s / 3.26 GB, 20 s / 4.5 GB).
+It is pulled in by 19 declared closures, the cheapest being `static5_pivot` (9.4 s / 3.26 GB, 20 s / 4.5 GB).
 
 Depend on the `types` crates when you need the types and their operators without the named methods (those are in the `static` crates). It is the largest crate of the library (37,463 lines).
 

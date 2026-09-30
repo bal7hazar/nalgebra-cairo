@@ -17,7 +17,7 @@ It depends on [`nalgebra_core`](../core/README.md), [`nalgebra_types2`](../types
 
 ## When to depend on it
 
-It is also pulled in by 22 other declared closures, the cheapest being `static4_svd` (6.9 s / 2.11 GB, 15 s / 3 GB).
+It is pulled in by 23 declared closures, the cheapest being `static4_svd` (6.9 s / 2.11 GB, 15 s / 3 GB).
 
 Depend on the `types` crates when you need the types and their operators without the named methods (those are in the `static` crates). Dimension k builds on every dimension below it: dimension 5 is the first one that costs more than a few seconds (docs/SPLIT.md §19, the "Dimensions 5 and 6" section of the facade README).
 

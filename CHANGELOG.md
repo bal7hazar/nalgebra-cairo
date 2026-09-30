@@ -21,60 +21,60 @@ the `Consumer cost` CI job (GitHub runner, medians of interleaved cold builds). 
 - **The 54 packages** (52 sub-crates, the facade and `nalgebra_glam`; a number in a name is exactly
   that dimension, the dimension of a rectangular shape being max(rows, columns); docs/SPLIT.md §18.1),
   lowest first:
-  - `nalgebra_core`: generic trait declarations (`MatrixMul`, `MatrixTrMul`, `MatrixIndex`, `Norm`, `Normed` / `Unit`, `MatrixSolve`, `PermuteRows`, `GivensRotate`, `LuSteps`, Householder / balancing, `TransformMul`), errors, fused kernels; the dimension-1 types (`Matrix1`, `Vector1`, `Point1`, `Translation1`, `Perm1`, `Reflection1`)
-  - `nalgebra_types2`: the types of dimension 2 (shapes with max(rows, cols) = 2, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); `Point2`, `Translation2`, `Perm2`, `Rotation2`, `Reflection2`
-  - `nalgebra_types3`: the types of dimension 3 (as `types2`); `Point3`, `Translation3`, `Perm3`, `Rotation3`, `Reflection3`
-  - `nalgebra_types4`: the types of dimension 4 (as `types2`); `Point4`, `Translation4`, `Perm4`, `Reflection4`
-  - `nalgebra_types5`: the types of dimension 5 (as `types2`); `Point5`, `Translation5`, `Perm5`
-  - `nalgebra_types6`: the types of dimension 6 (as `types2`, without the edit kernels); `Point6`, `Translation6`
-  - `nalgebra_static_core`: the methods of the dimension-1 shapes (`Matrix1`, `Vector1`, `RowVector1`, `UnitVector1`)
-  - `nalgebra_static2`: the methods of the dimension-2 shapes (`Matrix2`, `Vector2`, `RowVector2`, `Matrix1x2`...)
-  - `nalgebra_static3`: the methods of the dimension-3 shapes (`Matrix3`, `Vector3`, `Matrix2x3`, `Matrix3x2`...)
-  - `nalgebra_static4`: the methods of the dimension-4 shapes
-  - `nalgebra_static5`: the methods of the dimension-5 shapes
-  - `nalgebra_static6_tall`: the methods of the shapes with 6 rows and fewer columns (`Matrix6x1`..`Matrix6x5`, `Vector6`); dimension-6 edit kernels
-  - `nalgebra_static6_wide`: the methods of the shapes with 6 columns (`Matrix6`, `Matrix2x6`..`Matrix5x6`, `RowVector6`); `Lu6`, `Perm6`
-  - `nalgebra_geometry2`: the 1D / 2D geometry: `UnitComplex`, `Rotation2` methods, isometries, similarities, points / translations / scales 1-2 methods, swizzles, `Matrix2` / `Matrix3` homogeneous (`cg`)
-  - `nalgebra_geometry3`: the 3D geometry: quaternions, unit quaternions, `Rotation3` methods, isometries, similarities, dual quaternions, `AbstractRotation`, point / translation / scale / reflection 3 methods, `Matrix4` homogeneous
-  - `nalgebra_geometry4`: point / translation / scale 4 methods, `Matrix5` homogeneous
-  - `nalgebra_geometry5`: points, translations, scales, reflections of dimension 5 (`Reflection5` whole), `Matrix6` homogeneous
-  - `nalgebra_geometry6`: points, translations, scales, reflections of dimension 6 (`Reflection6` whole)
-  - `nalgebra_transform2`: `Transform2`, `Projective2`, `Affine2` and their products (upstream `geometry::transform`)
-  - `nalgebra_transform3`: `Transform3`, `Projective3`, `Affine3`, `Perspective3`, `Orthographic3` and their products
-  - `nalgebra_blocks`: row / column blocks, resize, pad / crop, Kronecker products
-  - `nalgebra_views`: `FixedView` and its 441 impls
-  - `nalgebra_norm`: the norm markers and every `Norm` impl
-  - `nalgebra_statistics2`: `base::statistics` of the dimension-2 shapes (one inherent trait per shape)
-  - `nalgebra_statistics3`: `base::statistics` of dimension 3
-  - `nalgebra_statistics4`: `base::statistics` of dimension 4
-  - `nalgebra_statistics5`: `base::statistics` of dimension 5
-  - `nalgebra_statistics6`: `base::statistics` of dimension 6
-  - `nalgebra_blas`: `base::blas` (`MatrixGemm` and its 216 impls, the per-shape BLAS traits)
-  - `nalgebra_linalg_core`: shared linalg kernels: Householder kernels and steps (`clear_column_unchecked`, `assemble_q`), `reflection_axis_mut`, balancing, Givens methods, the SVD right-vector kernel trait
-  - `nalgebra_linalg2`: LU, Cholesky, LDLᵀ / UDU, QR, inverse of dimension 2 (and 1)
+  - `nalgebra_core`: The generic trait declarations (MatrixMul, MatrixTrMul, MatrixIndex, Norm, Normed / Unit, MatrixSolve, PermuteRows, GivensRotate, LuSteps, Householder / balancing, TransformMul), errors, fused kernels, and the dimension-1 types (Matrix1, Vector1, Point1, Translation1, Perm1, Reflection1 with its constructors and accessors)
+  - `nalgebra_types2`: The types of dimension 2 (shapes with max(rows, cols) = 2, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point2, Translation2, Perm2, Rotation2, Reflection2 (with its constructors and accessors), GivensRotation
+  - `nalgebra_types3`: The types of dimension 3 (shapes with max(rows, cols) = 3, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point3, Translation3, Perm3, Rotation3, Reflection3 (with its constructors and accessors)
+  - `nalgebra_types4`: The types of dimension 4 (shapes with max(rows, cols) = 4, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point4, Translation4, Perm4, Reflection4 (with its constructors and accessors)
+  - `nalgebra_types5`: The types of dimension 5 (shapes with max(rows, cols) = 5, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls); Point5, Translation5, Perm5
+  - `nalgebra_types6`: The types of dimension 6 (shapes with max(rows, cols) = 6, their core-trait impls, products, indexing, solve / permutation / Givens / LU-step / Householder impls, without the edit kernels); Point6, Translation6
+  - `nalgebra_static_core`: The methods of the dimension-1 shapes (Matrix1, Vector1, RowVector1, UnitVector1)
+  - `nalgebra_static2`: The methods of the dimension-2 shapes (Matrix2, Vector2, RowVector2, Matrix1x2...)
+  - `nalgebra_static3`: The methods of the dimension-3 shapes (Matrix3, Vector3, Matrix2x3, Matrix3x2...)
+  - `nalgebra_static4`: The methods of the dimension-4 shapes (Matrix4, Vector4, Matrix2x4, Matrix4x3...)
+  - `nalgebra_static5`: The methods of the dimension-5 shapes (Matrix5, Vector5, Matrix2x5, Matrix5x3...)
+  - `nalgebra_static6_tall`: The methods of the shapes with 6 rows and fewer columns (Matrix6x1..Matrix6x5, Vector6); the dimension-6 edit kernels
+  - `nalgebra_static6_wide`: The methods of the shapes with 6 columns (Matrix6, Matrix2x6..Matrix5x6, RowVector6); Lu6, Perm6
+  - `nalgebra_geometry2`: The 1D / 2D geometry: UnitComplex, Rotation2 methods, isometries, similarities, points / translations / scales 1-2 methods, swizzles, Matrix2 / Matrix3 homogeneous (cg)
+  - `nalgebra_geometry3`: The 3D geometry: quaternions, unit quaternions, Rotation3 methods, isometries, similarities, dual quaternions, AbstractRotation, point / translation / scale 3 methods, Matrix4 homogeneous (cg)
+  - `nalgebra_geometry4`: The 4D geometry: point / translation / scale 4 methods, Matrix5 homogeneous (cg)
+  - `nalgebra_geometry5`: The 5D geometry: points, translations, scales, reflections of dimension 5 (Reflection5 whole), Matrix6 homogeneous (cg)
+  - `nalgebra_geometry6`: The 6D geometry: points, translations, scales, reflections of dimension 6 (Reflection6 whole)
+  - `nalgebra_transform2`: Transform2, Projective2, Affine2 and their products (upstream geometry::transform)
+  - `nalgebra_transform3`: Transform3, Projective3, Affine3, Perspective3, Orthographic3 and their products (upstream geometry::transform)
+  - `nalgebra_blocks`: Row / column blocks, resize, pad / crop, Kronecker products, the fixed-size edition of the static shapes (upstream base::edition, base::blocks)
+  - `nalgebra_views`: FixedView and its impls: fixed-size views of the static shapes (upstream base::matrix_view)
+  - `nalgebra_norm`: The norm markers (EuclideanNorm, LpNorm, OneNorm, UniformNorm) and every Norm impl (upstream base::norm)
+  - `nalgebra_statistics2`: base::statistics of the dimension-2 shapes (one inherent trait per shape)
+  - `nalgebra_statistics3`: base::statistics of the dimension-3 shapes (one inherent trait per shape)
+  - `nalgebra_statistics4`: base::statistics of the dimension-4 shapes (one inherent trait per shape)
+  - `nalgebra_statistics5`: base::statistics of the dimension-5 shapes (one inherent trait per shape)
+  - `nalgebra_statistics6`: base::statistics of the dimension-6 shapes (one inherent trait per shape)
+  - `nalgebra_blas`: base::blas: MatrixGemm and its impls, the per-shape BLAS traits
+  - `nalgebra_linalg_core`: Shared linalg kernels: the Householder kernels and steps (`clear_column_unchecked`, `assemble_q`), `reflection_axis_mut`, balancing, the SVD filters, the `exp` Padé message
+  - `nalgebra_linalg2`: LU, Cholesky, LDLᵀ / UDU, QR, inverse of dimension 2 (and 1); the `Perm1` / `Perm2` methods
   - `nalgebra_linalg_svd_eigen2`: SVD and symmetric eigen of dimension 2 (and 1)
-  - `nalgebra_linalg_pivot2`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 2 (and 1)
-  - `nalgebra_linalg_spectral2`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 2 (and 1)
-  - `nalgebra_linalg3`: LU, Cholesky (+ the column updates of dimension 2), LDLᵀ / UDU, QR, inverse of dimension 3
+  - `nalgebra_linalg_pivot2`: Column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 2 (and 1)
+  - `nalgebra_linalg_spectral2`: Bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 2 (and 1)
+  - `nalgebra_linalg3`: LU, Cholesky (+ the column updates of dimension 2), LDLᵀ / UDU, QR, inverse of dimension 3; the `Perm3` methods
   - `nalgebra_linalg_svd_eigen3`: SVD and symmetric eigen of dimension 3
-  - `nalgebra_linalg_pivot3`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 3
-  - `nalgebra_linalg_spectral3`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 3
-  - `nalgebra_linalg4`: LU, Cholesky (+ the column updates of dimension 3), LDLᵀ / UDU, QR, inverse of dimension 4
+  - `nalgebra_linalg_pivot3`: Column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 3
+  - `nalgebra_linalg_spectral3`: Bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 3
+  - `nalgebra_linalg4`: LU, Cholesky (+ the column updates of dimension 3), LDLᵀ / UDU, QR, inverse of dimension 4; the `Perm4` methods
   - `nalgebra_linalg_svd_eigen4`: SVD and symmetric eigen of dimension 4
-  - `nalgebra_linalg_pivot4`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 4
-  - `nalgebra_linalg_spectral4`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 4
-  - `nalgebra_linalg5`: LU, Cholesky (+ the column updates of dimension 4), LDLᵀ / UDU, QR, inverse of dimension 5
+  - `nalgebra_linalg_pivot4`: Column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 4
+  - `nalgebra_linalg_spectral4`: Bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 4
+  - `nalgebra_linalg5`: QR of dimension 5; the `Perm5` methods (0.1.0 has no `Lu5`, `Cholesky5` or `Udu5`)
   - `nalgebra_linalg_svd_eigen5`: SVD and symmetric eigen of dimension 5
-  - `nalgebra_linalg_pivot5`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 5
-  - `nalgebra_linalg_spectral5`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 5
-  - `nalgebra_linalg6`: Cholesky, LDLᵀ / UDU, QR, inverse of dimension 6 (`Lu6` is in `static6_wide`)
+  - `nalgebra_linalg_pivot5`: Column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 5
+  - `nalgebra_linalg_spectral5`: Bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 5
+  - `nalgebra_linalg6`: Cholesky (+ its column updates), LDLᵀ / UDU, QR, inverse of dimension 6 (`Lu6` is in `static6_wide`)
   - `nalgebra_linalg_svd_eigen6`: SVD and symmetric eigen of dimension 6
-  - `nalgebra_linalg_pivot6`: column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6
-  - `nalgebra_linalg_spectral6`: bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 6
-  - `nalgebra_dynamic`: `DMatrix`, `DVector`, the dynamic forms
-  - `nalgebra_sparse`: `sparse`, `io`
+  - `nalgebra_linalg_pivot6`: Column-pivoting QR, full-pivoting LU, LBLᵀ of dimension 6
+  - `nalgebra_linalg_spectral6`: Bidiagonal, Schur, eigen, Hessenberg, tridiagonal, `exp` / `pow` of dimension 6
+  - `nalgebra_dynamic`: DMatrix, DVector, RowDVector, the dynamic forms of the static shapes
+  - `nalgebra_sparse`: sparse (legacy CsMatrix, CsCholesky) and io (Matrix Market)
   - `nalgebra`: the facade: root functions, macros, `LuInvert`, `MatrixInfSup` and the 0.1.0 module tree, re-exporting every package above at its 0.1.0 paths.
-  - `nalgebra_glam`: unchanged API
+  - `nalgebra_glam`: Conversions between nalgebra-cairo and glam-cairo types: the glam interop of the Rust nalgebra crate (its `convert-glam` features) as a separate package
 - **Why**: a consumer that needs part of the library depends on the sub-crates it uses and pays
   only for them. Every sub-crate is at most 40,000 library lines and adds at most 5 s / 1 GB to a
   cold build of an empty consumer over its own dependencies; the typical closures cost at most

@@ -76,9 +76,9 @@ rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of 
 | bidiagonal, Schur, eigen, Hessenberg, `exp` / `pow` of dimensions 2-4 | `nalgebra_linalg_spectral2` .. `nalgebra_linalg_spectral4` | with the methods of dimension 4: see the packages' marginals in `docs/PACKAGES.md` |
 | statistics (`mean`, `variance`...) of dimensions 2-4 | `nalgebra_static4`, `nalgebra_statistics2` .. `nalgebra_statistics4` | 8.6 s / 1.91 GB (`static4_statistics`); the family whole, 2-6: 11.9 s / 2.79 GB (`static4_statistics_all`) |
 | BLAS (`gemm`, `gemv`, `axpy`, `ger`...) | `nalgebra_static4`, `nalgebra_blas` | 12.4 s / 2.88 GB (`static4_blas`) |
-| dynamic matrices (`DMatrix`, `DVector`) and sparse matrices | `nalgebra_dynamic`, `nalgebra_sparse` | marginal: `dynamic` 3.0 s / 0.47 GB, `sparse` 0.6 s / 0.10 GB (they pull every method crate) |
+| dynamic matrices (`DMatrix`, `DVector`) and sparse matrices | `nalgebra_dynamic`, `nalgebra_sparse` | marginal: `dynamic` 2.5 s / 0.34 GB, `sparse` 0.6 s / 0.10 GB (they pull every method crate) |
 | dimension 5 or 6 | see [Dimensions 5 and 6](#dimensions-5-and-6) | 9.4 - 21.5 s, 3.05 - 4.71 GB |
-| blocks, views, norms as generic traits | see [Blocks, views and norms](#blocks-views-and-norms) | 16.3 - 18.7 s, 3.74 - 4.06 GB with static 2-4 |
+| blocks, views, norms as generic traits | see [Blocks, views and norms](#blocks-views-and-norms) | 17.4 - 18.7 s, 3.87 - 4.18 GB with static 2-4 |
 
 Every package has a README (what it holds, its dependencies, when to depend on it). By family:
 - shared: [`nalgebra_core`](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/core) (trait declarations, errors, dimension-1 types), `nalgebra_static_core` (dimension-1 methods), `nalgebra_linalg_core` (shared linalg kernels);
@@ -144,15 +144,15 @@ For comparison, 0.1.0 was one package: a cold build of `nalgebra` with the defau
 
 `nalgebra_blocks`, `nalgebra_views` and `nalgebra_norm` are advanced use. They are the generic forms
 (`FixedView::fixed_view(m, i, j)` over any shape, the `Norm` markers with their generic impls, the
-block traits and Kronecker products); a generic trait's dimension 5-6 impls can only sit in its own
+block traits, the fixed-size edition `insert_fixed_rows`... and the Kronecker products); a generic trait's dimension 5-6 impls can only sit in its own
 crate, so they cannot be cut per dimension and each one pulls dimensions 5-6 (`blocks` pulls
 `static6_tall`, `norm` every method crate). "Static 2-4 + family" on the runner, documented and not
 gated (docs/SPLIT.md §18.4, §18.7):
 
 | Closure | Packages | Time / memory |
 |---|---|---:|
-| `static4_blocks` | `static4`, `blocks` | 16.3 s / 3.74 GB |
-| `static4_views` | `static4`, `views` | 16.7 s / 4.06 GB |
+| `static4_blocks` | `static4`, `blocks` | 17.4 s / 3.87 GB |
+| `static4_views` | `static4`, `views` | 17.9 s / 4.18 GB |
 | `static4_norm` | `static4`, `norm` | 18.7 s / 4.04 GB |
 
 **The everyday methods do not need them**: `norm()`, `normalize()`, `apply_norm`, `lp_norm`, `dot`,

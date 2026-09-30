@@ -18,7 +18,7 @@ Feature `closures` (on by default, forwarded by the facade's feature of the same
 
 ## When to depend on it
 
-`nalgebra_static4` is a member of the declared closures `static4_svd` (6.9 s / 2.11 GB, 15 s / 3 GB), `static4_geometry` (11.2 s / 2.44 GB, 15 s / 3 GB), `static4_factor` (8.9 s / 2.06 GB, 15 s / 3 GB), `static4_statistics` (8.6 s / 1.91 GB, 15 s / 3 GB), `static4_statistics_all` (11.9 s / 2.79 GB, 15 s / 3 GB), `static4_blas` (12.4 s / 2.88 GB, 15 s / 3 GB), `static4_blocks` (16.3 s / 3.74 GB, documented, not gated), `static4_views` (16.7 s / 4.06 GB, documented, not gated), `static4_norm` (18.7 s / 4.04 GB, documented, not gated). It is also pulled in by 13 other declared closures, the cheapest being `static5_pivot` (9.4 s / 3.26 GB, 20 s / 4.5 GB).
+`nalgebra_static4` is a member of the declared closures `static4_svd` (6.9 s / 2.11 GB, 15 s / 3 GB), `static4_geometry` (11.2 s / 2.44 GB, 15 s / 3 GB), `static4_factor` (8.9 s / 2.06 GB, 15 s / 3 GB), `static4_statistics` (8.6 s / 1.91 GB, 15 s / 3 GB), `static4_statistics_all` (11.9 s / 2.79 GB, 15 s / 3 GB), `static4_blas` (12.4 s / 2.88 GB, 15 s / 3 GB), `static4_blocks` (17.4 s / 3.87 GB, documented, not gated), `static4_views` (17.9 s / 4.18 GB, documented, not gated), `static4_norm` (18.7 s / 4.04 GB, documented, not gated). It is also pulled in by 13 other declared closures, the cheapest being `static5_pivot` (9.4 s / 3.26 GB, 20 s / 4.5 GB).
 
 Depend on the `static` crates for the named methods of the shapes (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*` / `remove_*`...). This is the top of the everyday range (dimensions 2-4).
 

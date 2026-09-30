@@ -21,7 +21,7 @@ Feature `closures` (on by default, forwarded by the facade's feature of the same
 
 ## When to depend on it
 
-It is also pulled in by 10 other declared closures, the cheapest being `pivot6` (12.8 s / 4.30 GB, 20 s / 4.5 GB).
+It is pulled in by 10 declared closures, the cheapest being `pivot6` (12.8 s / 4.30 GB, 20 s / 4.5 GB).
 
 Depend on it (or on `nalgebra_static6_wide`, which pulls it) for the methods of the dimension-6 shapes; dimension 5-6 closures have their own budget (facade README, "Dimensions 5 and 6").
 

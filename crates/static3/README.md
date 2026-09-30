@@ -18,7 +18,7 @@ Feature `closures` (on by default, forwarded by the facade's feature of the same
 
 ## When to depend on it
 
-`nalgebra_static3` is a member of the declared closures `static3_svd` (5.8 s / 1.23 GB, 15 s / 3 GB), `static3_geometry` (6.3 s / 1.43 GB, 15 s / 3 GB). It is also pulled in by 23 other declared closures, the cheapest being `static4_svd` (6.9 s / 2.11 GB, 15 s / 3 GB).
+`nalgebra_static3` is a member of the declared closures `static3_svd` (5.8 s / 1.23 GB, 15 s / 3 GB), `static3_geometry` (6.3 s / 1.43 GB, 15 s / 3 GB). It is also pulled in by 24 other declared closures, the cheapest being `static4_svd` (6.9 s / 2.11 GB, 15 s / 3 GB).
 
 Depend on the `static` crates for the named methods of the shapes (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*` / `remove_*`...). Dimension k builds on every dimension below it.
 

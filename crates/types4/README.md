@@ -17,7 +17,7 @@ It depends on [`nalgebra_core`](../core/README.md), [`nalgebra_types2`](../types
 
 ## When to depend on it
 
-It is also pulled in by 26 other declared closures, the cheapest being `core_pivot` (3.5 s / 1.04 GB, 15 s / 3 GB).
+It is pulled in by 27 declared closures, the cheapest being `core_pivot` (3.5 s / 1.04 GB, 15 s / 3 GB).
 
 Depend on the `types` crates when you need the types and their operators without the named methods (those are in the `static` crates). Dimension k builds on every dimension below it.
 

@@ -18,7 +18,7 @@ Feature `closures` (on by default, forwarded by the facade's feature of the same
 
 ## When to depend on it
 
-It is also pulled in by 25 other declared closures, the cheapest being `static3_svd` (5.8 s / 1.23 GB, 15 s / 3 GB).
+It is pulled in by 26 declared closures, the cheapest being `static3_svd` (5.8 s / 1.23 GB, 15 s / 3 GB).
 
 Depend on the `static` crates for the named methods of the shapes (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*` / `remove_*`...). `static2` is the dimension-2 step.
 

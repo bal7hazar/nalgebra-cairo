@@ -18,7 +18,7 @@ It depends on [`nalgebra_core`](../core/README.md) and `simba`.
 
 ## When to depend on it
 
-It is also pulled in by 26 other declared closures, the cheapest being `core_pivot` (3.5 s / 1.04 GB, 15 s / 3 GB).
+It is pulled in by 27 declared closures, the cheapest being `core_pivot` (3.5 s / 1.04 GB, 15 s / 3 GB).
 
 Depend on the `types` crates when you need the matrix / vector / point types and their operators, products and indexing, without the named methods (`norm()`, `transpose()`, `inverse()`: those are in the `static` crates). `nalgebra_types2` is the dimension-2 step.
 

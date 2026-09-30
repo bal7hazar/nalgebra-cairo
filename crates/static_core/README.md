@@ -18,7 +18,7 @@ Feature `closures` (on by default, forwarded by the facade's feature of the same
 
 ## When to depend on it
 
-It is also pulled in by `static5_spectral` (14.8 s / 3.35 GB, 20 s / 4.5 GB), `static4_norm` (18.7 s / 4.04 GB, documented, not gated), `static6_spectral` (21.5 s / 4.64 GB, documented, not gated).
+It is pulled in by `static4_norm` (18.7 s / 4.04 GB, documented, not gated).
 
 Depend on it for the methods of the 1x1 / 1xN shapes; no other static crate needs it.
 

@@ -16,7 +16,7 @@ It depends on [`nalgebra_core`](../core/README.md), [`nalgebra_types2`](../types
 
 ## When to depend on it
 
-`nalgebra_views` is a member of the declared closure `static4_views` (16.7 s / 4.06 GB, documented, not gated).
+`nalgebra_views` is a member of the declared closure `static4_views` (17.9 s / 4.18 GB, documented, not gated).
 
 Advanced use: the generic `FixedView::fixed_view(m, i, j)` over any shape. `fixed_view` as a method of the shapes does not need this crate. Its dimension 5-6 impls can only sit here (a generic trait's impls live in its crate or in a type's), so "static 2-4 + views" is a dimension 5-6 closure (docs/SPLIT.md §18.4, §18.7).
 
