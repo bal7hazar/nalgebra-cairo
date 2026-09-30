@@ -8,9 +8,11 @@ generator-driven move of about 185k lines with placement decisions).
 
 Read `docs/briefs/_env.md` (the machine) and `docs/briefs/_move_common.md` (the reading list, rules,
 proofs and definition of done of every move) first, and follow them: this brief adds to them.
-Another lot, WP 9-R3, runs at the same time on files you do not touch (the READMEs of the
-non-decomposition packages, the root `README.md`, `CHANGELOG.md`); no other agent touches the
-decomposition crates, the maps or the generators during R2.
+Other lots run at the same time on files you do not touch: WP 9-R3 (the READMEs of the
+non-decomposition packages, the root `README.md`, `CHANGELOG.md`) and the plan of WP 9-NS12b (only
+the new proposal map `tools/split/crates.dyncut.toml`, which you never create); no other agent
+touches the decomposition crates, the live and re-cut maps (`crates.toml`, `crates.recut.toml`) or
+the generators during R2.
 
 ## 1. Read first (beyond `_move_common.md`)
 
@@ -67,8 +69,9 @@ Allowed: `crates/linalg*/**` (the old and the new decomposition packages); `crat
 `crates/types5/**` only for the `Perm*Trait` moves and the `[internal]` or kernel entries the move
 needs (list each file in the report); the manifests `crates/dynamic/Scarb.toml`,
 `crates/sparse/Scarb.toml`, `crates/nalgebra_glam/Scarb.toml` only if a dependency name changes;
-test packages' imports only if forced (`rewrite_imports.py`, reported); `tools/split/**`,
-`tools/linalggen/**`, `tools/shapegen/**` (routing only); workspace `Scarb.toml`, `Scarb.lock`;
+test packages' imports only if forced (`rewrite_imports.py`, reported); `tools/split/**` (except
+`crates.dyncut.toml`), `tools/linalggen/**`, `tools/shapegen/**` (routing only); workspace
+`Scarb.toml`, `Scarb.lock`;
 `.github/workflows/ci.yml` (shards only, if a package with in-crate tests appears);
 `consumer_cost.toml` (the three closures of item 6 only); `gas/**`; `docs/SPLIT.md` (§18.5 progress
 line); `scripts/api_parity.py` (`CROSS_FILE_TRAITS` only, if a trait's implementors land in another

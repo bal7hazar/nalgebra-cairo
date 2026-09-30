@@ -1317,7 +1317,7 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
   "committed brief"; the `nalgebra` row of `OPERATIONS.md` §4 still names
   `~/orchestrator/nalgebra-cairo/briefs/`, the project manager's file).
 
-**Next, in order.**
+**Next, in order** (as planned at 15:40 UTC; the order is superseded by the 16:45 update below).
 - **R2** (`docs/briefs/wp-9-r2.md`, Opus 5.5) and **R3** (`docs/briefs/wp-9-r3.md`, the `sonnet`
   alias) launched together once this PR is on `main`, each as a `nalgebra-wp-9-r<n>` unit. R3 has two
   phases so that its files never overlap R2's: phase 1 now (non-decomposition READMEs, the facade
@@ -1326,6 +1326,25 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
 - Then the `nalgebra_dynamic` cut under gate 2 (its new crate names to the project manager before the
   move), `--report-only-marginals` dropped, `split-measure.yml` repointed or retired; then the
   release 0.1.1 on the project manager's written go.
+
+**Update 16:45 UTC.**
+- Objective 1 merged (#81, squash `91a9d22`, 16:13 UTC) after a second Codex review: the first
+  (`slingfall/review-9-docs-align`) found that `scripts/agent.sh`'s framing reserved the shared files
+  the R2 / R3 briefs allow (fixed: a brief's allowlist may grant them) and a count of 12 instead of 10
+  linalg crates in §18.5; `slingfall/review-9-docs-align-2` PASS on `03f6a7f`.
+- **R2** running since 16:15 UTC: unit `nalgebra-wp-9-r2`, `claude-opus-5-5` (read from its
+  transcript), `MemoryMax` 14G (set on the running unit: the `nalgebra-` drop-in's 20G wins over
+  `-p`, recipe in `docs/ORCHESTRATOR.md`).
+- **R3 phase 1** done (unit `nalgebra-wp-9-r3`, `claude-sonnet-5-5`, 16:15-16:37 UTC): draft PR #82,
+  78 / 78 checks green; 32 package READMEs, the facade README (packages, dimensions 5 and 6, blocks /
+  views / norms, features), CHANGELOG 0.1.1's package list; scope checked (READMEs, root `README.md`,
+  `CHANGELOG.md` only).
+- **Order changed**: the cut of `nalgebra_dynamic` changes the package set (names, count, release
+  order, `docs/PACKAGES.md`, CHANGELOG), so R3's phase 2 waits for it: R2 → **WP 9-NS12b** (the cut;
+  its plan, measured on the GitHub runner with no local build, runs now beside R2; its move after R2
+  and the project manager's approval of the names) → R3 phase 2 → release. Brief
+  `docs/briefs/wp-9-ns12b.md`; R3's brief updated to match. What would reverse it: a cut that adds no
+  package (then R3 phase 2 may run right after R2).
 
 **Capacity at the start** (15:09 UTC): `~/orchestrator/capacity.json` `can_launch` true, `free_slots`
 4, `oom_kills_30min` 0; `nexus resources`: vps 0 / 2 jobs, 26.6 GB free; `nexus accounts`: claude:b7r
