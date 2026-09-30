@@ -1,3 +1,7 @@
+//! In `nalgebra_linalg2`: the `struct` `Udu2`; its 2 impls, among them `Udu2Impl`,
+//! `Matrix2UduImpl`. This module is split over packages; the other parts are in `nalgebra_linalg3`,
+//! `nalgebra_linalg4`, `nalgebra_linalg6`.
+//!
 //! `UDUᵀ` factorisation `p = u·diag(d)·uᵀ` of a symmetric matrix — `u` unit UPPER
 //! triangular, `d` a vector — unrolled for the static sizes 2, 3, 4 and 6 (upstream
 //! `nalgebra::linalg::UDU`).

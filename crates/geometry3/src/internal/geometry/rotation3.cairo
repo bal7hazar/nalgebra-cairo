@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry3`: the impl `Rotation3InternalImpl`. This module is split over packages;
+//! the other parts are in `nalgebra_types4`.
+//!
 //! Internal, no stability promise: the crate-private items of `geometry::rotation3` that the
 //! packages above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 

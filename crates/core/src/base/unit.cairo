@@ -1,3 +1,7 @@
+//! In `nalgebra_core`: the `struct` `Unit`; the traits `Normed`, `UnitTrait`; its 3 impls, among
+//! them `Matrix1Normed`, `UnitImpl`, `UnitNeg`. This module is split over packages; the other parts
+//! are in `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4`.
+//!
 //! `Unit<V>`: a wrapper guaranteeing (by contract) that a vector has unit norm (upstream
 //! `nalgebra::Unit`).
 //!

@@ -1,3 +1,7 @@
+//! In `nalgebra_geometry2`: the traits `Rotation2Trait`, `Rotation2AngleTrait`; its 2 impls, among
+//! them `Rotation2Impl`, `Rotation2AngleImpl`. This module is split over packages; the other parts
+//! are in `nalgebra_types2`.
+//!
 //! `Rotation2`: a 2D rotation stored as a 2x2 orthogonal matrix (upstream
 //! `nalgebra::Rotation2`, which is `Rotation<T, 2>`).
 //!

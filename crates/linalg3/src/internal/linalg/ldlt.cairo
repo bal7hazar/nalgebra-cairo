@@ -1,3 +1,6 @@
+//! In `nalgebra_linalg3`: the `struct` `Ldlt3`; the impl `Ldlt3Impl`. This module is split over
+//! packages; the other parts are in `nalgebra_linalg2`, `nalgebra_linalg4`, `nalgebra_linalg6`.
+//!
 //! Internal, no stability promise: the crate-private items of `linalg::ldlt` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 

@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry3`: the trait `Point3Trait`; the impl `Point3Impl`. This module is split
+//! over packages; the other parts are in `nalgebra_types3`.
+//!
 //! `Point3`: a 3-dimensional point (upstream `nalgebra::Point3`, which lives in `geometry`).
 //!
 //! A point is an affine position, as opposed to a `Vector3` displacement: points cannot be added

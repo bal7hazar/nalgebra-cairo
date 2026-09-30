@@ -1,3 +1,8 @@
+//! In `nalgebra_static6_wide`: the `struct` `Perm6`; its 13 impls, among them `Perm6Impl`,
+//! `Perm6PermuteRowsVector6`, `Perm6PermuteRowsMatrix6x2` and 10 more; the sub-module `lu6`. This
+//! module is split over packages; the other parts are in `nalgebra_core`, `nalgebra_linalg2`,
+//! `nalgebra_linalg3`, `nalgebra_linalg4`, `nalgebra_linalg5`, `nalgebra_types2` and others.
+//!
 //! LU factorisation with partial pivoting of the static square matrices (upstream
 //! `nalgebra::linalg::lu`), one unrolled module per dimension: `Lu2`, `Lu3`, `Lu4`, `Lu6`.
 //!

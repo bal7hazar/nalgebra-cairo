@@ -1,3 +1,6 @@
+//! In `nalgebra_static2`: the impl `SymMatrix2Impl`. This module is split over packages; the other
+//! parts are in `nalgebra_types2`.
+//!
 //! Internal, no stability promise: the crate-private items of `base::sym_matrix2` that the packages
 //! above this one use (docs/SPLIT.md §12.3). Never re-exported by the facade `nalgebra`.
 

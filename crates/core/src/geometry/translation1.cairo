@@ -1,3 +1,7 @@
+//! In `nalgebra_core`: the `struct` `Translation1`; its 9 impls, among them `Translation1Mul`,
+//! `Translation1FromVector`, `Translation1Div` and 6 more. This module is split over packages; the
+//! other parts are in `nalgebra_geometry2`.
+//!
 //! `Translation1`: a 1-dimensional translation (upstream `nalgebra::Translation1`, i.e.
 //! `Translation<T, 1>`), WP 8.4-P09a.
 //!

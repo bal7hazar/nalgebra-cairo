@@ -1,3 +1,7 @@
+//! In `nalgebra_types5`: the `struct` `Translation5`; its 9 impls, among them `Translation5Mul`,
+//! `Translation5FromVector`, `Translation5Div` and 6 more. This module is split over packages; the
+//! other parts are in `nalgebra_geometry5`.
+//!
 //! `Translation5`: a 5-dimensional translation (upstream `nalgebra::Translation5`, i.e.
 //! `Translation<T, 5>`), WP 8.4-P09a.
 //!

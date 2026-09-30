@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry3`: the impl `Translation3Impl`. This module is split over packages; the
+//! other parts are in `nalgebra_types3`.
+//!
 //! `Translation3`: a 3D translation (upstream `nalgebra::Translation3`, which is
 //! `Translation<T, 3>`).
 //!

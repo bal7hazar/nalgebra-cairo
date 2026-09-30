@@ -1,3 +1,8 @@
+//! In `nalgebra_types3`: the `struct` `Perm3`; its 2 impls, among them `Perm3PermuteRowsVector3`,
+//! `Perm3PermuteColumnsRowVector3`. This module is split over packages; the other parts are in
+//! `nalgebra_core`, `nalgebra_linalg2`, `nalgebra_linalg3`, `nalgebra_linalg4`, `nalgebra_linalg5`,
+//! `nalgebra_static6_wide` and others.
+//!
 //! LU factorisation with partial pivoting of the static square matrices (upstream
 //! `nalgebra::linalg::lu`), one unrolled module per dimension: `Lu2`, `Lu3`, `Lu4`, `Lu6`.
 //!

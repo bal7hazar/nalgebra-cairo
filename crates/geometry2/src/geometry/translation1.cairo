@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry2`: the impl `Translation1Impl`. This module is split over packages; the
+//! other parts are in `nalgebra_core`.
+//!
 //! `Translation1`: a 1-dimensional translation (upstream `nalgebra::Translation1`, i.e.
 //! `Translation<T, 1>`), WP 8.4-P09a.
 //!

@@ -1,3 +1,6 @@
+//! In `nalgebra_linalg2`: the impl `Matrix2InverseImpl`. This module is split over packages; the
+//! other parts are in `nalgebra_linalg3`, `nalgebra_linalg4`, `nalgebra_linalg6`.
+//!
 //! In-place inversion of the static square matrices (upstream `SquareMatrix::try_inverse_mut`,
 //! `src/linalg/inverse.rs`), on the sizes that have an inverse: the closed forms of
 //! `Matrix2/3/4::try_inverse` and the LU inverse of `Matrix6` (`Matrix6LuTrait::try_inverse`).

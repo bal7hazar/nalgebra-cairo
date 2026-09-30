@@ -1,3 +1,7 @@
+//! In `nalgebra_types4`: the `struct` `Point4`; its 11 impls, among them `Point4Neg`,
+//! `Point4AddAssign`, `Point4SubAssign` and 8 more. This module is split over packages; the other
+//! parts are in `nalgebra_geometry4`.
+//!
 //! `Point4`: a 4-dimensional point (upstream `nalgebra::Point4`, i.e. `Point<T, 4>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

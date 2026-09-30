@@ -1,3 +1,7 @@
+//! In `nalgebra_types6`: the `struct` `Point6`; its 11 impls, among them `Point6Neg`,
+//! `Point6AddAssign`, `Point6SubAssign` and 8 more. This module is split over packages; the other
+//! parts are in `nalgebra_geometry6`.
+//!
 //! `Point6`: a 6-dimensional point (upstream `nalgebra::Point6`, i.e. `Point<T, 6>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to

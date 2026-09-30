@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry5`: the impl `Translation5Impl`. This module is split over packages; the
+//! other parts are in `nalgebra_types5`.
+//!
 //! `Translation5`: a 5-dimensional translation (upstream `nalgebra::Translation5`, i.e.
 //! `Translation<T, 5>`), WP 8.4-P09a.
 //!

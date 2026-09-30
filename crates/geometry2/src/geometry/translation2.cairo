@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry2`: the impl `Translation2Impl`. This module is split over packages; the
+//! other parts are in `nalgebra_types2`.
+//!
 //! `Translation2`: a 2D translation (upstream `nalgebra::Translation2`, which is
 //! `Translation<T, 2>`).
 //!

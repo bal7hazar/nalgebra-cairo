@@ -1,3 +1,6 @@
+//! In `nalgebra_geometry4`: the impl `Point4Impl`. This module is split over packages; the other
+//! parts are in `nalgebra_types4`.
+//!
 //! `Point4`: a 4-dimensional point (upstream `nalgebra::Point4`, i.e. `Point<T, 4>`), WP 8.4-P09a.
 //!
 //! The same API as `Point2` / `Point3` (`crate::base::point2`, which predate the move of points to
