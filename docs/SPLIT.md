@@ -1353,8 +1353,9 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
 - **The gap** between the prototype (2.9 s / 0.47 GB) and the CI (6.4 s / 0.89 GB) is, by inference,
   `nalgebra_dynamic`'s `closures` feature: it forwards to the 7 static method crates, whose closure
   methods the CI's marginal then charges to `dynamic` (its direct-dependencies consumer has them off).
-  Controls: `nalgebra_norm` (same dependencies, no forwarding) measures 0.7 s both ways; every other
-  crate agrees within ±0.7 s. No `closures`-gated body of `dynamic` calls a static closure method.
+  Controls: `nalgebra_norm` (the same 7 static method crates with `default-features = false`, no
+  forwarding; unlike `dynamic`, no `nalgebra_blocks`) measures 0.7 s both ways; every other crate
+  agrees within ±0.7 s. No `closures`-gated body of `dynamic` calls a static closure method.
 - **Attribution** of `dynamic`'s own 2.9 s: `DMatrix` / `DVector` / `RowDVector` 0.9 s, convolution
   0.1 s, the per-shape dynamic forms 1.8 s, the fixed-size edition (8,021 lines) 0.4 s.
 - **Decided (orchestrator): cut A + D1 (ii).** The fixed-size edition (4 traits, 360 impls,
@@ -1364,6 +1365,9 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
   (1.2-1.5) / 0.44 GB; static 2-4 + blocks 17.0 → 17.4 s (advanced use, not a declared closure).
   Reversed if the phase-2 CI shows `dynamic` above 4 s after D1: then cut B (the fixed-size edition in
   its own package, a new name for the project manager).
+- The order R2 → NS12b → R3 phase 2 stays although the cut adds no package: both lots edit
+  `nalgebra_blocks` / `nalgebra_dynamic` (R3's READMEs and module docs, NS12b's module files and
+  manifests), `.github/workflows/ci.yml` and the figures of `docs/PACKAGES.md`.
 - Not chosen: fixing `scripts/consumer_cost.py` to build the direct-dependencies consumer with the
   dependency features the crate's defaults enable (a change of the shared script's measure, relayed to
   the project manager for the sibling tracks instead).

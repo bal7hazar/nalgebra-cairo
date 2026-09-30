@@ -14,9 +14,9 @@ WP 9-R2 (the decomposition crates, `crates/linalg*`) runs at the same time. So t
 never edit the same file, this lot has two phases:
 - **Phase 1, now**: only the files of §3.1. At its end: push, open the PR as a draft, write
   `REPORT.md` (section "Phase 1"), end your turn.
-- **Phase 2**: the orchestrator resumes you after R2 and WP 9-NS12b (the cut of `nalgebra_dynamic`,
-  which adds packages to §18.1's 54) are merged, with the merge commit and the final package list;
-  only then the files of §3.2.
+- **Phase 2**: the orchestrator resumes you after R2 and WP 9-NS12b (the cut of `nalgebra_dynamic`:
+  no new package, the list stays at §18.1's 54, but `nalgebra_blocks` and `nalgebra_dynamic` change
+  content) are merged, with the merge commit; only then the files of §3.2.
 
 ## 1. Read first
 
@@ -78,12 +78,12 @@ never edit the same file, this lot has two phases:
 1. `git fetch origin && git merge origin/main` (no rebase, no force push); resolve conflicts in your
    own files only.
 2. The READMEs of the 21 decomposition packages (`linalg_core`, `linalg2` .. `6`,
-   `linalg_svd_eigen2` .. `6`, `linalg_pivot2` .. `6`, `linalg_spectral2` .. `6`) and of the packages
-   WP 9-NS12b made of `nalgebra_dynamic`, same style; the phase-1 files updated for the final package
-   list (the CHANGELOG list, the facade README's rows, the closure sentences of the READMEs) and for
-   NS12b's cut (`nalgebra_blocks` holds the fixed-size edition; `nalgebra_dynamic` no longer pulls
-   `nalgebra_blocks` nor forwards `closures`; the "static 2-4 + blocks / views" figures of NS12b's
-   report, and the `dynamic` row from the final run).
+   `linalg_svd_eigen2` .. `6`, `linalg_pivot2` .. `6`, `linalg_spectral2` .. `6`), same style; the
+   phase-1 files updated after R2 (the closure sentences of the READMEs) and for NS12b's cut (the
+   READMEs of `nalgebra_blocks`, which now holds the fixed-size edition, and of `nalgebra_dynamic`,
+   which no longer pulls `nalgebra_blocks` nor forwards `closures`; the CHANGELOG lines of both; the
+   facade README's "static 2-4 + blocks / views" figures from NS12b's report and its `dynamic` row
+   from the final run).
 3. The module docs (`//!` lines only, no code) of the modules split over several packages: each
    package's part says what that package holds of the module, instead of its lowest part's doc (R1
    Deviation 8, and the same after R2).
@@ -119,8 +119,7 @@ root `README.md`; `CHANGELOG.md`. Nothing else.
 
 ### 3.2 Phase 2
 
-Allowed, in addition: `crates/linalg*/README.md` and the READMEs of the packages WP 9-NS12b
-created; the `//!` module-doc lines of `crates/*/src/**`
+Allowed, in addition: `crates/linalg*/README.md`; the `//!` module-doc lines of `crates/*/src/**`
 (no other line of a `.cairo` file); `consumer_cost.toml`; `docs/PACKAGES.md` (new);
 `scripts/release.py` (only if the order is wrong); `.github/workflows/ci.yml` (the one comment).
 
