@@ -1411,7 +1411,7 @@ The conditions of the release go (§17, §19, `slingfall/OPERATIONS.md` §6-§7)
 | condition | evidence |
 |---|---|
 | the final name list, for the owner | 54 packages: `docs/PACKAGES.md`, CHANGELOG 0.1.1, `scripts/release.py`'s order (dependencies first, the facade 53rd, `nalgebra_glam` last) |
-| gates 1 and 2 on every package | `docs/PACKAGES.md`: largest `nalgebra_types6` 37,436 lines (6.4 % margin); highest marginal 2.6 s; the enforcing `Consumer cost` job gates lines, marginals and closures |
+| gates 1 and 2 on every sub-crate | `docs/PACKAGES.md`: largest `nalgebra_types6` 37,436 lines (6.4 % margin); highest marginal 2.6 s; the enforcing `Consumer cost` job gates lines, marginals and closures; the facade `nalgebra` is report-only (it re-exports every sub-crate and fails gate 3 by construction, §12.1) |
 | the declared closures and the dimension 5-6 budget (§19) | `consumer_cost.toml` (every §18.2 closure, 15 s / 3 GB up to dimension 4, 20 s / 4.5 GB with dimension 5 or 6); the facade README's "Dimensions 5 and 6" (the combined static 6 + SVD / eigen 6 and static 6 + spectral 6, documented, not gated: §18.7.1) |
 | the end-of-split table (§16.2, §17) | the facade README: packages table (what you need → crates → cost), "Dimensions 5 and 6", "Blocks, views and norms" (the base families with static 2-4, advanced use, and the everyday methods already in the light crates, §18.4 / §18.7.3); `nalgebra_reflections6` (§16) is superseded: the re-cut places reflections per dimension and the dimension-6 closures have their budget |
 | no path, API or result change | every move: `gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0, API parity unchanged (R1 #80, R2 #85, NS12b #86) |
