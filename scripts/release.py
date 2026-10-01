@@ -33,7 +33,14 @@ it lists NAME at the version, and its checksum is compared with the local archiv
 Resume: the state file `target/release/state-VERSION.json` records the release commit and every
 package once verified (and the one in flight). After a failure at package k, run the same command
 again: the packages before k are checked on the index and skipped, k is published again (or, if the
-index already lists it, verified and recorded), then k+1... A state file of another commit is refused.
+index already lists it, verified and recorded), then k+1... A state file of another commit is refused,
+with one exception: a release may continue at a later commit (a fix of a package not published yet)
+when OLD is an ancestor of HEAD, every package the state records as published is still published by
+the workspace, and `git diff --name-only --no-renames OLD HEAD` touches no file of those packages
+(their directories, and their `readme` / `license-file` when they live elsewhere, inherited ones
+included) nor the workspace `Scarb.toml`, `Scarb.lock`, `.gitignore`, `.scarbignore`: what the
+registry holds is then exactly what HEAD would publish. The check and its file list are printed;
+the state file then records HEAD and the commit it continued from.
 """
 
 import argparse
@@ -143,6 +150,39 @@ def plan_resume(order, state, on_index):
     return actions, refusals
 
 
+WORKSPACE_FILES = ("Scarb.toml", "Scarb.lock", ".gitignore", ".scarbignore")
+
+
+def continuation_packages(order, state, on_index):
+    """The packages a continuation must leave untouched: every package the state records as
+    published (whatever the index says on this run), and the one in flight if the index lists it.
+    A recorded package that is no longer published by the workspace is a problem."""
+    names = list(state.get("published", []))
+    in_flight = state.get("in_flight")
+    if in_flight and on_index.get(in_flight) and in_flight not in names:
+        names.append(in_flight)
+    problems = [f"{n} is recorded as published but is no longer a published package of the workspace"
+                for n in names if n not in order]
+    return [n for n in names if n in order], problems
+
+
+def continuation_problems(changed, published_paths):
+    """Whether a release begun at an older commit may continue at HEAD. `changed`: the files
+    `git diff --name-only OLD HEAD` lists (relative to the repository root); `published_paths`:
+    {package: [its directory, and its readme / license file when outside it]} for every package
+    already on the registry at this version. Returns the problems (empty: it may continue)."""
+    problems = []
+    for f in changed:
+        if f in WORKSPACE_FILES:
+            problems.append(f"{f} changed (it reaches every published package)")
+            continue
+        for n, paths in sorted(published_paths.items()):
+            if any(q in (".", "") or f == q or f.startswith(q.rstrip("/") + "/") for q in paths):
+                problems.append(f"{f} changed, and it belongs to {n}, already published")
+                break
+    return problems
+
+
 def self_test():
     g = {"core": [], "a": ["core"], "b": ["core", "a"], "facade": ["core", "a", "b"],
          "bridge": ["core", "a"]}
@@ -176,6 +216,23 @@ def self_test():
     state = {"published": ["core"], "in_flight": "a"}
     acts, ref = plan_resume(order, state, {"core": True, "a": True, "b": False})
     assert acts == {"core": "skip", "a": "verify", "b": "publish"} and not ref
+    published = {"core": ["crates/core"], "a": ["crates/a", "README.md"]}
+    assert continuation_problems(["crates/b/Scarb.toml", "docs/PLAN.md"], published) == []
+    assert continuation_problems(["crates/core/src/lib.cairo"], published)
+    assert continuation_problems(["crates/core_extra/Scarb.toml"], published) == []
+    assert continuation_problems(["README.md"], published)
+    assert continuation_problems(["Scarb.lock"], published) and continuation_problems(["Scarb.toml"], published)
+    assert continuation_problems([".gitignore"], published)
+    assert continuation_problems(["anything.cairo"], {"root": ["."]})
+    names, probs = continuation_packages(["core", "a", "b"], {"published": ["core", "a"], "in_flight": "b"},
+                                         {"core": True, "a": False, "b": False})
+    assert names == ["core", "a"] and not probs  # `a` stays checked although the index misses it
+    names, probs = continuation_packages(["core", "b"], {"published": ["core"], "in_flight": "b"},
+                                         {"core": True, "b": True})
+    assert names == ["core", "b"] and not probs  # in flight and on the index: checked
+    names, probs = continuation_packages(["core"], {"published": ["core", "gone"], "in_flight": None},
+                                         {"core": True})
+    assert names == ["core"] and probs  # a recorded package no longer published: refused
     print("self-test: ok")
     return 0
 
@@ -196,15 +253,29 @@ def workspace(scarb):
     meta = json.loads(sh([scarb, "metadata", "--format-version", "1", "--no-deps"]).stdout)
     root = meta["workspace"]["root"]
     with open(os.path.join(root, "Scarb.toml"), "rb") as f:
-        ws_version = tomllib.load(f).get("workspace", {}).get("package", {}).get("version")
+        ws_package = tomllib.load(f).get("workspace", {}).get("package", {})
+    ws_version = ws_package.get("version")
     by_manifest = {}
     pkgs = {}
     for p in meta["packages"]:
         with open(p["manifest_path"], "rb") as f:
             manifest = tomllib.load(f)
-        publish = manifest.get("package", {}).get("publish", True) is not False
+        package = manifest.get("package", {})
+        publish = package.get("publish", True) is not False
         by_manifest[os.path.normpath(p["manifest_path"])] = p["name"]
-        pkgs[p["name"]] = {"version": p["version"], "publish": publish, "deps": p["dependencies"]}
+        pkg_dir = os.path.dirname(os.path.normpath(p["manifest_path"]))
+        paths = [os.path.relpath(pkg_dir, root)]
+        for key in ("readme", "license-file"):
+            value = package.get(key)
+            base = pkg_dir
+            if isinstance(value, dict) and value.get("workspace") is True:
+                value, base = ws_package.get(key), root
+            if isinstance(value, str):
+                full = os.path.normpath(os.path.join(base, value))
+                if not full.startswith(pkg_dir + os.sep):
+                    paths.append(os.path.relpath(full, root))
+        pkgs[p["name"]] = {"version": p["version"], "publish": publish, "deps": p["dependencies"],
+                           "paths": paths}
     graph = {}
     for n, p in pkgs.items():
         if not p["publish"]:
@@ -309,12 +380,29 @@ def main():
     if os.path.exists(state_path):
         with open(state_path) as f:
             state = json.load(f)
-        if state.get("commit") != head:
-            problems.append(f"{state_path} belongs to commit {state.get('commit', '?')[:10]}, not HEAD")
         print(f"resuming: {len(state.get('published', []))} package(s) already published "
               f"({state_path})")
     template = registry_index(args.registry)
     on_index = {n: index_entry(template, n, version) is not None for n in order}
+    if state is not None and state.get("commit") != head:
+        old = state.get("commit", "")
+        if sh(["git", "merge-base", "--is-ancestor", old, head], check=False, cwd=root).returncode != 0:
+            problems.append(f"{state_path} belongs to commit {old[:10]}, which is not an ancestor of HEAD")
+        else:
+            out = sh(["git", "-c", "core.quotepath=off", "diff", "--name-only", "--no-renames", "-z", old, head],
+                     cwd=root).stdout
+            changed = [f for f in out.split("\0") if f]
+            done, found = continuation_packages(order, state, on_index)
+            found += continuation_problems(changed, {n: pkgs[n]["paths"] for n in done})
+            print(f"continuing the release begun at {old[:10]}: `git diff --name-only --no-renames {old[:10]} {head[:10]}` "
+                  f"lists {len(changed)} file(s); checked against the {len(done)} package(s) already published "
+                  f"and {', '.join(WORKSPACE_FILES)}: {'refused' if found else 'none of them is touched'}")
+            for f in changed:
+                print(f"    {f}")
+            problems += [f"cannot continue at HEAD: {p}" for p in found]
+            if not found:
+                state["continued_from"] = state.get("continued_from", []) + [old]
+                state["commit"] = head
     actions, refusals = plan_resume(order, state, on_index)
     problems += refusals
 

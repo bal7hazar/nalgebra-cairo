@@ -7,7 +7,7 @@ cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "linalg", "bidiagonal", "eigen", "exp", "hessenberg", "pow", "schur", "symmetric-tridiagonal"]
+keywords = ["linear-algebra", "fixed-point", "linalg", "bidiagonal", "eigen", "hessenberg", "schur", "tridiagonal"]
 readme = "README.md"
 
 # `hessenberg`, `bidiagonal`, `schur`, `exp` (as in `nalgebra`, whose features of the same names

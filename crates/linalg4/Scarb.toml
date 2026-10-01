@@ -7,7 +7,7 @@ cairo-version.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
-keywords = ["linear-algebra", "fixed-point", "linalg", "cholesky", "cholesky-update", "inverse", "lu", "qr", "udu"]
+keywords = ["linear-algebra", "fixed-point", "linalg", "cholesky", "cholesky-update", "inverse", "lu", "qr"]
 readme = "README.md"
 
 # `qr`, `cholesky_update` (as in `nalgebra`, whose features of the same names forward to these):
