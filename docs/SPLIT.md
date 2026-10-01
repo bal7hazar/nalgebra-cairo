@@ -1411,7 +1411,7 @@ The conditions of the release go (§17, §19, `slingfall/OPERATIONS.md` §6-§7)
 | condition | evidence |
 |---|---|
 | the final name list, for the owner | 54 packages: `docs/PACKAGES.md`, CHANGELOG 0.1.1, `scripts/release.py`'s order (dependencies first, the facade 53rd, `nalgebra_glam` last) |
-| gates 1 and 2 on every sub-crate | `docs/PACKAGES.md`: largest `nalgebra_types6` 37,436 lines (6.4 % margin); highest marginal 2.6 s; the enforcing `Consumer cost` job gates lines, marginals and closures; the facade `nalgebra` is report-only (it re-exports every sub-crate and fails gate 3 by construction, §12.1) |
+| gates 1 and 2 on every sub-crate | `docs/PACKAGES.md`: largest `nalgebra_types6` 37,436 lines (6.4 % margin); highest marginal 3.5 s (`nalgebra_linalg_svd_eigen6`, the release commit's run; 2.6 s in run 36767869070); the enforcing `Consumer cost` job gates lines, marginals and closures; the facade `nalgebra` is report-only (it re-exports every sub-crate and fails gate 3 by construction, §12.1) |
 | the declared closures and the dimension 5-6 budget (§19) | `consumer_cost.toml` (every §18.2 closure, 15 s / 3 GB up to dimension 4, 20 s / 4.5 GB with dimension 5 or 6); the facade README's "Dimensions 5 and 6" (the combined static 6 + SVD / eigen 6 and static 6 + spectral 6, documented, not gated: §18.7.1) |
 | the end-of-split table (§16.2, §17) | the facade README: packages table (what you need → crates → cost), "Dimensions 5 and 6", "Blocks, views and norms" (the base families with static 2-4, advanced use, and the everyday methods already in the light crates, §18.4 / §18.7.3); `nalgebra_reflections6` (§16) is superseded: the re-cut places reflections per dimension and the dimension-6 closures have their budget |
 | no path, API or result change | every move: `gas_compare` 0 / 0 / 0, strict path proof 9,289 / 0 / 0, anchors 0, API parity unchanged (R1 #80, R2 #85, NS12b #86) |
@@ -1440,7 +1440,9 @@ tag `v0.1.1` on `b3915c7`, [GitHub release](https://github.com/bal7hazar/nalgebr
 - Run 2 (from `b3915c7`): "continuing the release begun at 3e5e4ba3f5: ... 8 file(s) ... none of them
   is touched"; the 42 other packages published and verified; "released 54 packages at 0.1.1".
 - `docs/PACKAGES.md` is now the release commit's run (36841314574). Its medians differ from run
-  36767869070's for the same code (for instance `nalgebra_types6` 1.7 s against 2.5 s, `dynamic`
-  2.2 s against 2.6 s; line counts identical): the runners' spread, which the TC lots measure with
+  36767869070's for the same code, line counts identical: `nalgebra_types6` 1.7 s against 2.5 s,
+  `dynamic` 2.2 s against 2.6 s, `nalgebra_linalg_svd_eigen6` 3.5 s against 2.3 s (+52 %, still under
+  the 5 s gate), the facade 46.0 s against 29.8 s over the baseline (reported only). That spread
+  between runs of identical code is what the TC lots must measure and explain, every measurement with
   `RAYON_NUM_THREADS=1`.
 

@@ -83,7 +83,8 @@ package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates s
   5.5 GB). Figures of [CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070) (5 interleaved rounds, one runner per shard); [docs/PACKAGES.md](docs/PACKAGES.md)
   holds the per-package table of the release commit's run ([36841314574](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36841314574)),
   whose medians differ from these by the runners' spread (same code, same line counts). The highest package marginal is 2.6 s /
-  0.77 GB (`nalgebra_dynamic`, `nalgebra_linalg_svd_eigen6`), under the gate of 5 s / 1 GB.
+  0.77 GB in run 36767869070 (`nalgebra_dynamic`, `nalgebra_linalg_svd_eigen6`) and 3.5 s
+  (`nalgebra_linalg_svd_eigen6`) in the release run, under the gate of 5 s / 1 GB in both.
 - **Dimensions 5 and 6** (docs/SPLIT.md §19): dimension k builds on every dimension below it, so a
   closure that includes dimension 5 or 6 costs more than all of dimensions 2-4. It has its own
   budget, **20 s / 4.5 GB** on the runner (15 s / 3 GB up to dimension 4), declared and enforced in
