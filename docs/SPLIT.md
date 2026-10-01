@@ -1425,3 +1425,22 @@ Known after the release, not blocking it: the generated split modules (`internal
 (R3's escalation: the generator templates would need package-specific docs); §18.1 / §18.2 keep the
 plan's prototype figures, the final ones being `docs/PACKAGES.md`.
 
+**Release done (2026-10-01).** `nalgebra` 0.1.1, the 54 packages, on scarbs.xyz
+([nalgebra](https://scarbs.xyz/packages/nalgebra), [nalgebra_glam](https://scarbs.xyz/packages/nalgebra_glam)),
+tag `v0.1.1` on `b3915c7`, [GitHub release](https://github.com/bal7hazar/nalgebra-cairo/releases/tag/v0.1.1).
+- The project manager's written go (2026-09-30, renewed 2026-10-01 for the continuation) and the
+  owner's OK in the orchestrator session, each time.
+- Run 1 (07:28 UTC, from `3e5e4ba`): 12 packages published and verified; scarbs.xyz then refused
+  `nalgebra_linalg_spectral2` twice with a non-JSON answer: its keyword `symmetric-tridiagonal` has
+  21 characters (Scarb recommends at most 20; same refusal as dojoengine/origami#137).
+- #89 (`b3915c7`): keywords at most 20 characters and 8 per package in the 7 unpublished packages over
+  the limits; `scripts/release.py` continues a release at a later commit when no file of a published
+  package nor a workspace file changed (`git diff --no-renames`, printed). Reviews on Fable (Codex
+  without quota): PASS WITH FINDINGS twice, all minors fixed, notes left as follow-ups (PLAN REL-FU).
+- Run 2 (from `b3915c7`): "continuing the release begun at 3e5e4ba3f5: ... 8 file(s) ... none of them
+  is touched"; the 42 other packages published and verified; "released 54 packages at 0.1.1".
+- `docs/PACKAGES.md` is now the release commit's run (36841314574). Its medians differ from run
+  36767869070's for the same code (for instance `nalgebra_types6` 1.7 s against 2.5 s, `dynamic`
+  2.2 s against 2.6 s; line counts identical): the runners' spread, which the TC lots measure with
+  `RAYON_NUM_THREADS=1`.
+
