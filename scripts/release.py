@@ -33,7 +33,12 @@ it lists NAME at the version, and its checksum is compared with the local archiv
 Resume: the state file `target/release/state-VERSION.json` records the release commit and every
 package once verified (and the one in flight). After a failure at package k, run the same command
 again: the packages before k are checked on the index and skipped, k is published again (or, if the
-index already lists it, verified and recorded), then k+1... A state file of another commit is refused.
+index already lists it, verified and recorded), then k+1... A state file of another commit is refused,
+with one exception: a release may continue at a later commit (a fix of a package not published yet)
+when `git diff --name-only OLD HEAD` touches no file of an already published package (its directory,
+and its `readme` / `license-file` when they live elsewhere) and neither the workspace `Scarb.toml`
+nor `Scarb.lock`: what the registry holds is then exactly what HEAD would publish. The check and
+its outcome are printed; the state file then records HEAD and the commit it continued from.
 """
 
 import argparse
@@ -143,6 +148,26 @@ def plan_resume(order, state, on_index):
     return actions, refusals
 
 
+WORKSPACE_FILES = ("Scarb.toml", "Scarb.lock")
+
+
+def continuation_problems(changed, published_paths):
+    """Whether a release begun at an older commit may continue at HEAD. `changed`: the files
+    `git diff --name-only OLD HEAD` lists (relative to the repository root); `published_paths`:
+    {package: [its directory, and its readme / license file when outside it]} for every package
+    already on the registry at this version. Returns the problems (empty: it may continue)."""
+    problems = []
+    for f in changed:
+        if f in WORKSPACE_FILES:
+            problems.append(f"{f} changed (it reaches every published package)")
+            continue
+        for n, paths in sorted(published_paths.items()):
+            if any(f == q or f.startswith(q.rstrip("/") + "/") for q in paths):
+                problems.append(f"{f} changed, and it belongs to {n}, already published")
+                break
+    return problems
+
+
 def self_test():
     g = {"core": [], "a": ["core"], "b": ["core", "a"], "facade": ["core", "a", "b"],
          "bridge": ["core", "a"]}
@@ -176,6 +201,12 @@ def self_test():
     state = {"published": ["core"], "in_flight": "a"}
     acts, ref = plan_resume(order, state, {"core": True, "a": True, "b": False})
     assert acts == {"core": "skip", "a": "verify", "b": "publish"} and not ref
+    published = {"core": ["crates/core"], "a": ["crates/a", "README.md"]}
+    assert continuation_problems(["crates/b/Scarb.toml", "docs/PLAN.md"], published) == []
+    assert continuation_problems(["crates/core/src/lib.cairo"], published)
+    assert continuation_problems(["crates/core_extra/Scarb.toml"], published) == []
+    assert continuation_problems(["README.md"], published)
+    assert continuation_problems(["Scarb.lock"], published) and continuation_problems(["Scarb.toml"], published)
     print("self-test: ok")
     return 0
 
@@ -202,9 +233,19 @@ def workspace(scarb):
     for p in meta["packages"]:
         with open(p["manifest_path"], "rb") as f:
             manifest = tomllib.load(f)
-        publish = manifest.get("package", {}).get("publish", True) is not False
+        package = manifest.get("package", {})
+        publish = package.get("publish", True) is not False
         by_manifest[os.path.normpath(p["manifest_path"])] = p["name"]
-        pkgs[p["name"]] = {"version": p["version"], "publish": publish, "deps": p["dependencies"]}
+        pkg_dir = os.path.dirname(os.path.normpath(p["manifest_path"]))
+        paths = [os.path.relpath(pkg_dir, root)]
+        for key in ("readme", "license-file"):
+            value = package.get(key)
+            if isinstance(value, str):
+                full = os.path.normpath(os.path.join(pkg_dir, value))
+                if not full.startswith(pkg_dir + os.sep):
+                    paths.append(os.path.relpath(full, root))
+        pkgs[p["name"]] = {"version": p["version"], "publish": publish, "deps": p["dependencies"],
+                           "paths": paths}
     graph = {}
     for n, p in pkgs.items():
         if not p["publish"]:
@@ -309,12 +350,28 @@ def main():
     if os.path.exists(state_path):
         with open(state_path) as f:
             state = json.load(f)
-        if state.get("commit") != head:
-            problems.append(f"{state_path} belongs to commit {state.get('commit', '?')[:10]}, not HEAD")
         print(f"resuming: {len(state.get('published', []))} package(s) already published "
               f"({state_path})")
     template = registry_index(args.registry)
     on_index = {n: index_entry(template, n, version) is not None for n in order}
+    if state is not None and state.get("commit") != head:
+        old = state.get("commit", "")
+        if sh(["git", "merge-base", "--is-ancestor", old, head], check=False, cwd=root).returncode != 0:
+            problems.append(f"{state_path} belongs to commit {old[:10]}, which is not an ancestor of HEAD")
+        else:
+            changed = [f for f in sh(["git", "diff", "--name-only", old, head], cwd=root).stdout.split("\n") if f]
+            done = [n for n in order if on_index[n] and
+                    (n in state.get("published", []) or n == state.get("in_flight"))]
+            found = continuation_problems(changed, {n: pkgs[n]["paths"] for n in done})
+            print(f"continuing the release begun at {old[:10]}: `git diff --name-only {old[:10]} {head[:10]}` "
+                  f"lists {len(changed)} file(s); checked against the {len(done)} package(s) already on the "
+                  f"index and {', '.join(WORKSPACE_FILES)}: {'refused' if found else 'none of them is touched'}")
+            for f in changed:
+                print(f"    {f}")
+            problems += [f"cannot continue at HEAD: {p}" for p in found]
+            if not found:
+                state["continued_from"] = state.get("continued_from", []) + [old]
+                state["commit"] = head
     actions, refusals = plan_resume(order, state, on_index)
     problems += refusals
 
