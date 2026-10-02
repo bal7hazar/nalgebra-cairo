@@ -18,14 +18,117 @@ defaults:
 env:
   RAYON_NUM_THREADS: "1"
 
+# A push to main has a group of its own commit (a group keeps one pending run only: every main commit
+# keeps its full run); a pull request cancels its previous run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # Path gating (owner rule 2026-10-02: tests run only when files related to them changed). On a
+  # pull request, one boolean per group from the changed paths only; every other job is gated on its
+  # group, and `CI result` (the required check) accepts a skip only when the group is false. A push to
+  # main runs everything and skips the filter. The toolchain set (T) is in every group: `.tool-versions`,
+  # any `Scarb.toml`, any `Scarb.lock`, `.github/workflows/**`.
+  # `some-with-excludes`: a file is in a group if it matches a pattern and no `!` pattern, so prose
+  # `.md` files under a group's directories trigger nothing. The `.md` files a job checks are listed
+  # apart (`<group>_md`) and added back: `docs/API_PARITY.md` (`scripts/api_parity.py --check`, group
+  # `workspace`) is the only one (gas/*.md are written by `gas_report.py --update` but the check reads
+  # the .json only).
+  # What each job reads beyond the brief's table: `path-proof` imports `scripts/consumer_cost.py`
+  # (tools/split/public_paths.py), hence it is in that group. `oracle` builds with cargo, but the
+  # toolchain set is in it too (an extra trigger rather than a missing one).
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      workspace: ${{ steps.filter.outputs.workspace == 'true' || steps.filter.outputs.workspace_md == 'true' }}
+      cost: ${{ steps.filter.outputs.cost == 'true' }}
+      facade: ${{ steps.filter.outputs.facade == 'true' }}
+      paths: ${{ steps.filter.outputs.paths == 'true' }}
+      library: ${{ steps.filter.outputs.library == 'true' }}
+      benchmarks: ${{ steps.filter.outputs.benchmarks == 'true' }}
+      oracle: ${{ steps.filter.outputs.oracle == 'true' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          predicate-quantifier: some-with-excludes
+          filters: |
+            workspace:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'scripts/**'
+              - 'tools/shapegen/**'
+              - 'tools/linalggen/**'
+              - 'tools/split/**'
+              - 'consumer_cost.toml'
+              - '!**/*.md'
+            workspace_md:
+              - 'docs/API_PARITY.md'
+            cost:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'scripts/consumer_cost.py'
+              - 'scripts/packages_table.py'
+              - 'consumer_cost.toml'
+              - '!**/*.md'
+            facade:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'scripts/facade_features.py'
+              - '!**/*.md'
+            paths:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'tools/split/**'
+              - 'scripts/consumer_cost.py'
+              - '!**/*.md'
+            library:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'gas/**'
+              - 'scripts/gas_report.py'
+              - 'scripts/shard_coverage.py'
+              - '!**/*.md'
+            benchmarks:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'benchmarks/**'
+              - 'scripts/gas_report.py'
+              - '!**/*.md'
+            oracle:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'tools/oracle/**'
+              - '!**/*.md'
+
   # Once for the whole workspace (the shards below only test their package).
   workspace:
     name: Workspace (fmt, parity, generated code, lint, build)
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.workspace == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -90,6 +193,8 @@ jobs:
   # (gate 2) and the declared closures (gate 3) are all enforced.
   consumer-cost-shard:
     name: Consumer cost shard (${{ matrix.shard }})
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.cost == 'true'
     runs-on: ubuntu-latest
     # Wall time and memory of cold builds, nothing hashed: the compiler's default threads ("0" =
     # all cores), as the gates were set; one thread doubles the times (CI run 37012930609, WP 10-TC).
@@ -126,8 +231,8 @@ jobs:
 
   consumer-cost:
     name: Consumer cost
-    needs: consumer-cost-shard
-    if: always()
+    needs: [changes, consumer-cost-shard]
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.cost == 'true')
     runs-on: ubuntu-latest
     # Wall time and memory of cold builds, nothing hashed: the compiler's default threads ("0" =
     # all cores), as the gates were set; one thread doubles the times (CI run 37012930609, WP 10-TC).
@@ -176,6 +281,8 @@ jobs:
   # stay declared in 0.1.1; two consumers naming them (with and without the default features) build.
   facade-features:
     name: Facade features
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.facade == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -195,6 +302,8 @@ jobs:
   # of them, plus the usage checks, builds.
   path-proof:
     name: Path proof
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.paths == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -211,6 +320,8 @@ jobs:
 
   library:
     name: Library (${{ matrix.name }})
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.library == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -326,7 +437,8 @@ jobs:
 
   gas:
     name: Gas snapshot
-    needs: library
+    needs: [changes, library]
+    if: github.event_name == 'push' || needs.changes.outputs.library == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -341,19 +453,12 @@ jobs:
 
   benchmarks:
     name: Design benchmarks
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.benchmarks == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        id: changes
-        with:
-          filters: |
-            benchmarks:
-              - 'benchmarks/**'
-              - 'scripts/gas_report.py'
-              - '.tool-versions'
       - id: scarb6
-        if: steps.changes.outputs.benchmarks == 'true'
         continue-on-error: true
         uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - if: steps.scarb6.outcome == 'failure'
@@ -361,7 +466,6 @@ jobs:
       - if: steps.scarb6.outcome == 'failure'
         uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - id: snfoundry2
-        if: steps.changes.outputs.benchmarks == 'true'
         continue-on-error: true
         uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
       - if: steps.snfoundry2.outcome == 'failure'
@@ -369,7 +473,6 @@ jobs:
       - if: steps.snfoundry2.outcome == 'failure'
         uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
       - name: Workspace benchmarks
-        if: steps.changes.outputs.benchmarks == 'true'
         working-directory: benchmarks
         run: |
           scarb fmt --check
@@ -378,7 +481,6 @@ jobs:
       # comparison of vendored third-party libraries (cubit, orion) that corelib 2.20.0 no longer compiles
       # (u32_as_non_zero / u64_as_non_zero removed); patching them would change the compared figures.
       - id: scarb7
-        if: steps.changes.outputs.benchmarks == 'true'
         continue-on-error: true
         uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
         with:
@@ -390,7 +492,6 @@ jobs:
         with:
           tool-versions: benchmarks/libs/.tool-versions
       - id: snfoundry3
-        if: steps.changes.outputs.benchmarks == 'true'
         continue-on-error: true
         uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
         with:
@@ -402,7 +503,6 @@ jobs:
         with:
           tool-versions: benchmarks/libs/.tool-versions
       - name: Third-party library benchmarks
-        if: steps.changes.outputs.benchmarks == 'true'
         working-directory: benchmarks/libs
         run: |
           scarb fmt --check
@@ -410,20 +510,69 @@ jobs:
 
   oracle:
     name: Oracle (golden vectors)
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.oracle == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        id: changes
-        with:
-          filters: |
-            oracle:
-              - 'tools/oracle/**'
       - name: Format, lint, test and check that committed vectors are up to date
-        if: steps.changes.outputs.oracle == 'true'
         working-directory: tools/oracle
         run: |
           cargo fmt --check
           cargo clippy --all-targets -- -D warnings
           cargo test
           cargo run --release -- check
+
+  # The one check that always exists (`gh pr checks` and the merge command see it whatever was
+  # skipped). It aggregates every job above, with its group of `changes`: workspace (group
+  # workspace), consumer-cost-shard and consumer-cost (cost), facade-features (facade), path-proof
+  # (paths), library and gas (library), benchmarks (benchmarks), oracle (oracle). It passes when each
+  # job succeeded or was skipped by the paths rule: `skipped` is accepted only on a pull request and
+  # only when the group's output is exactly `false`. A failed or cancelled job, a skip while the
+  # group is true (a needed job failed) and a `changes` that did not succeed all fail it.
+  ci-result:
+    name: CI result
+    needs: [changes, workspace, consumer-cost-shard, consumer-cost, facade-features, path-proof, library, gas, benchmarks, oracle]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      EVENT: ${{ github.event_name }}
+      CHANGES: ${{ needs.changes.result }}
+      WORKSPACE: ${{ needs.workspace.result }}/${{ needs.changes.outputs.workspace }}
+      CONSUMER_COST_SHARD: ${{ needs.consumer-cost-shard.result }}/${{ needs.changes.outputs.cost }}
+      CONSUMER_COST: ${{ needs.consumer-cost.result }}/${{ needs.changes.outputs.cost }}
+      FACADE_FEATURES: ${{ needs.facade-features.result }}/${{ needs.changes.outputs.facade }}
+      PATH_PROOF: ${{ needs.path-proof.result }}/${{ needs.changes.outputs.paths }}
+      LIBRARY: ${{ needs.library.result }}/${{ needs.changes.outputs.library }}
+      GAS: ${{ needs.gas.result }}/${{ needs.changes.outputs.library }}
+      BENCHMARKS: ${{ needs.benchmarks.result }}/${{ needs.changes.outputs.benchmarks }}
+      ORACLE: ${{ needs.oracle.result }}/${{ needs.changes.outputs.oracle }}
+    steps:
+      - name: Every job passed or was skipped by the paths rule
+        run: |
+          status=0
+          if [ "$CHANGES" != success ]; then
+            echo "::error::changes: $CHANGES"
+            status=1
+          fi
+          # job name, then "<result>/<group output>"
+          for job in WORKSPACE CONSUMER_COST_SHARD CONSUMER_COST FACADE_FEATURES PATH_PROOF LIBRARY GAS BENCHMARKS ORACLE; do
+            value="${!job}"
+            result="${value%%/*}"
+            group="${value#*/}"
+            case "$result" in
+              success)
+                echo "$job: success" ;;
+              skipped)
+                if [ "$EVENT" = pull_request ] && [ "$group" = false ]; then
+                  echo "$job: skipped by the paths rule"
+                else
+                  echo "::error::$job: skipped although its paths changed or it should have run (event $EVENT, group $group)"
+                  status=1
+                fi ;;
+              *)
+                echo "::error::$job: $result"
+                status=1 ;;
+            esac
+          done
+          exit $status
