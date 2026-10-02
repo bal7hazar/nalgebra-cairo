@@ -22,7 +22,7 @@ Depend on `nalgebra_blas` (and the crates it depends on) when you need `gemm`, `
 rank updates of the static shapes without the rest of the library. It belongs to the declared
 closure `static4_blas` (static 2-4 + blas: 7.7 s / 2.51 GB on a GitHub runner over an empty
 consumer, budget 15 s / 3 GB); its own marginal cost over its direct dependencies is 1.3 s / 0.31 GB
-(12,105 lines; the CI run of the Scarb 2.20.1 bump, `docs/PACKAGES.md`). For upstream's whole API at
+(12,105 lines; CI run 37019191074 of the Scarb 2.20.1 bump, `docs/PACKAGES.md`). For upstream's whole API at
 upstream's paths, depend on the facade `nalgebra`, which re-exports every sub-crate at the 0.1.0
 paths (behind its feature `blas`, on by default: `nalgebra` always depends on this crate, the
 feature gates its re-exports only).
