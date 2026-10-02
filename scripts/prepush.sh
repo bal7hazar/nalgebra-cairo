@@ -36,10 +36,12 @@
 # waiting at most 90 s for its turn. The wait starts FIRST, in the background, alongside the fixed checks (which
 # need no lock): the lock-busy case costs about the 90 s, not the 90 s plus the checks. A waiter that obtains the
 # lock runs the block at once (the lock is never held idle), its output kept and printed after the fixed checks; if
-# a fixed check fails, it stops at its next step boundary (nothing is signalled). Inside the lock the
+# a fixed check fails, or this script is interrupted (INT, TERM, HUP), this script sends TERM to the process
+# groups of the jobs IT started (the lock waiter with its own compile, and the fixed checks) and to nothing
+# else; the waiter also stops at its next step boundary. Inside the lock the
 # scarb/snforge SHIMS are still called, with HEAVY_BUILD_LOCK_HELD=1 exported (the lock really is held), which
 # they honour as a pass-through: they never wait on the lock a second time. It never bypasses the lock, and it
-# only gives up waiting: it never signals or kills the process holding the lock, nor a compile that runs (the
+# only gives up waiting: it never signals any other holder of the lock, nor a compile that is not its own (the
 # lock file is touched only through `flock -w`). If the lock is not obtained in 90 s the whole Cairo block is
 # skipped, with the single line `heavy lock busy: Cairo compile left to CI`, and the push is not blocked (CI
 # runs them). Without the lock (no lock directory or no `flock`, as on the Mac), or when a caller already holds
@@ -132,7 +134,7 @@ cairo_block() {
 # Inner mode: re-executed by flock, so the lock is held. It tells the caller (PREPUSH_MARK), then runs the block at
 # once, alongside the fixed checks, so the lock is never held idle; its output goes to a file (PREPUSH_OUT) that the
 # caller prints after the fixed checks. When the caller refuses the push (PREPUSH_GATE says stop) or is gone, it
-# stops at the next step boundary: nothing is signalled, a running compile ends by itself.
+# stops at the next step boundary; the caller also sends TERM to this job's process group on refusal or interrupt.
 if [[ "${PREPUSH_INNER:-}" == 1 ]]; then
     : > "$PREPUSH_MARK"
     waited=$(($(date +%s) - PREPUSH_T0))
@@ -224,7 +226,7 @@ waiter=""
 pids=()
 stop_jobs() {
     local g
-    for g in $waiter ${pids[@]+"${pids[@]}"}; do kill -TERM -- "-$g" 2> /dev/null || true; done
+    for g in $waiter ${pids[@]+"${pids[@]}"}; do [[ -n "$g" ]] && { kill -TERM -- "-$g" 2> /dev/null || true; }; done
 }
 trap 'rc=$?; [[ -e "$gate" ]] || set_gate stop 2> /dev/null || true; stop_jobs; rm -rf "$logs"; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
 
