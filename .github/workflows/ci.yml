@@ -12,6 +12,11 @@ defaults:
   run:
     shell: bash # enables pipefail
 
+# The compiler is not deterministic on several threads (slingfall OPERATIONS.md): every build whose
+# output is measured, hashed or snapshotted runs single-threaded.
+env:
+  RAYON_NUM_THREADS: "1"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

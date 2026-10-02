@@ -73,6 +73,9 @@ env:
   COMPARE: ${{ inputs.compare || 'false' }}
   MAP: ${{ inputs.map }}
   SOURCE: ${{ inputs.source }}
+  # The compiler is not deterministic on several threads (slingfall OPERATIONS.md): every measured
+  # build runs single-threaded.
+  RAYON_NUM_THREADS: "1"
 
 jobs:
   prepare:
