@@ -2,7 +2,7 @@
 
 Empirical Sierra-gas cost of the primitives a fixed-point linear algebra library is made of:
 integer arithmetic per type, conversions, bitwise operators, control flow, data structures,
-classic integer algorithms and inlining. Toolchain: scarb 2.19.4 / corelib 2.19.4, snforge 0.61.0.
+classic integer algorithms and inlining. Toolchain: scarb 2.20.1 / corelib 2.20.0, snforge 0.64.0.
 
 The question to settle (project owner's hypothesis): **in Cairo, simple math (add, mul, divmod) is
 cheaper than bitwise ops (and/or/xor), which are cheaper than loops.** Short answer: *mostly true,

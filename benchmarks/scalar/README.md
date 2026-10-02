@@ -5,7 +5,7 @@ engine) be built on? Cairo has no floats; this package implements the candidate 
 with identical semantics, measures every basic operation in Sierra gas, then benchmarks algorithm
 alternatives (sqrt, inverse sqrt / normalize, sin/cos, atan2, acos) on the winner.
 
-Toolchain: scarb 2.19.4, snforge 0.61.0. Full ranked tables: [`GAS.md`](GAS.md) (407 tests).
+Toolchain: scarb 2.20.1, snforge 0.64.0. Full ranked tables: [`GAS.md`](GAS.md) (407 tests).
 
 **TL;DR** — store a native `i64` in **Q32.32**, do the arithmetic with
 `core::internal::bounded_int` (branch-free *floor* multiply, 1,850 gas), keep products **unscaled**
