@@ -46,9 +46,10 @@ jobs:
               print(f"::error::{crate}: {lines} library lines > {limit} (gate 1)")
           sys.exit(1 if over else 0)
           PY
-      - name: Consumer cost script (self-test, consumer manifests of the dry run; no build)
+      - name: Consumer cost and release scripts (self-test, consumer manifests of the dry run; no build)
         run: |
           python3 scripts/consumer_cost.py --self-test
+          python3 scripts/release.py --self-test
           python3 scripts/packages_table.py --self-test
           python3 scripts/consumer_cost.py --dry-run --report-only
       - name: Lint (default features, then the lightest `nalgebra`)

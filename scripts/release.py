@@ -31,14 +31,20 @@ it lists NAME at the version, and its checksum is compared with the local archiv
 (`target/package/NAME-VERSION.tar.zst`) before the next package starts.
 
 Resume: the state file `target/release/state-VERSION.json` records the release commit and every
-package once verified (and the one in flight). After a failure at package k, run the same command
-again: the packages before k are checked on the index and skipped, k is published again (or, if the
-index already lists it, verified and recorded), then k+1... A state file of another commit is refused,
+package once verified (and the one in flight; `submitted` names it once `scarb publish` returned
+success). After a failure at package k, run the same command again: the packages before k are checked
+on the index and skipped, k is published again (or, if the index already lists it, or if `submitted`
+says `scarb publish` succeeded for it and the index lags, verified and recorded: the index is polled
+every VERIFY_DELAY s for up to `--verify-timeout` s, 45 checks by default, and k is never published
+twice; a run that gives up says so and the next run waits again), then k+1... A state file of another
+commit is refused,
 with one exception: a release may continue at a later commit (a fix of a package not published yet)
 when OLD is an ancestor of HEAD, every package the state records as published is still published by
 the workspace, and `git diff --name-only --no-renames OLD HEAD` touches no file of those packages
 (their directories, and their `readme` / `license-file` when they live elsewhere, inherited ones
-included) nor the workspace `Scarb.toml`, `Scarb.lock`, `.gitignore`, `.scarbignore`: what the
+included, `readme = true` inherited from the workspace meaning the default README files of the
+workspace root; the `.gitignore` / `.scarbignore` of every directory between the workspace root and
+the package) nor the workspace `Scarb.toml`, `Scarb.lock`, `.gitignore`, `.scarbignore`: what the
 registry holds is then exactly what HEAD would publish. The check and its file list are printed;
 the state file then records HEAD and the commit it continued from.
 """
@@ -60,6 +66,9 @@ except ImportError:  # Python < 3.11
 
 REQUIRED_CHECK = "Consumer cost"
 OK_CONCLUSIONS = {"success", "neutral", "skipped"}
+VERIFY_DELAY = 20  # seconds between two polls of the registry index
+IGNORE_FILES = (".gitignore", ".scarbignore")
+DEFAULT_READMES = ("README.md", "README.txt", "README")
 
 
 # ------------------------------------------------------------------------------------------------
@@ -127,17 +136,21 @@ def check_runs_verdict(runs, required=REQUIRED_CHECK):
 
 def plan_resume(order, state, on_index):
     """What to do for each package: `skip` (the state records it and the index lists it),
-    `verify` (the index lists it: only allowed for the package the state says was in flight),
-    `publish`; plus the refusals. `on_index`: {name: bool}."""
+    `verify` (the index lists it, only allowed for the package the state says was in flight; or the
+    state says `scarb publish` succeeded for the in-flight package and the index lags: wait, never
+    publish twice), `publish`; plus the refusals. `on_index`: {name: bool}."""
     actions, refusals = {}, []
     published = set(state.get("published", [])) if state else set()
     in_flight = state.get("in_flight") if state else None
+    submitted = state.get("submitted") if state else None
     for n in order:
         if n in published:
             if on_index[n]:
                 actions[n] = "skip"
             else:
                 actions[n] = "verify"  # recorded but not visible yet: wait for the index
+        elif n == in_flight and n == submitted:
+            actions[n] = "verify"  # published, the index lags: wait for it
         elif on_index[n]:
             if n == in_flight:
                 actions[n] = "verify"
@@ -155,11 +168,13 @@ WORKSPACE_FILES = ("Scarb.toml", "Scarb.lock", ".gitignore", ".scarbignore")
 
 def continuation_packages(order, state, on_index):
     """The packages a continuation must leave untouched: every package the state records as
-    published (whatever the index says on this run), and the one in flight if the index lists it.
+    published (whatever the index says on this run), and the one in flight if the index lists it or
+    if `scarb publish` succeeded for it (`submitted`).
     A recorded package that is no longer published by the workspace is a problem."""
     names = list(state.get("published", []))
     in_flight = state.get("in_flight")
-    if in_flight and on_index.get(in_flight) and in_flight not in names:
+    if in_flight and (on_index.get(in_flight) or state.get("submitted") == in_flight) \
+            and in_flight not in names:
         names.append(in_flight)
     problems = [f"{n} is recorded as published but is no longer a published package of the workspace"
                 for n in names if n not in order]
@@ -181,6 +196,48 @@ def continuation_problems(changed, published_paths):
                 problems.append(f"{f} changed, and it belongs to {n}, already published")
                 break
     return problems
+
+
+def ignore_files_between(root, pkg_dir):
+    """The ignore files of the directories strictly between the workspace root and PKG_DIR (the
+    root's are in WORKSPACE_FILES, the package's own are in its directory), relative to ROOT."""
+    parts = os.path.relpath(pkg_dir, root).split(os.sep)[:-1]
+    return [os.path.join(*parts[:i], f) for i in range(1, len(parts) + 1) for f in IGNORE_FILES]
+
+
+def package_paths(root, pkg_dir, package, ws_package):
+    """Everything outside the workspace-level files that decides what PKG_DIR's package ships:
+    its directory, the ignore files of the directories above it, and its `readme` / `license-file`
+    when they live outside it. `package`: its `[package]` table, `ws_package`: `[workspace.package]`.
+    An inherited value (`readme.workspace = true`) is read from the workspace; `readme = true`
+    (own or inherited) stands for the default README files, of the package directory (already
+    covered) and, when inherited, of the workspace root."""
+    paths = [os.path.relpath(pkg_dir, root)] + ignore_files_between(root, pkg_dir)
+    for key in ("readme", "license-file"):
+        value, base = package.get(key), pkg_dir
+        inherited = isinstance(value, dict) and value.get("workspace") is True
+        if inherited:
+            value, base = ws_package.get(key), root
+        names = [value] if isinstance(value, str) else []
+        if value is True and inherited:
+            names = list(DEFAULT_READMES)
+        for name in names:
+            full = os.path.normpath(os.path.join(base, name))
+            if not full.startswith(pkg_dir + os.sep):
+                paths.append(os.path.relpath(full, root))
+    return paths
+
+
+def wait_for_index(fetch, retries, delay, sleep=time.sleep):
+    """Poll `fetch()` (the index record or None): at most `retries` + 1 checks, `delay` s apart.
+    Returns the record, or None if the index never listed it."""
+    for k in range(retries + 1):
+        rec = fetch()
+        if rec is not None:
+            return rec
+        if k < retries:
+            sleep(delay)
+    return None
 
 
 def self_test():
@@ -233,6 +290,47 @@ def self_test():
     names, probs = continuation_packages(["core"], {"published": ["core", "gone"], "in_flight": None},
                                          {"core": True})
     assert names == ["core"] and probs  # a recorded package no longer published: refused
+    # follow-up 3: `scarb publish` succeeded for the package in flight, the index lags
+    lag = {"published": ["core"], "in_flight": "a", "submitted": "a"}
+    acts, ref = plan_resume(order, lag, {"core": True, "a": False, "b": False})
+    assert acts == {"core": "skip", "a": "verify", "b": "publish"} and not ref  # not republished
+    acts, ref = plan_resume(order, {"published": ["core"], "in_flight": "a"}, {"core": True, "a": False, "b": False})
+    assert acts["a"] == "publish"  # a state without the marker (0.1.1's, or a crash before the publish)
+    acts, ref = plan_resume(order, {"published": [], "in_flight": "a", "submitted": "a"},
+                            {"core": False, "a": False, "b": False})
+    assert acts["core"] == "publish" and acts["a"] == "verify"  # the marker is about `a` only
+    names, probs = continuation_packages(["core", "a"], lag, {"core": True, "a": False})
+    assert names == ["core", "a"] and not probs  # submitted: it counts as published
+    calls, naps = [], []
+    def fetch(listed_at):
+        def f():
+            calls.append(1)
+            return {"v": "1"} if len(calls) >= listed_at else None
+        return f
+    assert wait_for_index(fetch(3), 5, 20, naps.append) == {"v": "1"} and len(calls) == 3 and naps == [20, 20]
+    calls.clear(); naps.clear()
+    assert wait_for_index(fetch(99), 4, 20, naps.append) is None and len(calls) == 5 and naps == [20] * 4
+    # follow-up 2: ignore files above a package, `readme = true` inherited from the workspace
+    root, pkg = os.path.join(os.sep, "r"), os.path.join(os.sep, "r", "crates", "a")
+    assert ignore_files_between(root, pkg) == [os.path.join("crates", ".gitignore"),
+                                               os.path.join("crates", ".scarbignore")]
+    assert ignore_files_between(root, os.path.join(os.sep, "r", "a")) == []
+    assert ignore_files_between(root, os.path.join(pkg, "x", "y")) == [
+        os.path.join("crates", ".gitignore"), os.path.join("crates", ".scarbignore"),
+        os.path.join("crates", "a", ".gitignore"), os.path.join("crates", "a", ".scarbignore"),
+        os.path.join("crates", "a", "x", ".gitignore"), os.path.join("crates", "a", "x", ".scarbignore")]
+    paths = package_paths(root, pkg, {}, {})
+    assert paths[0] == os.path.join("crates", "a") and os.path.join("crates", ".gitignore") in paths
+    assert continuation_problems([os.path.join("crates", ".scarbignore")], {"a": paths})
+    assert continuation_problems([os.path.join("crates", "b", "src", "lib.cairo")], {"a": paths}) == []
+    inherited = package_paths(root, pkg, {"readme": {"workspace": True}}, {"readme": "docs/R.md"})
+    assert os.path.join("docs", "R.md") in inherited
+    inherited = package_paths(root, pkg, {"readme": {"workspace": True}}, {"readme": True})
+    assert "README.md" in inherited and "README" in inherited
+    assert continuation_problems(["README.md"], {"a": inherited})
+    assert "README.md" not in package_paths(root, pkg, {"readme": True}, {})  # own default: in the dir
+    own = package_paths(root, pkg, {"readme": "../../README.md", "license-file": "../../LICENSE"}, {})
+    assert "README.md" in own and "LICENSE" in own
     print("self-test: ok")
     return 0
 
@@ -264,16 +362,7 @@ def workspace(scarb):
         publish = package.get("publish", True) is not False
         by_manifest[os.path.normpath(p["manifest_path"])] = p["name"]
         pkg_dir = os.path.dirname(os.path.normpath(p["manifest_path"]))
-        paths = [os.path.relpath(pkg_dir, root)]
-        for key in ("readme", "license-file"):
-            value = package.get(key)
-            base = pkg_dir
-            if isinstance(value, dict) and value.get("workspace") is True:
-                value, base = ws_package.get(key), root
-            if isinstance(value, str):
-                full = os.path.normpath(os.path.join(base, value))
-                if not full.startswith(pkg_dir + os.sep):
-                    paths.append(os.path.relpath(full, root))
+        paths = package_paths(root, pkg_dir, package, ws_package)
         pkgs[p["name"]] = {"version": p["version"], "publish": publish, "deps": p["dependencies"],
                            "paths": paths}
     graph = {}
@@ -446,20 +535,21 @@ def main():
             p = subprocess.run([args.scarb, "publish", "-p", n], cwd=root)
             if p.returncode != 0:
                 sys.exit(f"error: publishing {n} failed; fix and run the same command again to resume")
-        deadline = time.monotonic() + args.verify_timeout
-        rec = None
-        while rec is None:
-            rec = index_entry(template, n, version)
-            if rec is None:
-                if time.monotonic() > deadline:
-                    sys.exit(f"error: {n} {version} not on the index after {args.verify_timeout} s; "
-                             "run again to resume (it will be verified, not republished)")
-                time.sleep(20)
+            state["submitted"] = n  # published: a lagging index must never make a resume publish again
+            save()
+        retries = max(args.verify_timeout // VERIFY_DELAY, 1)
+        print(f"{n}: waiting for the index to list {version} (up to {retries + 1} checks, "
+              f"{VERIFY_DELAY} s apart)", flush=True)
+        rec = wait_for_index(lambda: index_entry(template, n, version), retries, VERIFY_DELAY)
+        if rec is None:
+            sys.exit(f"error: {n} {version} not on the index after {retries + 1} checks "
+                     f"({retries * VERIFY_DELAY} s); run again to resume (it will be verified, not republished)")
         local = local_checksum(root, n, version)
         if local is not None and rec.get("cksum") != local:
             sys.exit(f"error: {n} {version}: index checksum {rec.get('cksum')} != local archive {local}")
         state["published"].append(n)
         state["in_flight"] = None
+        state.pop("submitted", None)
         save()
         print(f"{n}: verified on the index ({rec.get('cksum')})", flush=True)
     print(f"\nreleased {len(order)} packages at {version}; tag v{version} per docs/ORCHESTRATOR.md")
