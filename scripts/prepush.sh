@@ -110,7 +110,7 @@ changed=$(git diff --name-only --no-renames "$merge_base")
 # The independent checks (none holds the lock, none writes) run side by side to keep the wall time down; they
 # are judged in this order, and the first failing one is named.
 logs=$(mktemp -d)
-trap 'rm -rf "$logs"; rc=$?; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
+trap 'rc=$?; rm -rf "$logs"; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
 names=("scarb fmt --check" "api_parity.py --check" "shapegen.py --check" "linalggen/generate.py --check")
 cmds=("scarb fmt --check" "python3 scripts/api_parity.py --check" "python3 tools/shapegen/shapegen.py --check" "python3 tools/linalggen/generate.py --check")
 pids=()
@@ -143,7 +143,7 @@ else
     # The touched packages: each changed path is mapped to the workspace package whose directory holds it;
     # "*" (the whole workspace) for a root manifest, Scarb.lock or .tool-versions.
     step="map the changed paths to packages (scarb metadata)"
-    PREPUSH_PKGS=$(PREPUSH_CHANGED="$changed" scarb metadata --format-version 1 --no-deps | python3 -c '
+    PREPUSH_PKGS=$(scarb metadata --format-version 1 --no-deps | PREPUSH_CHANGED="$changed" python3 -c '
 import json, os, sys
 meta = json.load(sys.stdin)
 root = meta["workspace"]["root"]
