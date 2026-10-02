@@ -1,152 +1,152 @@
 {
   "nalgebra_tests_dynamic::benches": {
     "dmatrix_add16": {
-      "baseline": 2487120,
-      "library": 2906610
+      "baseline": 2479290,
+      "library": 2898780
     },
     "dmatrix_add6": {
-      "baseline": 361920,
-      "library": 425560
+      "baseline": 354090,
+      "library": 417730
     },
     "dmatrix_index": {
-      "baseline": 189700,
-      "library": 191880
+      "baseline": 181870,
+      "library": 184050
     },
     "dmatrix_insert_columns6": {
-      "baseline": 189230,
-      "library": 238980
+      "baseline": 181400,
+      "library": 231150
     },
     "dmatrix_insert_rows6": {
-      "baseline": 189230,
-      "library": 357010
+      "baseline": 181400,
+      "library": 349180
     },
     "dmatrix_mul16": {
-      "baseline": 2487120,
-      "library": 10189770
+      "baseline": 2479290,
+      "library": 10181940
     },
     "dmatrix_mul3": {
-      "baseline": 101100,
-      "library": 126250
+      "baseline": 93270,
+      "library": 118420
     },
     "dmatrix_mul6": {
-      "baseline": 361920,
-      "library": 483130
+      "baseline": 354090,
+      "library": 475300
     },
     "dmatrix_mul_vec16": {
-      "baseline": 1327220,
-      "library": 2502920
+      "baseline": 1319390,
+      "library": 2495090
     },
     "dmatrix_mul_vec3": {
-      "baseline": 71420,
-      "library": 82190
+      "baseline": 63590,
+      "library": 74360
     },
     "dmatrix_mul_vec6": {
-      "baseline": 216320,
-      "library": 246630
+      "baseline": 208490,
+      "library": 238800
     },
     "dmatrix_remove_rows16": {
-      "baseline": 1252100,
-      "library": 1718490
+      "baseline": 1244270,
+      "library": 1710660
     },
     "dmatrix_resize16": {
-      "baseline": 1252100,
-      "library": 1601980
+      "baseline": 1244270,
+      "library": 1594150
     },
     "dmatrix_resize6": {
-      "baseline": 189500,
-      "library": 330960
+      "baseline": 181670,
+      "library": 323130
     },
     "dmatrix_transpose16": {
-      "baseline": 1250930,
-      "library": 1988060
+      "baseline": 1243100,
+      "library": 1980230
     },
     "dmatrix_transpose6": {
-      "baseline": 188330,
-      "library": 329910
+      "baseline": 180500,
+      "library": 322080
     },
     "dvector_dot16": {
-      "baseline": 167920,
-      "library": 192020
+      "baseline": 160090,
+      "library": 184190
     },
     "dvector_dot3": {
-      "baseline": 42340,
-      "library": 48490
+      "baseline": 34510,
+      "library": 40660
     },
     "dvector_dot6": {
-      "baseline": 71320,
-      "library": 78670
+      "baseline": 63490,
+      "library": 70840
     },
     "dvector_norm16": {
-      "baseline": 91330,
-      "library": 111710
+      "baseline": 83500,
+      "library": 103880
     },
     "matrix3x4_insert_columns": {
-      "baseline": 73480,
-      "library": 112580
+      "baseline": 65650,
+      "library": 104750
     },
     "matrix3x4_insert_fixed_columns": {
-      "alt_direct": 78210,
-      "baseline": 73010,
-      "library": 74110
+      "alt_direct": 70380,
+      "baseline": 65180,
+      "library": 66280
     },
     "matrix6_into_dmatrix": {
-      "baseline": 193030,
-      "library": 192730
+      "baseline": 185200,
+      "library": 184900
     }
   },
   "nalgebra_tests_dynamic::layout": {
     "dyn_layout_column16": {
-      "baseline": 1251230,
-      "col": 1279640,
-      "row": 1307630
+      "baseline": 1243400,
+      "col": 1271810,
+      "row": 1299800
     },
     "dyn_layout_dot16": {
-      "baseline": 167920,
-      "chunk4": 189350,
-      "chunk8": 187870,
-      "index": 226290,
-      "pop": 203290
+      "baseline": 160090,
+      "chunk4": 181520,
+      "chunk8": 180040,
+      "index": 218460,
+      "pop": 195460
     },
     "dyn_layout_dot6": {
-      "baseline": 71320,
-      "chunk4": 85560,
-      "chunk8": 88300,
-      "dispatch": 78170,
-      "pop": 86990
+      "baseline": 63490,
+      "chunk4": 77730,
+      "chunk8": 80470,
+      "dispatch": 70340,
+      "pop": 79160
     },
     "dyn_layout_index": {
-      "baseline": 189300,
-      "col": 191480,
-      "dict": 491360,
-      "dict_build_only": 490480
+      "baseline": 181470,
+      "col": 183650,
+      "dict": 483630,
+      "dict_build_only": 482750
     },
     "dyn_layout_mul16": {
-      "baseline": 2486320,
-      "col": 25647470,
-      "colseq": 13615340,
-      "colseq4": 10046700,
-      "dict": 38308460,
-      "row": 16927880
+      "baseline": 2478490,
+      "col": 25639640,
+      "colseq": 13607510,
+      "colseq4": 10038870,
+      "dict": 38300730,
+      "row": 16920050
     },
     "dyn_layout_mul6": {
-      "baseline": 361120,
-      "col": 1656670,
-      "colseq": 1263140,
-      "colseq4": 1211660,
-      "colseqd": 945620,
-      "dict": 2867860,
-      "row": 1300280
+      "baseline": 353290,
+      "col": 1648840,
+      "colseq": 1255310,
+      "colseq4": 1203830,
+      "colseqd": 937790,
+      "dict": 2860130,
+      "row": 1292450
     },
     "dyn_layout_resize6": {
-      "baseline": 188630,
-      "col": 334920,
-      "dict": 812490
+      "baseline": 180800,
+      "col": 327090,
+      "dict": 804760
     },
     "dyn_layout_transpose16": {
-      "baseline": 1250530,
-      "runs": 2047400,
-      "strided": 2094210,
-      "strided4": 1987660
+      "baseline": 1242700,
+      "runs": 2039570,
+      "strided": 2086380,
+      "strided4": 1979830
     }
   }
 }

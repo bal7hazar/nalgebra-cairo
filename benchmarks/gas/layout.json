@@ -1,874 +1,874 @@
 {
   "layout::abstraction::tests": {
     "call_add": {
-      "baseline": 18140,
-      "free_fn": 22590,
-      "free_fn_generic": 22590,
-      "operator": 22590,
-      "operator_inline_always": 20260,
-      "trait_method": 22590,
-      "trait_method_inline_always": 20260
+      "baseline": 10310,
+      "free_fn": 14760,
+      "free_fn_generic": 14760,
+      "operator": 14760,
+      "operator_inline_always": 12430,
+      "trait_method": 14760,
+      "trait_method_inline_always": 12430
     },
     "call_dot": {
-      "baseline": 17540,
-      "free_fn": 52170,
-      "free_fn_generic": 52170,
-      "trait_method": 52170
+      "baseline": 9710,
+      "free_fn": 44340,
+      "free_fn_generic": 44340,
+      "trait_method": 44340
     }
   },
   "layout::abstraction_gen": {
     "abs_vec3_add_fixed": {
-      "baseline": 18740,
-      "concrete_default": 23290,
-      "concrete_inline_always": 20960,
-      "concrete_inline_never": 23290,
-      "generic_default": 23290,
-      "generic_inline_always": 20960,
-      "generic_inline_never": 23290
+      "baseline": 10910,
+      "concrete_default": 15460,
+      "concrete_inline_always": 13130,
+      "concrete_inline_never": 15460,
+      "generic_default": 15460,
+      "generic_inline_always": 13130,
+      "generic_inline_never": 15460
     },
     "abs_vec3_chain_fixed": {
-      "baseline": 18740,
-      "concrete_default": 162110,
-      "concrete_inline_always": 151320,
-      "concrete_inline_never": 162110,
-      "generic_default": 162110,
-      "generic_inline_always": 151320,
-      "generic_inline_never": 162110
+      "baseline": 10910,
+      "concrete_default": 154280,
+      "concrete_inline_always": 143490,
+      "concrete_inline_never": 154280,
+      "generic_default": 154280,
+      "generic_inline_always": 143490,
+      "generic_inline_never": 154280
     },
     "abs_vec3_cross_fixed": {
-      "baseline": 18740,
-      "concrete_default": 85330,
-      "concrete_inline_always": 83280,
-      "concrete_inline_never": 85330,
-      "generic_default": 85330,
-      "generic_inline_always": 83280,
-      "generic_inline_never": 85330
+      "baseline": 10910,
+      "concrete_default": 77500,
+      "concrete_inline_always": 75450,
+      "concrete_inline_never": 77500,
+      "generic_default": 77500,
+      "generic_inline_always": 75450,
+      "generic_inline_never": 77500
     },
     "abs_vec3_dot_fixed": {
-      "baseline": 18140,
-      "concrete_default": 52870,
-      "concrete_inline_always": 50860,
-      "concrete_inline_never": 52870,
-      "generic_default": 52870,
-      "generic_inline_always": 50860,
-      "generic_inline_never": 52870
+      "baseline": 10310,
+      "concrete_default": 45040,
+      "concrete_inline_always": 43030,
+      "concrete_inline_never": 45040,
+      "generic_default": 45040,
+      "generic_inline_always": 43030,
+      "generic_inline_never": 45040
     }
   },
   "layout::composite::tests": {
     "inertia_world": {
-      "baseline": 20540,
-      "scaled_symmetric": 311730,
-      "two_mat_mat": 613300
+      "baseline": 12710,
+      "scaled_symmetric": 303900,
+      "two_mat_mat": 605470
     },
     "iso_compose": {
-      "baseline": 21340,
-      "mat3": 428510,
-      "quat": 377230
+      "baseline": 13510,
+      "mat3": 420680,
+      "quat": 369400
     },
     "iso_transform_point": {
-      "baseline": 19740,
-      "mat3": 127200,
-      "quat": 198080
+      "baseline": 11910,
+      "mat3": 119370,
+      "quat": 190250
     },
     "m_mt": {
-      "baseline": 19340,
-      "symmetric_6_dots": 229720,
-      "transpose_then_mat_mat": 315870
+      "baseline": 11510,
+      "symmetric_6_dots": 221890,
+      "transpose_then_mat_mat": 308040
     },
     "normalize": {
-      "baseline": 16740,
-      "norm_only": 59190,
-      "one_division_three_muls": 101170,
-      "three_divisions": 99660
+      "baseline": 8910,
+      "norm_only": 51360,
+      "one_division_three_muls": 93340,
+      "three_divisions": 91830
     },
     "quat_mul": {
-      "baseline": 20840,
-      "hamilton": 196790
+      "baseline": 13010,
+      "hamilton": 188960
     },
     "quat_rotate": {
-      "baseline": 18540,
-      "expanded": 191730,
-      "sandwich": 372940,
-      "via_mat3": 226060
+      "baseline": 10710,
+      "expanded": 183900,
+      "sandwich": 365110,
+      "via_mat3": 218230
     },
     "quat_rotate_x4": {
-      "baseline": 24840,
-      "expanded": 717900,
-      "via_mat3_once": 533650
+      "baseline": 17010,
+      "expanded": 710070,
+      "via_mat3_once": 525820
     },
     "quat_to_mat3": {
-      "baseline": 18540,
-      "convert": 124830
+      "baseline": 10710,
+      "convert": 117000
     },
     "skew_mul_mat": {
-      "baseline": 20540,
-      "cross_per_column": 220210,
-      "skew_then_mat_mat": 317570
+      "baseline": 12710,
+      "cross_per_column": 212380,
+      "skew_then_mat_mat": 309740
     },
     "skew_mul_vec": {
-      "baseline": 18140,
-      "cross": 84630,
-      "skew_then_mat_vec": 119070
+      "baseline": 10310,
+      "cross": 76800,
+      "skew_then_mat_vec": 111240
     },
     "sym3_inverse": {
-      "baseline": 18140,
-      "full9": 362470,
-      "sym6": 258970
+      "baseline": 10310,
+      "full9": 354640,
+      "sym6": 251140
     },
     "sym3_mul_vec": {
-      "baseline": 19340,
-      "full9": 119670,
-      "sym6": 119370
+      "baseline": 11510,
+      "full9": 111840,
+      "sym6": 111540
     }
   },
   "layout::inline_gen": {
     "inline_mat3_inverse": {
-      "baseline": 26140,
-      "cols_malways": 380190,
-      "cols_mdefault": 380190,
-      "cols_mnever": 418620,
-      "fields_malways": 370970,
-      "fields_mdefault": 370970,
-      "fields_mnever": 409400
+      "baseline": 18310,
+      "cols_malways": 372360,
+      "cols_mdefault": 372360,
+      "cols_mnever": 410790,
+      "fields_malways": 363140,
+      "fields_mdefault": 363140,
+      "fields_mnever": 401570
     },
     "inline_mat3_mul_mat": {
-      "baseline": 26140,
-      "cols_malways": 355490,
-      "cols_mdefault": 355490,
-      "cols_mnever": 390230,
-      "fields_malways": 323170,
-      "fields_mdefault": 323170,
-      "fields_mnever": 372580
+      "baseline": 18310,
+      "cols_malways": 347660,
+      "cols_mdefault": 347660,
+      "cols_mnever": 382400,
+      "fields_malways": 315340,
+      "fields_mdefault": 315340,
+      "fields_mnever": 364750
     },
     "inline_mat3_mul_vec": {
-      "baseline": 24740,
-      "cols_malways": 133290,
-      "cols_mdefault": 133290,
-      "cols_mnever": 144870,
-      "fields_malways": 125170,
-      "fields_mdefault": 125170,
-      "fields_mnever": 141640
+      "baseline": 16910,
+      "cols_malways": 125460,
+      "cols_mdefault": 125460,
+      "cols_mnever": 137040,
+      "fields_malways": 117340,
+      "fields_mdefault": 117340,
+      "fields_mnever": 133810
     },
     "inline_vec3_chain": {
-      "baseline": 18740,
-      "valways_malways": 151320,
-      "valways_mdefault": 151320,
-      "valways_mnever": 172720,
-      "vdefault_malways": 162110,
-      "vdefault_mdefault": 162110,
-      "vdefault_mnever": 181940,
-      "vnever_malways": 162110,
-      "vnever_mdefault": 162110,
-      "vnever_mnever": 183240
+      "baseline": 10910,
+      "valways_malways": 143490,
+      "valways_mdefault": 143490,
+      "valways_mnever": 164890,
+      "vdefault_malways": 154280,
+      "vdefault_mdefault": 154280,
+      "vdefault_mnever": 174110,
+      "vnever_malways": 154280,
+      "vnever_mdefault": 154280,
+      "vnever_mnever": 175410
     },
     "inline_vec3_cross": {
-      "baseline": 18740,
-      "valways_malways": 83280,
-      "valways_mdefault": 83280,
-      "valways_mnever": 93980,
-      "vdefault_malways": 85330,
-      "vdefault_mdefault": 85330,
-      "vdefault_mnever": 96310,
-      "vnever_malways": 85330,
-      "vnever_mdefault": 85330,
-      "vnever_mnever": 96310
+      "baseline": 10910,
+      "valways_malways": 75450,
+      "valways_mdefault": 75450,
+      "valways_mnever": 86150,
+      "vdefault_malways": 77500,
+      "vdefault_mdefault": 77500,
+      "vdefault_mnever": 88480,
+      "vnever_malways": 77500,
+      "vnever_mdefault": 77500,
+      "vnever_mnever": 88480
     },
     "inline_vec3_dot": {
-      "baseline": 18140,
-      "valways_malways": 50860,
-      "valways_mdefault": 50860,
-      "valways_mnever": 56130,
-      "vdefault_malways": 52870,
-      "vdefault_mdefault": 52870,
-      "vdefault_mnever": 58360,
-      "vnever_malways": 52870,
-      "vnever_mdefault": 52870,
-      "vnever_mnever": 58360
+      "baseline": 10310,
+      "valways_malways": 43030,
+      "valways_mdefault": 43030,
+      "valways_mnever": 48300,
+      "vdefault_malways": 45040,
+      "vdefault_mdefault": 45040,
+      "vdefault_mnever": 50530,
+      "vnever_malways": 45040,
+      "vnever_mdefault": 45040,
+      "vnever_mnever": 50530
     }
   },
   "layout::lazy::tests": {
     "lazy_cross": {
-      "baseline": 18140,
-      "eager": 84630,
-      "lazy_felt": 31250,
-      "lazy_felt_floor": 29880,
-      "lazy_i128": 75350
+      "baseline": 10310,
+      "eager": 76800,
+      "lazy_felt": 23420,
+      "lazy_felt_floor": 22050,
+      "lazy_i128": 67520
     },
     "lazy_dot": {
-      "baseline": 17540,
-      "eager": 52170,
-      "eager_bounded_floor": 27000,
-      "eager_felt": 31230,
-      "eager_wide_mul": 30120,
-      "lazy_bounded_floor": 19790,
-      "lazy_felt": 23630,
-      "lazy_felt_floor": 20530,
-      "lazy_felt_generic_api": 23630,
-      "lazy_i128": 45850,
-      "lazy_wide_mul": 23800
+      "baseline": 9710,
+      "eager": 44340,
+      "eager_bounded_floor": 19170,
+      "eager_felt": 23400,
+      "eager_wide_mul": 22290,
+      "lazy_bounded_floor": 11960,
+      "lazy_felt": 15800,
+      "lazy_felt_floor": 12700,
+      "lazy_felt_generic_api": 15800,
+      "lazy_i128": 38020,
+      "lazy_wide_mul": 15970
     },
     "lazy_mul_mat": {
-      "baseline": 24340,
-      "dynamic_eager": 476420,
-      "dynamic_lazy_felt": 231370,
-      "eager": 321270,
-      "eager_bounded_floor": 94740,
-      "eager_wide_mul": 122820,
-      "lazy_bounded_floor": 50120,
-      "lazy_felt": 62810,
-      "lazy_felt_floor": 57420,
-      "lazy_i128": 264390,
-      "lazy_wide_mul": 65940
+      "baseline": 16510,
+      "dynamic_eager": 468590,
+      "dynamic_lazy_felt": 223540,
+      "eager": 313440,
+      "eager_bounded_floor": 86910,
+      "eager_wide_mul": 114990,
+      "lazy_bounded_floor": 42290,
+      "lazy_felt": 54980,
+      "lazy_felt_floor": 49590,
+      "lazy_i128": 256560,
+      "lazy_wide_mul": 58110
     },
     "lazy_mul_vec": {
-      "baseline": 25340,
-      "eager": 125670,
-      "eager_bounded_floor": 50160,
-      "eager_wide_mul": 59520,
-      "lazy_bounded_floor": 35420,
-      "lazy_felt": 39650,
-      "lazy_felt_floor": 38280,
-      "lazy_i128": 106910,
-      "lazy_wide_mul": 40560
+      "baseline": 17510,
+      "eager": 117840,
+      "eager_bounded_floor": 42330,
+      "eager_wide_mul": 51690,
+      "lazy_bounded_floor": 27590,
+      "lazy_felt": 31820,
+      "lazy_felt_floor": 30450,
+      "lazy_i128": 99080,
+      "lazy_wide_mul": 32730
     }
   },
   "layout::mat3_gen": {
     "mat3_add_felt": {
-      "array3x3": 26540,
-      "array9": 26540,
-      "baseline": 25440,
-      "cols": 26540,
-      "dyn_index": 58500,
-      "dyn_seq": 51310,
-      "fields": 26540
+      "array3x3": 18710,
+      "array9": 18710,
+      "baseline": 17610,
+      "cols": 18710,
+      "dyn_index": 50670,
+      "dyn_seq": 43480,
+      "fields": 18710
     },
     "mat3_add_fixed": {
-      "array3x3": 37330,
-      "array9": 37330,
-      "baseline": 26140,
-      "cols": 40190,
-      "dyn_index": 65860,
-      "dyn_seq": 58670,
-      "fields": 37330
+      "array3x3": 29500,
+      "array9": 29500,
+      "baseline": 18310,
+      "cols": 32360,
+      "dyn_index": 58030,
+      "dyn_seq": 50840,
+      "fields": 29500
     },
     "mat3_add_i64": {
-      "array3x3": 37330,
-      "array9": 37330,
-      "baseline": 26140,
-      "cols": 40190,
-      "dyn_index": 65160,
-      "dyn_seq": 57970,
-      "fields": 37330
+      "array3x3": 29500,
+      "array9": 29500,
+      "baseline": 18310,
+      "cols": 32360,
+      "dyn_index": 57330,
+      "dyn_seq": 50140,
+      "fields": 29500
     },
     "mat3_construct_felt": {
-      "array3x3": 25440,
-      "array9": 25440,
-      "baseline": 25440,
-      "cols": 25440,
-      "dyn_index": 35000,
-      "dyn_seq": 28010,
-      "fields": 25440
+      "array3x3": 17610,
+      "array9": 17610,
+      "baseline": 17610,
+      "cols": 17610,
+      "dyn_index": 27170,
+      "dyn_seq": 20180,
+      "fields": 17610
     },
     "mat3_construct_fixed": {
-      "array3x3": 26140,
-      "array9": 26140,
-      "baseline": 26140,
-      "cols": 26140,
-      "dyn_index": 35700,
-      "dyn_seq": 28710,
-      "fields": 26140
+      "array3x3": 18310,
+      "array9": 18310,
+      "baseline": 18310,
+      "cols": 18310,
+      "dyn_index": 27870,
+      "dyn_seq": 20880,
+      "fields": 18310
     },
     "mat3_construct_i64": {
-      "array3x3": 26140,
-      "array9": 26140,
-      "baseline": 26140,
-      "cols": 26140,
-      "dyn_index": 35700,
-      "dyn_seq": 28710,
-      "fields": 26140
+      "array3x3": 18310,
+      "array9": 18310,
+      "baseline": 18310,
+      "cols": 18310,
+      "dyn_index": 27870,
+      "dyn_seq": 20880,
+      "fields": 18310
     },
     "mat3_determinant_felt": {
-      "array3x3": 25440,
-      "array9": 25440,
-      "baseline": 24040,
-      "cols": 25440,
-      "dyn_index": 51740,
-      "dyn_seq": 28010,
-      "fields": 25440
+      "array3x3": 17610,
+      "array9": 17610,
+      "baseline": 16210,
+      "cols": 17610,
+      "dyn_index": 43910,
+      "dyn_seq": 20180,
+      "fields": 17610
     },
     "mat3_determinant_fixed": {
-      "array3x3": 123430,
-      "array9": 123430,
-      "baseline": 24140,
-      "cols": 125460,
-      "dyn_index": 146630,
-      "dyn_seq": 125100,
-      "fields": 123430
+      "array3x3": 115600,
+      "array9": 115600,
+      "baseline": 16310,
+      "cols": 117630,
+      "dyn_index": 138800,
+      "dyn_seq": 117270,
+      "fields": 115600
     },
     "mat3_determinant_i64": {
-      "array3x3": 37030,
-      "array9": 37030,
-      "baseline": 24140,
-      "cols": 39060,
-      "dyn_index": 61730,
-      "dyn_seq": 38700,
-      "fields": 37030
+      "array3x3": 29200,
+      "array9": 29200,
+      "baseline": 16310,
+      "cols": 31230,
+      "dyn_index": 53900,
+      "dyn_seq": 30870,
+      "fields": 29200
     },
     "mat3_inverse_felt": {
-      "array3x3": 36440,
-      "array9": 36440,
-      "baseline": 25440,
-      "cols": 36440,
-      "dyn_index": 206900,
-      "dyn_seq": 40680,
-      "fields": 36440
+      "array3x3": 28610,
+      "array9": 28610,
+      "baseline": 17610,
+      "cols": 28610,
+      "dyn_index": 199070,
+      "dyn_seq": 32850,
+      "fields": 28610
     },
     "mat3_inverse_fixed": {
-      "array3x3": 370970,
-      "array9": 370970,
-      "baseline": 26140,
-      "cols": 380190,
-      "dyn_index": 600350,
-      "dyn_seq": 375210,
-      "fields": 370970
+      "array3x3": 363140,
+      "array9": 363140,
+      "baseline": 18310,
+      "cols": 372360,
+      "dyn_index": 592520,
+      "dyn_seq": 367380,
+      "fields": 363140
     },
     "mat3_inverse_i64": {
-      "array3x3": 91500,
-      "array9": 91500,
-      "baseline": 26140,
-      "cols": 100720,
-      "dyn_index": 268450,
-      "dyn_seq": 95740,
-      "fields": 91500
+      "array3x3": 83670,
+      "array9": 83670,
+      "baseline": 18310,
+      "cols": 92890,
+      "dyn_index": 260620,
+      "dyn_seq": 87910,
+      "fields": 83670
     },
     "mat3_mul_mat_felt": {
-      "array3x3": 30140,
-      "array9": 30140,
-      "baseline": 25440,
-      "cols": 30140,
-      "dyn_index": 238050,
-      "dyn_seq": 190560,
-      "fields": 30140
+      "array3x3": 22310,
+      "array9": 22310,
+      "baseline": 17610,
+      "cols": 22310,
+      "dyn_index": 230220,
+      "dyn_seq": 182730,
+      "fields": 22310
     },
     "mat3_mul_mat_fixed": {
-      "array3x3": 323170,
-      "array9": 323170,
-      "baseline": 26140,
-      "cols": 355490,
-      "dyn_index": 524670,
-      "dyn_seq": 478020,
-      "fields": 323170
+      "array3x3": 315340,
+      "array9": 315340,
+      "baseline": 18310,
+      "cols": 347660,
+      "dyn_index": 516840,
+      "dyn_seq": 470190,
+      "fields": 315340
     },
     "mat3_mul_mat_i64": {
-      "array3x3": 63970,
-      "array9": 63970,
-      "baseline": 26140,
-      "cols": 81620,
-      "dyn_index": 270450,
-      "dyn_seq": 222960,
-      "fields": 63970
+      "array3x3": 56140,
+      "array9": 56140,
+      "baseline": 18310,
+      "cols": 73790,
+      "dyn_index": 262620,
+      "dyn_seq": 215130,
+      "fields": 56140
     },
     "mat3_mul_vec_felt": {
-      "array3x3": 25940,
-      "array9": 25940,
-      "baseline": 24440,
-      "cols": 25940,
-      "dyn_index": 110270,
-      "dyn_seq": 81390,
-      "fields": 25940
+      "array3x3": 18110,
+      "array9": 18110,
+      "baseline": 16610,
+      "cols": 18110,
+      "dyn_index": 102440,
+      "dyn_seq": 73560,
+      "fields": 18110
     },
     "mat3_mul_vec_fixed": {
-      "array3x3": 125170,
-      "array9": 125170,
-      "baseline": 24740,
-      "cols": 133290,
-      "dyn_index": 205930,
-      "dyn_seq": 177410,
-      "fields": 125170
+      "array3x3": 117340,
+      "array9": 117340,
+      "baseline": 16910,
+      "cols": 125460,
+      "dyn_index": 198100,
+      "dyn_seq": 169580,
+      "fields": 117340
     },
     "mat3_mul_vec_i64": {
-      "array3x3": 38770,
-      "array9": 38770,
-      "baseline": 24740,
-      "cols": 42000,
-      "dyn_index": 121070,
-      "dyn_seq": 92190,
-      "fields": 38770
+      "array3x3": 30940,
+      "array9": 30940,
+      "baseline": 16910,
+      "cols": 34170,
+      "dyn_index": 113240,
+      "dyn_seq": 84360,
+      "fields": 30940
     },
     "mat3_scale_felt": {
-      "array3x3": 26340,
-      "array9": 26340,
-      "baseline": 25440,
-      "cols": 26340,
-      "dyn_index": 53400,
-      "dyn_seq": 46210,
-      "fields": 26340
+      "array3x3": 18510,
+      "array9": 18510,
+      "baseline": 17610,
+      "cols": 18510,
+      "dyn_index": 45570,
+      "dyn_seq": 38380,
+      "fields": 18510
     },
     "mat3_scale_fixed": {
-      "array3x3": 122530,
-      "array9": 122530,
-      "baseline": 26140,
-      "cols": 125590,
-      "dyn_index": 145740,
-      "dyn_seq": 138550,
-      "fields": 122530
+      "array3x3": 114700,
+      "array9": 114700,
+      "baseline": 18310,
+      "cols": 117760,
+      "dyn_index": 137910,
+      "dyn_seq": 130720,
+      "fields": 114700
     },
     "mat3_scale_i64": {
-      "array3x3": 36330,
-      "array9": 36330,
-      "baseline": 26140,
-      "cols": 36330,
-      "dyn_index": 59860,
-      "dyn_seq": 52670,
-      "fields": 36330
+      "array3x3": 28500,
+      "array9": 28500,
+      "baseline": 18310,
+      "cols": 28500,
+      "dyn_index": 52030,
+      "dyn_seq": 44840,
+      "fields": 28500
     },
     "mat3_transpose_felt": {
-      "array3x3": 25440,
-      "array9": 25440,
-      "baseline": 25440,
-      "cols": 25440,
-      "dyn_index": 87620,
-      "dyn_seq": 75300,
-      "fields": 25440
+      "array3x3": 17610,
+      "array9": 17610,
+      "baseline": 17610,
+      "cols": 17610,
+      "dyn_index": 79790,
+      "dyn_seq": 67470,
+      "fields": 17610
     },
     "mat3_transpose_fixed": {
-      "array3x3": 26140,
-      "array9": 26140,
-      "baseline": 26140,
-      "cols": 26140,
-      "dyn_index": 89020,
-      "dyn_seq": 76700,
-      "fields": 26140
+      "array3x3": 18310,
+      "array9": 18310,
+      "baseline": 18310,
+      "cols": 18310,
+      "dyn_index": 81190,
+      "dyn_seq": 68870,
+      "fields": 18310
     },
     "mat3_transpose_i64": {
-      "array3x3": 26140,
-      "array9": 26140,
-      "baseline": 26140,
-      "cols": 26140,
-      "dyn_index": 88320,
-      "dyn_seq": 76000,
-      "fields": 26140
+      "array3x3": 18310,
+      "array9": 18310,
+      "baseline": 18310,
+      "cols": 18310,
+      "dyn_index": 80490,
+      "dyn_seq": 68170,
+      "fields": 18310
     }
   },
   "layout::matn_gen": {
     "matmul_n2_felt": {
-      "baseline": 18740,
-      "dyn_index": 93420,
-      "dyn_seq": 95770,
-      "static": 19940
+      "baseline": 10910,
+      "dyn_index": 85590,
+      "dyn_seq": 87940,
+      "static": 12110
     },
     "matmul_n2_fixed": {
-      "baseline": 19040,
-      "dyn_index": 177360,
-      "dyn_seq": 180070,
-      "static": 107250
+      "baseline": 11210,
+      "dyn_index": 169530,
+      "dyn_seq": 172240,
+      "static": 99420
     },
     "matmul_n2_i64": {
-      "baseline": 19040,
-      "dyn_index": 102200,
-      "dyn_seq": 104550,
-      "static": 30450
+      "baseline": 11210,
+      "dyn_index": 94370,
+      "dyn_seq": 96720,
+      "static": 22620
     },
     "matmul_n3_felt": {
-      "baseline": 23640,
-      "dyn_index": 228860,
-      "dyn_seq": 184660,
-      "dyn_static_kernel": 36650,
-      "static": 28240
+      "baseline": 15810,
+      "dyn_index": 221030,
+      "dyn_seq": 176830,
+      "dyn_static_kernel": 28820,
+      "static": 20410
     },
     "matmul_n3_fixed": {
-      "baseline": 24340,
-      "dyn_index": 515620,
-      "dyn_seq": 472040,
-      "dyn_static_kernel": 326980,
-      "static": 321070
+      "baseline": 16510,
+      "dyn_index": 507790,
+      "dyn_seq": 464210,
+      "dyn_static_kernel": 319150,
+      "static": 313240
     },
     "matmul_n3_i64": {
-      "baseline": 24340,
-      "dyn_index": 261160,
-      "dyn_seq": 216960,
-      "dyn_static_kernel": 67780,
-      "static": 61870
+      "baseline": 16510,
+      "dyn_index": 253330,
+      "dyn_seq": 209130,
+      "dyn_static_kernel": 59950,
+      "static": 54040
     },
     "matmul_n4_felt": {
-      "baseline": 30540,
-      "dyn_index": 476200,
-      "dyn_seq": 324370,
-      "static": 41940
+      "baseline": 22710,
+      "dyn_index": 468370,
+      "dyn_seq": 316540,
+      "static": 34110
     },
     "matmul_n4_fixed": {
-      "baseline": 31840,
-      "dyn_index": 1159260,
-      "dyn_seq": 1008530,
-      "static": 735650
+      "baseline": 24010,
+      "dyn_index": 1151430,
+      "dyn_seq": 1000700,
+      "static": 727820
     },
     "matmul_n4_i64": {
-      "baseline": 31840,
-      "dyn_index": 555780,
-      "dyn_seq": 403950,
-      "static": 121250
+      "baseline": 24010,
+      "dyn_index": 547950,
+      "dyn_seq": 396120,
+      "static": 113420
     },
     "matmul_n6_felt": {
-      "baseline": 50340,
-      "dyn_index": 1445340,
-      "dyn_seq": 803330,
-      "static": 97540
+      "baseline": 42510,
+      "dyn_index": 1437510,
+      "dyn_seq": 795500,
+      "static": 89710
     },
     "matmul_n6_fixed": {
-      "baseline": 53440,
-      "dyn_index": 3761840,
-      "dyn_seq": 3122610,
-      "static": 2481340
+      "baseline": 45610,
+      "dyn_index": 3754010,
+      "dyn_seq": 3114780,
+      "static": 2473510
     },
     "matmul_n6_i64": {
-      "baseline": 53440,
-      "dyn_index": 1723680,
-      "dyn_seq": 1081670,
-      "static": 407740
+      "baseline": 45610,
+      "dyn_index": 1715850,
+      "dyn_seq": 1073840,
+      "static": 399910
     }
   },
   "layout::passing::tests": {
     "pass_iso7": {
-      "baseline": 18040,
-      "box_x1": 19640,
-      "box_x3": 20840,
-      "snapshot_x1": 19040,
-      "snapshot_x3": 21040,
-      "value_x1": 19040,
-      "value_x3": 21040
+      "baseline": 10210,
+      "box_x1": 11810,
+      "box_x3": 13010,
+      "snapshot_x1": 11210,
+      "snapshot_x3": 13210,
+      "value_x1": 11210,
+      "value_x3": 13210
     },
     "pass_mat3": {
-      "baseline": 18840,
-      "box_x1": 20640,
-      "box_x3": 21840,
-      "snapshot_x1": 20040,
-      "snapshot_x3": 22440,
-      "value_x1": 20040,
-      "value_x3": 22440
+      "baseline": 11010,
+      "box_x1": 12810,
+      "box_x3": 14010,
+      "snapshot_x1": 12210,
+      "snapshot_x3": 14610,
+      "value_x1": 12210,
+      "value_x3": 14610
     },
     "pass_mat4": {
-      "baseline": 21640,
-      "box_x1": 24140,
-      "box_x3": 25340,
-      "snapshot_default_inline_x3": 22140,
-      "snapshot_x1": 23540,
-      "snapshot_x3": 27340,
-      "value_default_inline_x3": 21940,
-      "value_x1": 23540,
-      "value_x3": 27340
+      "baseline": 13810,
+      "box_x1": 16310,
+      "box_x3": 17510,
+      "snapshot_default_inline_x3": 14310,
+      "snapshot_x1": 15710,
+      "snapshot_x3": 19510,
+      "value_default_inline_x3": 14110,
+      "value_x1": 15710,
+      "value_x3": 19510
     },
     "pass_mulvec": {
-      "baseline": 20540,
-      "snapshot": 120870,
-      "value": 120870
+      "baseline": 12710,
+      "snapshot": 113040,
+      "value": 113040
     },
     "pass_vec3": {
-      "baseline": 16440,
-      "box_x1": 17640,
-      "box_x3": 18840,
-      "snapshot_x1": 17040,
-      "snapshot_x3": 18240,
-      "value_x1": 17040,
-      "value_x3": 18240
+      "baseline": 8610,
+      "box_x1": 9810,
+      "box_x3": 11010,
+      "snapshot_x1": 9210,
+      "snapshot_x3": 10410,
+      "value_x1": 9210,
+      "value_x3": 10410
     },
     "return_mat4": {
-      "baseline": 15540,
-      "boxed": 17940,
-      "value": 17340
+      "baseline": 7710,
+      "boxed": 10110,
+      "value": 9510
     }
   },
   "layout::vec3_gen": {
     "vec3_add_felt": {
-      "array": 18740,
-      "baseline": 18440,
-      "span_box": 23790,
-      "span_index": 27260,
-      "span_loop": 30560,
-      "struct": 18740,
-      "tuple": 18740
+      "array": 10910,
+      "baseline": 10610,
+      "span_box": 15960,
+      "span_index": 19430,
+      "span_loop": 22730,
+      "struct": 10910,
+      "tuple": 10910
     },
     "vec3_add_fixed": {
-      "array": 23290,
-      "baseline": 18740,
-      "span_box": 27040,
-      "span_index": 29910,
-      "span_loop": 33080,
-      "struct": 23290,
-      "tuple": 23290
+      "array": 15460,
+      "baseline": 10910,
+      "span_box": 19210,
+      "span_index": 22080,
+      "span_loop": 25250,
+      "struct": 15460,
+      "tuple": 15460
     },
     "vec3_add_i64": {
-      "array": 23290,
-      "baseline": 18740,
-      "span_box": 27040,
-      "span_index": 29910,
-      "span_loop": 32780,
-      "struct": 23290,
-      "tuple": 23290
+      "array": 15460,
+      "baseline": 10910,
+      "span_box": 19210,
+      "span_index": 22080,
+      "span_loop": 24950,
+      "struct": 15460,
+      "tuple": 15460
     },
     "vec3_chain_felt": {
-      "array": 20640,
-      "baseline": 18440,
-      "span_box": 32310,
-      "span_index": 47070,
-      "span_loop": 84430,
-      "struct": 20640,
-      "tuple": 20640
+      "array": 12810,
+      "baseline": 10610,
+      "span_box": 24480,
+      "span_index": 39240,
+      "span_loop": 76600,
+      "struct": 12810,
+      "tuple": 12810
     },
     "vec3_chain_fixed": {
-      "array": 162110,
-      "baseline": 18740,
-      "span_box": 169380,
-      "span_index": 180840,
-      "span_loop": 215310,
-      "struct": 162110,
-      "tuple": 162110
+      "array": 154280,
+      "baseline": 10910,
+      "span_box": 161550,
+      "span_index": 173010,
+      "span_loop": 207480,
+      "struct": 154280,
+      "tuple": 154280
     },
     "vec3_chain_i64": {
-      "array": 44780,
-      "baseline": 18740,
-      "span_box": 54680,
-      "span_index": 66140,
-      "span_loop": 101650,
-      "struct": 44780,
-      "tuple": 44780
+      "array": 36950,
+      "baseline": 10910,
+      "span_box": 46850,
+      "span_index": 58310,
+      "span_loop": 93820,
+      "struct": 36950,
+      "tuple": 36950
     },
     "vec3_construct_felt": {
-      "array": 18440,
-      "baseline": 18440,
-      "span_box": 20750,
-      "span_index": 20680,
-      "span_loop": 20680,
-      "struct": 18440,
-      "tuple": 18440
+      "array": 10610,
+      "baseline": 10610,
+      "span_box": 12920,
+      "span_index": 12850,
+      "span_loop": 12850,
+      "struct": 10610,
+      "tuple": 10610
     },
     "vec3_construct_fixed": {
-      "array": 18740,
-      "baseline": 18740,
-      "span_box": 21050,
-      "span_index": 20980,
-      "span_loop": 20980,
-      "struct": 18740,
-      "tuple": 18740
+      "array": 10910,
+      "baseline": 10910,
+      "span_box": 13220,
+      "span_index": 13150,
+      "span_loop": 13150,
+      "struct": 10910,
+      "tuple": 10910
     },
     "vec3_construct_i64": {
-      "array": 18740,
-      "baseline": 18740,
-      "span_box": 21050,
-      "span_index": 20980,
-      "span_loop": 20980,
-      "struct": 18740,
-      "tuple": 18740
+      "array": 10910,
+      "baseline": 10910,
+      "span_box": 13220,
+      "span_index": 13150,
+      "span_loop": 13150,
+      "struct": 10910,
+      "tuple": 10910
     },
     "vec3_cross_felt": {
-      "array": 19340,
-      "baseline": 18440,
-      "span_box": 24390,
-      "span_index": 27860,
-      "span_loop": 49150,
-      "struct": 19340,
-      "tuple": 19340
+      "array": 11510,
+      "baseline": 10610,
+      "span_box": 16560,
+      "span_index": 20030,
+      "span_loop": 41320,
+      "struct": 11510,
+      "tuple": 11510
     },
     "vec3_cross_fixed": {
-      "array": 85330,
-      "baseline": 18740,
-      "span_box": 89380,
-      "span_index": 92250,
-      "span_loop": 111890,
-      "struct": 85330,
-      "tuple": 85330
+      "array": 77500,
+      "baseline": 10910,
+      "span_box": 81550,
+      "span_index": 84420,
+      "span_loop": 104060,
+      "struct": 77500,
+      "tuple": 77500
     },
     "vec3_cross_i64": {
-      "array": 27730,
-      "baseline": 18740,
-      "span_box": 31480,
-      "span_index": 34350,
-      "span_loop": 55210,
-      "struct": 27730,
-      "tuple": 27730
+      "array": 19900,
+      "baseline": 10910,
+      "span_box": 23650,
+      "span_index": 26520,
+      "span_loop": 47380,
+      "struct": 19900,
+      "tuple": 19900
     },
     "vec3_dot_felt": {
-      "array": 18540,
-      "baseline": 18040,
-      "span_box": 21280,
-      "span_index": 24520,
-      "span_loop": 26250,
-      "struct": 18540,
-      "tuple": 18540
+      "array": 10710,
+      "baseline": 10210,
+      "span_box": 13450,
+      "span_index": 16690,
+      "span_loop": 18420,
+      "struct": 10710,
+      "tuple": 10710
     },
     "vec3_dot_fixed": {
-      "array": 52870,
-      "baseline": 18140,
-      "span_box": 54410,
-      "span_index": 56950,
-      "span_loop": 60470,
-      "struct": 52870,
-      "tuple": 52870
+      "array": 45040,
+      "baseline": 10310,
+      "span_box": 46580,
+      "span_index": 49120,
+      "span_loop": 52640,
+      "struct": 45040,
+      "tuple": 45040
     },
     "vec3_dot_i64": {
-      "array": 24070,
-      "baseline": 18140,
-      "span_box": 26210,
-      "span_index": 28750,
-      "span_loop": 32050,
-      "struct": 24070,
-      "tuple": 24070
+      "array": 16240,
+      "baseline": 10310,
+      "span_box": 18380,
+      "span_index": 20920,
+      "span_loop": 24220,
+      "struct": 16240,
+      "tuple": 16240
     },
     "vec3_equals_felt": {
-      "array": 21240,
-      "baseline": 20840,
-      "span_box": 23980,
-      "span_index": 27920,
-      "span_loop": 30220,
-      "struct": 21240,
-      "tuple": 21240
+      "array": 13410,
+      "baseline": 13010,
+      "span_box": 16150,
+      "span_index": 20090,
+      "span_loop": 22390,
+      "struct": 13410,
+      "tuple": 13410
     },
     "vec3_equals_fixed": {
-      "array": 21540,
-      "baseline": 20940,
-      "span_box": 24280,
-      "span_index": 28120,
-      "span_loop": 30520,
-      "struct": 21540,
-      "tuple": 21540
+      "array": 13710,
+      "baseline": 13110,
+      "span_box": 16450,
+      "span_index": 20290,
+      "span_loop": 22690,
+      "struct": 13710,
+      "tuple": 13710
     },
     "vec3_equals_i64": {
-      "array": 21540,
-      "baseline": 20940,
-      "span_box": 24280,
-      "span_index": 28120,
-      "span_loop": 30520,
-      "struct": 21540,
-      "tuple": 21540
+      "array": 13710,
+      "baseline": 13110,
+      "span_box": 16450,
+      "span_index": 20290,
+      "span_loop": 22690,
+      "struct": 13710,
+      "tuple": 13710
     },
     "vec3_neg_felt": {
-      "array": 18740,
-      "baseline": 18440,
-      "span_box": 22420,
-      "span_index": 23220,
-      "span_loop": 28260,
-      "struct": 18740,
-      "tuple": 18740
+      "array": 10910,
+      "baseline": 10610,
+      "span_box": 14590,
+      "span_index": 15390,
+      "span_loop": 20430,
+      "struct": 10910,
+      "tuple": 10910
     },
     "vec3_neg_fixed": {
-      "array": 19640,
-      "baseline": 18740,
-      "span_box": 23320,
-      "span_index": 24120,
-      "span_loop": 29160,
-      "struct": 19640,
-      "tuple": 19640
+      "array": 11810,
+      "baseline": 10910,
+      "span_box": 15490,
+      "span_index": 16290,
+      "span_loop": 21330,
+      "struct": 11810,
+      "tuple": 11810
     },
     "vec3_neg_i64": {
-      "array": 19640,
-      "baseline": 18740,
-      "span_box": 23320,
-      "span_index": 24120,
-      "span_loop": 29160,
-      "struct": 19640,
-      "tuple": 19640
+      "array": 11810,
+      "baseline": 10910,
+      "span_box": 15490,
+      "span_index": 16290,
+      "span_loop": 21330,
+      "struct": 11810,
+      "tuple": 11810
     },
     "vec3_scale_felt": {
-      "array": 18740,
-      "baseline": 18440,
-      "span_box": 22420,
-      "span_index": 23220,
-      "span_loop": 28660,
-      "struct": 18740,
-      "tuple": 18740
+      "array": 10910,
+      "baseline": 10610,
+      "span_box": 14590,
+      "span_index": 15390,
+      "span_loop": 20830,
+      "struct": 10910,
+      "tuple": 10910
     },
     "vec3_scale_fixed": {
-      "array": 51890,
-      "baseline": 18740,
-      "span_box": 54570,
-      "span_index": 56170,
-      "span_loop": 59720,
-      "struct": 51890,
-      "tuple": 51890
+      "array": 44060,
+      "baseline": 10910,
+      "span_box": 46740,
+      "span_index": 48340,
+      "span_loop": 51890,
+      "struct": 44060,
+      "tuple": 44060
     },
     "vec3_scale_i64": {
-      "array": 20960,
-      "baseline": 18740,
-      "span_box": 25970,
-      "span_index": 27570,
-      "span_loop": 30880,
-      "struct": 20960,
-      "tuple": 20960
+      "array": 13130,
+      "baseline": 10910,
+      "span_box": 18140,
+      "span_index": 19740,
+      "span_loop": 23050,
+      "struct": 13130,
+      "tuple": 13130
     },
     "vec3_sub_felt": {
-      "array": 18740,
-      "baseline": 18440,
-      "span_box": 23790,
-      "span_index": 27260,
-      "span_loop": 30560,
-      "struct": 18740,
-      "tuple": 18740
+      "array": 10910,
+      "baseline": 10610,
+      "span_box": 15960,
+      "span_index": 19430,
+      "span_loop": 22730,
+      "struct": 10910,
+      "tuple": 10910
     },
     "vec3_sub_fixed": {
-      "array": 23290,
-      "baseline": 18740,
-      "span_box": 27040,
-      "span_index": 29910,
-      "span_loop": 32780,
-      "struct": 23290,
-      "tuple": 23290
+      "array": 15460,
+      "baseline": 10910,
+      "span_box": 19210,
+      "span_index": 22080,
+      "span_loop": 24950,
+      "struct": 15460,
+      "tuple": 15460
     },
     "vec3_sub_i64": {
-      "array": 23290,
-      "baseline": 18740,
-      "span_box": 27040,
-      "span_index": 29910,
-      "span_loop": 32780,
-      "struct": 23290,
-      "tuple": 23290
+      "array": 15460,
+      "baseline": 10910,
+      "span_box": 19210,
+      "span_index": 22080,
+      "span_loop": 24950,
+      "struct": 15460,
+      "tuple": 15460
     }
   },
   "layout::vecn::tests": {
     "access_dyn_index": {
-      "array_span": 18210,
-      "baseline": 16640,
-      "span": 17910,
-      "struct_match": 17350
+      "array_span": 10380,
+      "baseline": 8810,
+      "span": 10080,
+      "struct_match": 9520
     },
     "access_y": {
-      "array_destructure": 16240,
-      "array_span_index": 17910,
-      "baseline": 16240,
-      "span_index": 17410,
-      "struct_field": 16240,
-      "tuple_destructure": 16240
+      "array_destructure": 8410,
+      "array_span_index": 10080,
+      "baseline": 8410,
+      "span_index": 9580,
+      "struct_field": 8410,
+      "tuple_destructure": 8410
     },
     "vec2_add_fixed": {
-      "baseline": 17040,
-      "span_loop": 27300,
-      "struct": 18420
+      "baseline": 9210,
+      "span_loop": 19470,
+      "struct": 10590
     },
     "vec2_dot_felt": {
-      "baseline": 16640,
-      "span_loop": 22580,
-      "struct": 16940
+      "baseline": 8810,
+      "span_loop": 14750,
+      "struct": 9110
     },
     "vec2_dot_fixed": {
-      "baseline": 16740,
-      "span_loop": 45920,
-      "struct": 40090
+      "baseline": 8910,
+      "span_loop": 38090,
+      "struct": 32260
     },
     "vec4_add_fixed": {
-      "array": 24730,
-      "baseline": 19240,
-      "span_loop": 37360,
-      "struct": 24730
+      "array": 16900,
+      "baseline": 11410,
+      "span_loop": 29530,
+      "struct": 16900
     },
     "vec4_dot_felt": {
-      "array": 18940,
-      "baseline": 18240,
-      "span_loop": 28520,
-      "struct": 18940
+      "array": 11110,
+      "baseline": 10410,
+      "span_loop": 20690,
+      "struct": 11110
     },
     "vec4_dot_fixed": {
-      "array": 64250,
-      "baseline": 18340,
-      "span_loop": 73620,
-      "struct": 64250
+      "array": 56420,
+      "baseline": 10510,
+      "span_loop": 65790,
+      "struct": 56420
     }
   }
 }

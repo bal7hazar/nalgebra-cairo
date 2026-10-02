@@ -33,8 +33,8 @@ crates of the static shapes ([`nalgebra_static_core`](../static_core/README.md),
 
 Depend on `nalgebra_dynamic` (and the crates it depends on) when you need matrices whose size is
 only known at run time. It depends on every method crate, so it is a dimension 5-6 build: no declared
-closure names it; its marginal cost over its direct dependencies (2.2 s / 0.33 GB on the
-runner of the release commit's CI, 10,442 lines, under the 5 s / 1 GB gate since the fixed-size edition moved to
+closure names it; its marginal cost over its direct dependencies (1.5 s / 0.26 GB on the
+runner, CI run 37019191074 of the Scarb 2.20.1 bump, 10,442 lines, under the 5 s / 1 GB gate since the fixed-size edition moved to
 `nalgebra_blocks`) is in `docs/PACKAGES.md`. For upstream's whole API at upstream's paths, depend on the facade
 `nalgebra`, which re-exports every sub-crate at the 0.1.0 paths (behind its feature `dynamic`, on by
 default: `nalgebra` always depends on this crate, the feature gates its re-exports only).

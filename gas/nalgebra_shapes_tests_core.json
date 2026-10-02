@@ -1,62 +1,62 @@
 {
   "nalgebra_shapes_tests_core::benches": {
     "matrix2x3_mul_matrix3x2": {
-      "baseline": 84320,
-      "mul_mat": 96870
+      "baseline": 76490,
+      "mul_mat": 89040
     },
     "matrix2x3_mul_vector3": {
-      "baseline": 65300,
-      "mul_mat": 70460
+      "baseline": 57470,
+      "mul_mat": 62630
     },
     "matrix2x3_tr_mul_matrix2x3": {
-      "alt_transpose_then_mul_mat": 123520,
-      "baseline": 102370,
-      "tr_mul": 123520
+      "alt_transpose_then_mul_mat": 115690,
+      "baseline": 94540,
+      "tr_mul": 115690
     },
     "matrix3x2_mul_matrix2x3": {
-      "baseline": 102370,
-      "mul_mat": 123520
+      "baseline": 94540,
+      "mul_mat": 115690
     },
     "matrix3x2_tr_mul_vector3": {
-      "alt_transpose_then_mul_mat": 70460,
-      "baseline": 65300,
-      "tr_mul": 70460
+      "alt_transpose_then_mul_mat": 62630,
+      "baseline": 57470,
+      "tr_mul": 62630
     },
     "matrix4_mul_matrix4": {
-      "baseline": 195840,
-      "mul_mat": 242150,
-      "operator": 242150
+      "baseline": 188010,
+      "mul_mat": 234320,
+      "operator": 234320
     },
     "matrix5_mul_matrix5": {
-      "baseline": 288810,
-      "mul_mat": 365140,
-      "operator": 365140
+      "baseline": 280980,
+      "mul_mat": 357310,
+      "operator": 357310
     },
     "matrix5_mul_vector5": {
-      "baseline": 147510,
-      "mul_mat": 167740
+      "baseline": 139680,
+      "mul_mat": 159910
     },
     "matrix5_tr_mul_vector5": {
-      "alt_transpose_then_mul_mat": 167740,
-      "baseline": 147510,
-      "tr_mul": 167740
+      "alt_transpose_then_mul_mat": 159910,
+      "baseline": 139680,
+      "tr_mul": 159910
     },
     "matrix6x4_mul_matrix4x6": {
-      "baseline": 323000,
-      "mul_mat": 420110
+      "baseline": 315170,
+      "mul_mat": 412280
     },
     "row_vector3_mul_vector3": {
-      "baseline": 51960,
-      "mul_mat": 54740
+      "baseline": 44130,
+      "mul_mat": 46910
     },
     "row_vector6_mul_vector6": {
-      "alt_nested": 75800,
-      "baseline": 71820,
-      "mul_mat": 75800
+      "alt_nested": 67970,
+      "baseline": 63990,
+      "mul_mat": 67970
     },
     "vector3_mul_row_vector3": {
-      "baseline": 82510,
-      "mul_mat": 100660
+      "baseline": 74680,
+      "mul_mat": 92830
     }
   }
 }

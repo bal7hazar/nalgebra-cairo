@@ -1,114 +1,114 @@
 {
   "nalgebra_tests_geometry_poses::isometry_matrix::benches": {
     "isometry_matrix2_div": {
-      "baseline": 20840,
-      "inverse_then_mul": 42440
+      "baseline": 13010,
+      "inverse_then_mul": 34610
     },
     "isometry_matrix2_inv_mul": {
-      "alt_inverse_then_mul": 42440,
-      "baseline": 20840,
-      "fused": 39360
+      "alt_inverse_then_mul": 34610,
+      "baseline": 13010,
+      "fused": 31530
     },
     "isometry_matrix2_inverse": {
-      "baseline": 19440,
-      "transpose": 24100
+      "baseline": 11610,
+      "transpose": 16270
     },
     "isometry_matrix2_mul": {
-      "baseline": 20840,
-      "composition": 38280
+      "baseline": 13010,
+      "composition": 30450
     },
     "isometry_matrix2_transform_point": {
-      "alt_rotate_then_add": 23380,
-      "baseline": 18040,
-      "fused": 22100
+      "alt_rotate_then_add": 15550,
+      "baseline": 10210,
+      "fused": 14270
     },
     "isometry_matrix3_inv_mul": {
-      "alt_inverse_then_mul": 97200,
-      "baseline": 56240,
-      "fused": 91980
+      "alt_inverse_then_mul": 89370,
+      "baseline": 48410,
+      "fused": 84150
     },
     "isometry_matrix3_inverse": {
-      "baseline": 38590,
-      "transpose": 46630
+      "baseline": 30760,
+      "transpose": 38800
     },
     "isometry_matrix3_look_at_rh": {
-      "baseline": 23440,
-      "rotation3_frame": 81100
+      "baseline": 15610,
+      "rotation3_frame": 73270
     },
     "isometry_matrix3_mul": {
-      "baseline": 56240,
-      "composition": 90360
+      "baseline": 48410,
+      "composition": 82530
     },
     "isometry_matrix3_transform_point": {
-      "alt_rotate_then_add": 43650,
-      "baseline": 34890,
-      "fused": 41730
+      "alt_rotate_then_add": 35820,
+      "baseline": 27060,
+      "fused": 33900
     }
   },
   "nalgebra_tests_geometry_poses::poses::benches": {
     "isometry2_div": {
-      "baseline": 19040,
-      "inverse_then_mul": 33750
+      "baseline": 11210,
+      "inverse_then_mul": 25920
     },
     "isometry2_rotation_wrt_point": {
-      "alt_rotate_then_add": 24380,
-      "baseline": 18240,
-      "fused": 23100
+      "alt_rotate_then_add": 16550,
+      "baseline": 10410,
+      "fused": 15270
     },
     "isometry3_div": {
-      "baseline": 21740,
-      "inverse_then_mul": 80430
+      "baseline": 13910,
+      "inverse_then_mul": 72600
     },
     "isometry3_look_at_lh": {
-      "baseline": 20940,
-      "unit_quaternion_frame": 120980
+      "baseline": 13110,
+      "unit_quaternion_frame": 113150
     },
     "isometry3_rotation_wrt_point": {
-      "alt_rotate_then_add": 45930,
-      "baseline": 20340,
-      "fused": 44610
+      "alt_rotate_then_add": 38100,
+      "baseline": 12510,
+      "fused": 36780
     },
     "quaternion_exp_real": {
-      "baseline": 18040,
-      "identity": 85960
+      "baseline": 10210,
+      "identity": 78130
     },
     "rotation3_mul_isometry": {
-      "baseline": 40590,
-      "matrix": 69980
+      "baseline": 32760,
+      "matrix": 62150
     },
     "similarity2_mul_isometry": {
-      "baseline": 19740,
-      "fused": 31020
+      "baseline": 11910,
+      "fused": 23190
     },
     "similarity3_div": {
-      "baseline": 22640,
-      "inverse_then_mul": 113280
+      "baseline": 14810,
+      "inverse_then_mul": 105450
     }
   },
   "nalgebra_tests_geometry_poses::similarity_matrix::benches": {
     "similarity_matrix2_inverse": {
-      "baseline": 20140,
-      "transpose_div": 34280
+      "baseline": 12310,
+      "transpose_div": 26450
     },
     "similarity_matrix2_mul": {
-      "baseline": 21740,
-      "composition": 44220
+      "baseline": 13910,
+      "composition": 36390
     },
     "similarity_matrix2_transform_point": {
-      "baseline": 18240,
-      "fused": 25660
+      "baseline": 10410,
+      "fused": 17830
     },
     "similarity_matrix3_inverse": {
-      "baseline": 39290,
-      "transpose_div": 59960
+      "baseline": 31460,
+      "transpose_div": 52130
     },
     "similarity_matrix3_mul": {
-      "baseline": 57140,
-      "composition": 97980
+      "baseline": 49310,
+      "composition": 90150
     },
     "similarity_matrix3_transform_point": {
-      "baseline": 35090,
-      "fused": 46970
+      "baseline": 27260,
+      "fused": 39140
     }
   }
 }

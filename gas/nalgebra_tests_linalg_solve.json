@@ -1,36 +1,36 @@
 {
   "nalgebra_tests_linalg_solve::solve::benches": {
     "matrix2_solve_vector2": {
-      "baseline": 17240,
-      "lower": 26150,
-      "lower_unchecked": 25750,
-      "tr_lower": 26150,
-      "upper": 26150,
-      "with_diag": 22240
+      "baseline": 9410,
+      "lower": 18320,
+      "lower_unchecked": 17920,
+      "tr_lower": 18320,
+      "upper": 18320,
+      "with_diag": 14410
     },
     "matrix3_solve_vector3": {
-      "baseline": 18440,
-      "lower": 33030,
-      "lower_unchecked": 32430,
-      "tr_lower": 32760,
-      "upper": 32760,
-      "with_diag": 28270
+      "baseline": 10610,
+      "lower": 25200,
+      "lower_unchecked": 24600,
+      "tr_lower": 24930,
+      "upper": 24930,
+      "with_diag": 20440
     },
     "matrix4_solve_vector4": {
-      "baseline": 20040,
-      "lower": 40240,
-      "lower_unchecked": 39440,
-      "tr_lower": 39970,
-      "upper": 39970,
-      "with_diag": 35170
+      "baseline": 12210,
+      "lower": 32410,
+      "lower_unchecked": 31610,
+      "tr_lower": 32140,
+      "upper": 32140,
+      "with_diag": 27340
     },
     "matrix6_solve_vector6": {
-      "baseline": 24440,
-      "lower": 56730,
-      "lower_unchecked": 55530,
-      "tr_lower": 56730,
-      "upper": 56730,
-      "with_diag": 50500
+      "baseline": 16610,
+      "lower": 48900,
+      "lower_unchecked": 47700,
+      "tr_lower": 48900,
+      "upper": 48900,
+      "with_diag": 42670
     }
   }
 }

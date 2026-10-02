@@ -1,89 +1,89 @@
 {
   "nalgebra_tests_linalg_exp::exp1": {
     "exp1": {
-      "baseline": 16650,
-      "scalar": 37890
+      "baseline": 8820,
+      "scalar": 30060
     }
   },
   "nalgebra_tests_linalg_exp::exp2": {
     "exp2": {
-      "baseline": 17250,
-      "pade3": 109240,
-      "pade5": 133390,
-      "pade7": 154100,
-      "pade7_squared2": 193060
+      "baseline": 9420,
+      "pade3": 101410,
+      "pade5": 125560,
+      "pade7": 146270,
+      "pade7_squared2": 185230
     }
   },
   "nalgebra_tests_linalg_exp::exp3": {
     "exp3": {
-      "baseline": 18250,
-      "pade3": 241510,
-      "pade5": 291860,
-      "pade7": 328160,
-      "pade7_squared2": 400920
+      "baseline": 10420,
+      "pade3": 233680,
+      "pade5": 284030,
+      "pade7": 320330,
+      "pade7_squared2": 393090
     }
   },
   "nalgebra_tests_linalg_exp::exp4": {
     "exp4": {
-      "baseline": 19650,
-      "pade3": 436890,
-      "pade5": 526140,
-      "pade7": 587200,
-      "pade7_squared2": 710740
+      "baseline": 17190,
+      "pade3": 429060,
+      "pade5": 518310,
+      "pade7": 579370,
+      "pade7_squared2": 702910
     }
   },
   "nalgebra_tests_linalg_exp::exp5": {
     "exp5": {
-      "baseline": 21450,
-      "pade3": 693860,
-      "pade5": 835810,
-      "pade7": 931390,
-      "pade7_squared2": 1125590
+      "baseline": 20790,
+      "pade3": 686030,
+      "pade5": 827980,
+      "pade7": 923560,
+      "pade7_squared2": 1117760
     }
   },
   "nalgebra_tests_linalg_exp::exp6": {
     "exp6": {
-      "baseline": 23650,
-      "pade3": 1077090,
-      "pade5": 1286740,
-      "pade7": 1427800,
-      "pade7_squared2": 1714940
+      "baseline": 25190,
+      "pade3": 1069260,
+      "pade5": 1278910,
+      "pade7": 1419970,
+      "pade7_squared2": 1707110
     }
   },
   "nalgebra_tests_linalg_exp::pow1": {
     "pow1": {
-      "baseline": 17050,
-      "by_squaring": 32930
+      "baseline": 9220,
+      "by_squaring": 25100
     }
   },
   "nalgebra_tests_linalg_exp::pow2": {
     "pow2": {
-      "baseline": 17650,
-      "by_squaring": 63170
+      "baseline": 9820,
+      "by_squaring": 55340
     }
   },
   "nalgebra_tests_linalg_exp::pow3": {
     "pow3": {
-      "baseline": 18650,
-      "by_squaring": 107700
+      "baseline": 10820,
+      "by_squaring": 99870
     }
   },
   "nalgebra_tests_linalg_exp::pow4": {
     "pow4": {
-      "baseline": 20050,
-      "by_squaring": 178790
+      "baseline": 17690,
+      "by_squaring": 176430
     }
   },
   "nalgebra_tests_linalg_exp::pow5": {
     "pow5": {
-      "baseline": 21850,
-      "by_squaring": 276460
+      "baseline": 21290,
+      "by_squaring": 275900
     }
   },
   "nalgebra_tests_linalg_exp::pow6": {
     "pow6": {
-      "baseline": 24050,
-      "by_squaring": 414130
+      "baseline": 25690,
+      "by_squaring": 415770
     }
   }
 }

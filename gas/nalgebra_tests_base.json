@@ -1,1297 +1,1297 @@
 {
   "nalgebra_tests_base::matrix2::tests": {
     "matrix2_abs": {
-      "baseline": 18040,
-      "componentwise": 21810
+      "baseline": 10210,
+      "componentwise": 13980
     },
     "matrix2_abs_diff_eq": {
-      "all_compared": 24150,
-      "baseline": 17550
+      "all_compared": 16320,
+      "baseline": 9720
     },
     "matrix2_add": {
-      "assign": 22300,
-      "baseline": 19040,
-      "operator": 22300
+      "assign": 14470,
+      "baseline": 11210,
+      "operator": 14470
     },
     "matrix2_adjugate": {
-      "baseline": 18040
+      "baseline": 10210
     },
     "matrix2_column": {
-      "baseline": 17040
+      "baseline": 9210
     },
     "matrix2_component_mul": {
-      "baseline": 19040,
-      "products": 25660
+      "baseline": 11210,
+      "products": 17830
     },
     "matrix2_determinant": {
-      "baseline": 16540,
-      "fused": 18320
+      "baseline": 8710,
+      "fused": 10490
     },
     "matrix2_diagonal": {
-      "baseline": 17040,
-      "struct": 17240
+      "baseline": 9210,
+      "struct": 9410
     },
     "matrix2_from_columns": {
-      "baseline": 18240,
-      "struct": 18640
+      "baseline": 10410,
+      "struct": 10810
     },
     "matrix2_from_diagonal": {
-      "baseline": 17640,
-      "struct": 17440
+      "baseline": 9810,
+      "struct": 9610
     },
     "matrix2_from_diagonal_element": {
-      "baseline": 17440,
-      "struct": 17240
+      "baseline": 9610,
+      "struct": 9410
     },
     "matrix2_from_outer": {
-      "baseline": 18240
+      "baseline": 10410
     },
     "matrix2_from_rows": {
-      "baseline": 18240,
-      "struct": 18640
+      "baseline": 10410,
+      "struct": 10810
     },
     "matrix2_identity": {
-      "baseline": 17040,
-      "const": 16840
+      "baseline": 9210,
+      "const": 9010
     },
     "matrix2_is_identity": {
-      "all_compared": 22750,
-      "baseline": 16550
+      "all_compared": 14920,
+      "baseline": 8720
     },
     "matrix2_mul": {
-      "assign": 28990,
-      "baseline": 19040,
-      "fused": 28990
+      "assign": 21160,
+      "baseline": 11210,
+      "fused": 21160
     },
     "matrix2_mul_vec": {
-      "baseline": 17640,
-      "fused": 21300
+      "baseline": 9810,
+      "fused": 13470
     },
     "matrix2_neg": {
-      "baseline": 18040,
-      "operator": 19240
+      "baseline": 10210,
+      "operator": 11410
     },
     "matrix2_new": {
-      "baseline": 18040,
-      "struct": 18040
+      "baseline": 10210,
+      "struct": 10210
     },
     "matrix2_norm": {
-      "baseline": 16540,
-      "fused": 18960
+      "baseline": 8710,
+      "fused": 11130
     },
     "matrix2_norm_squared": {
-      "baseline": 16540,
-      "fused": 18720
+      "baseline": 8710,
+      "fused": 10890
     },
     "matrix2_scale": {
-      "baseline": 18440,
-      "products": 25060
+      "baseline": 10610,
+      "products": 17230
     },
     "matrix2_sub": {
-      "assign": 22300,
-      "baseline": 19040,
-      "operator": 22300
+      "assign": 14470,
+      "baseline": 11210,
+      "operator": 14470
     },
     "matrix2_tr_mul": {
-      "baseline": 19040,
-      "fused": 28990,
-      "transpose_mul": 28990
+      "baseline": 11210,
+      "fused": 21160,
+      "transpose_mul": 21160
     },
     "matrix2_tr_mul_vec": {
-      "baseline": 17640,
-      "fused": 21300,
-      "transpose_mul_vec": 21300
+      "baseline": 9810,
+      "fused": 13470,
+      "transpose_mul_vec": 13470
     },
     "matrix2_trace": {
-      "baseline": 16540,
-      "sum": 17180
+      "baseline": 8710,
+      "sum": 9350
     },
     "matrix2_transpose": {
-      "baseline": 18040,
-      "struct": 18440
+      "baseline": 10210,
+      "struct": 10610
     },
     "matrix2_try_inverse": {
-      "baseline": 18040,
-      "prescaled_det_ge_half": 52010,
-      "prescaled_norm_gt_one": 52010,
-      "prescaled_small": 52010
+      "baseline": 10210,
+      "prescaled_det_ge_half": 44180,
+      "prescaled_norm_gt_one": 44180,
+      "prescaled_small": 44180
     },
     "matrix2_try_inverse_singular": {
-      "baseline": 16550,
-      "none": 50820
+      "baseline": 8720,
+      "none": 42990
     },
     "matrix2_zeros": {
-      "baseline": 17040,
-      "const": 16240
+      "baseline": 9210,
+      "const": 8410
     }
   },
   "nalgebra_tests_base::matrix3::tests": {
     "matrix3_abs": {
-      "baseline": 21540,
-      "componentwise": 30890
+      "baseline": 13710,
+      "componentwise": 23060
     },
     "matrix3_abs_diff_eq": {
-      "all_compared": 33400,
-      "baseline": 19550
+      "all_compared": 25570,
+      "baseline": 11720
     },
     "matrix3_add": {
-      "assign": 31000,
-      "baseline": 23540,
-      "operator": 31000
+      "assign": 23170,
+      "baseline": 15710,
+      "operator": 23170
     },
     "matrix3_adjugate": {
-      "baseline": 21540
+      "baseline": 13710
     },
     "matrix3_column": {
-      "baseline": 18540
+      "baseline": 10710
     },
     "matrix3_component_mul": {
-      "baseline": 23540,
-      "products": 38560
+      "baseline": 15710,
+      "products": 30730
     },
     "matrix3_cross_matrix": {
-      "baseline": 20340,
-      "struct": 20940
+      "baseline": 12510,
+      "struct": 13110
     },
     "matrix3_cross_matrix_mul": {
-      "baseline": 22340,
-      "materialised": 45090
+      "baseline": 14510,
+      "materialised": 37260
     },
     "matrix3_determinant": {
-      "alt_triple_products": 32930,
-      "baseline": 17540,
-      "cofactors": 27890
+      "alt_triple_products": 25100,
+      "baseline": 9710,
+      "cofactors": 20060
     },
     "matrix3_diagonal": {
-      "baseline": 18540,
-      "struct": 18840
+      "baseline": 10710,
+      "struct": 11010
     },
     "matrix3_from_columns": {
-      "baseline": 21940,
-      "struct": 22840
+      "baseline": 14110,
+      "struct": 15010
     },
     "matrix3_from_diagonal": {
-      "baseline": 20340,
-      "struct": 19440
+      "baseline": 12510,
+      "struct": 11610
     },
     "matrix3_from_diagonal_element": {
-      "baseline": 19940,
-      "struct": 19040
+      "baseline": 12110,
+      "struct": 11210
     },
     "matrix3_from_outer": {
-      "baseline": 21140
+      "baseline": 13310
     },
     "matrix3_from_rows": {
-      "baseline": 21940,
-      "struct": 22840
+      "baseline": 14110,
+      "struct": 15010
     },
     "matrix3_identity": {
-      "baseline": 19540,
-      "const": 18640
+      "baseline": 11710,
+      "const": 10810
     },
     "matrix3_is_identity": {
-      "all_compared": 30500,
-      "baseline": 17550
+      "all_compared": 22670,
+      "baseline": 9720
     },
     "matrix3_mul": {
-      "assign": 45690,
-      "baseline": 23540,
-      "fused": 45690
+      "assign": 37860,
+      "baseline": 15710,
+      "fused": 37860
     },
     "matrix3_mul_vec": {
-      "baseline": 19340,
-      "fused": 25480
+      "baseline": 11510,
+      "fused": 17650
     },
     "matrix3_neg": {
-      "baseline": 21540,
-      "operator": 24240
+      "baseline": 13710,
+      "operator": 16410
     },
     "matrix3_new": {
-      "baseline": 21540,
-      "struct": 21540
+      "baseline": 13710,
+      "struct": 13710
     },
     "matrix3_norm": {
-      "baseline": 17540,
-      "wide": 23080
+      "baseline": 9710,
+      "wide": 15250
     },
     "matrix3_norm_squared": {
-      "baseline": 17540,
-      "wide": 20720
+      "baseline": 9710,
+      "wide": 12890
     },
     "matrix3_row": {
-      "baseline": 18540
+      "baseline": 10710
     },
     "matrix3_scale": {
-      "baseline": 21940,
-      "products": 36960
+      "baseline": 14110,
+      "products": 29130
     },
     "matrix3_sub": {
-      "assign": 31000,
-      "baseline": 23540,
-      "operator": 31000
+      "assign": 23170,
+      "baseline": 15710,
+      "operator": 23170
     },
     "matrix3_tr_mul": {
-      "baseline": 23540,
-      "fused": 45690,
-      "transpose_mul": 45690
+      "baseline": 15710,
+      "fused": 37860,
+      "transpose_mul": 37860
     },
     "matrix3_tr_mul_vec": {
-      "baseline": 19340,
-      "fused": 25480,
-      "transpose_mul_vec": 25480
+      "baseline": 11510,
+      "fused": 17650,
+      "transpose_mul_vec": 17650
     },
     "matrix3_trace": {
-      "baseline": 17540,
-      "sum": 18920
+      "baseline": 9710,
+      "sum": 11090
     },
     "matrix3_transpose": {
-      "baseline": 21540,
-      "struct": 22440
+      "baseline": 13710,
+      "struct": 14610
     },
     "matrix3_try_inverse": {
-      "baseline": 21540,
-      "prescaled_det_ge_half": 109900,
-      "prescaled_norm_gt_one": 109900,
-      "prescaled_small": 109900
+      "baseline": 13710,
+      "prescaled_det_ge_half": 102070,
+      "prescaled_norm_gt_one": 102070,
+      "prescaled_small": 102070
     },
     "matrix3_try_inverse_singular": {
-      "baseline": 17550,
-      "none": 106210
+      "baseline": 9720,
+      "none": 98380
     },
     "matrix3_zeros": {
-      "baseline": 19540,
-      "const": 17740
+      "baseline": 11710,
+      "const": 9910
     }
   },
   "nalgebra_tests_base::matrix4::tests": {
     "matrix4_abs": {
-      "baseline": 28440,
-      "componentwise": 44630
+      "baseline": 20610,
+      "componentwise": 36800
     },
     "matrix4_abs_diff_eq": {
-      "all_compared": 46350,
-      "baseline": 22350
+      "all_compared": 38520,
+      "baseline": 14520
     },
     "matrix4_add": {
-      "assign": 45180,
-      "baseline": 31840,
-      "operator": 45180
+      "assign": 37350,
+      "baseline": 24010,
+      "operator": 37350
     },
     "matrix4_adjugate": {
-      "baseline": 28440
+      "baseline": 20610
     },
     "matrix4_column": {
-      "baseline": 20440
+      "baseline": 12610
     },
     "matrix4_component_mul": {
-      "baseline": 31840,
-      "products": 58620
+      "baseline": 24010,
+      "products": 50790
     },
     "matrix4_determinant": {
-      "alt_row_cofactors": 66150,
-      "baseline": 18940,
-      "minors2x2": 47510
+      "alt_row_cofactors": 58320,
+      "baseline": 11110,
+      "minors2x2": 39680
     },
     "matrix4_diagonal": {
-      "baseline": 20440,
-      "struct": 20840
+      "baseline": 12610,
+      "struct": 13010
     },
     "matrix4_from_columns": {
-      "baseline": 29040,
-      "struct": 30640
+      "baseline": 21210,
+      "struct": 22810
     },
     "matrix4_from_diagonal": {
-      "baseline": 26040,
-      "struct": 24440
+      "baseline": 18210,
+      "struct": 16610
     },
     "matrix4_from_diagonal_element": {
-      "baseline": 25440,
-      "struct": 23840
+      "baseline": 17610,
+      "struct": 16010
     },
     "matrix4_from_outer": {
-      "baseline": 27040
+      "baseline": 19210
     },
     "matrix4_from_rows": {
-      "baseline": 29040,
-      "struct": 30640
+      "baseline": 21210,
+      "struct": 22810
     },
     "matrix4_identity": {
-      "baseline": 25040,
-      "const": 26640
+      "baseline": 17210,
+      "const": 18810
     },
     "matrix4_is_identity": {
-      "all_compared": 41350,
-      "baseline": 18950
+      "all_compared": 33520,
+      "baseline": 11120
     },
     "matrix4_mul": {
-      "assign": 74750,
-      "baseline": 31840,
-      "fused": 74750
+      "assign": 66920,
+      "baseline": 24010,
+      "fused": 66920
     },
     "matrix4_mul_vec": {
-      "baseline": 21440,
-      "fused": 30460
+      "baseline": 13610,
+      "fused": 22630
     },
     "matrix4_neg": {
-      "baseline": 28440,
-      "operator": 33240
+      "baseline": 20610,
+      "operator": 25410
     },
     "matrix4_new": {
-      "baseline": 28440,
-      "struct": 30040
+      "baseline": 20610,
+      "struct": 22210
     },
     "matrix4_norm": {
-      "baseline": 18940,
-      "wide": 25880
+      "baseline": 11110,
+      "wide": 18050
     },
     "matrix4_norm_squared": {
-      "baseline": 18940,
-      "wide": 23520
+      "baseline": 11110,
+      "wide": 15690
     },
     "matrix4_row": {
-      "baseline": 20440
+      "baseline": 12610
     },
     "matrix4_scale": {
-      "baseline": 28840,
-      "products": 55620
+      "baseline": 21010,
+      "products": 47790
     },
     "matrix4_sub": {
-      "assign": 45180,
-      "baseline": 31840,
-      "operator": 45180
+      "assign": 37350,
+      "baseline": 24010,
+      "operator": 37350
     },
     "matrix4_tr_mul": {
-      "baseline": 31840,
-      "fused": 74750,
-      "transpose_mul": 74750
+      "baseline": 24010,
+      "fused": 66920,
+      "transpose_mul": 66920
     },
     "matrix4_tr_mul_vec": {
-      "baseline": 21440,
-      "fused": 30460,
-      "transpose_mul_vec": 30460
+      "baseline": 13610,
+      "fused": 22630,
+      "transpose_mul_vec": 22630
     },
     "matrix4_trace": {
-      "baseline": 18940,
-      "sum": 21060
+      "baseline": 11110,
+      "sum": 13230
     },
     "matrix4_transpose": {
-      "baseline": 28440,
-      "struct": 30040
+      "baseline": 20610,
+      "struct": 22210
     },
     "matrix4_try_inverse": {
-      "baseline": 28440,
-      "prescaled_det_ge_half": 225260,
-      "prescaled_norm_gt_one": 225260,
-      "prescaled_small": 225260
+      "baseline": 20610,
+      "prescaled_det_ge_half": 217430,
+      "prescaled_norm_gt_one": 217430,
+      "prescaled_small": 217430
     },
     "matrix4_try_inverse_singular": {
-      "baseline": 18950,
-      "none": 214470
+      "baseline": 11120,
+      "none": 206640
     },
     "matrix4_zeros": {
-      "baseline": 25040,
-      "const": 19840
+      "baseline": 17210,
+      "const": 12010
     }
   },
   "nalgebra_tests_base::matrix6::benches": {
     "matrix6_abs": {
-      "baseline": 44440,
-      "componentwise": 86460
+      "baseline": 36610,
+      "componentwise": 78630
     },
     "matrix6_abs_diff_eq": {
-      "all_compared": 78030,
-      "alt_blocks": 85340,
-      "alt_blocks_first_differs": 44390,
-      "alt_not_inlined": 103260,
-      "alt_not_inlined_first_differs": 103460,
-      "baseline": 29940,
-      "first_differs": 31690
+      "all_compared": 70200,
+      "alt_blocks": 77510,
+      "alt_blocks_first_differs": 36560,
+      "alt_not_inlined": 95430,
+      "alt_not_inlined_first_differs": 95630,
+      "baseline": 22110,
+      "first_differs": 23860
     },
     "matrix6_add": {
-      "assign": 81980,
-      "baseline": 51840,
-      "operator": 81980
+      "assign": 74150,
+      "baseline": 44010,
+      "operator": 74150
     },
     "matrix6_diagonal": {
-      "baseline": 25440,
-      "blocks": 26040
+      "baseline": 17610,
+      "blocks": 18210
     },
     "matrix6_fill": {
-      "baseline": 41240,
-      "from_diagonal_element": 44840,
-      "identity": 44840,
-      "zeros": 44840
+      "baseline": 33410,
+      "from_diagonal_element": 37010,
+      "identity": 37010,
+      "zeros": 37010
     },
     "matrix6_from_diagonal": {
-      "baseline": 38440,
-      "blocks": 33640
+      "baseline": 30610,
+      "blocks": 25810
     },
     "matrix6_is_identity": {
-      "all_compared": 70630,
-      "alt_blocks": 74340,
-      "alt_blocks_first_differs": 36090,
-      "alt_not_inlined": 92260,
-      "alt_not_inlined_first_differs": 92460,
-      "baseline": 22540,
-      "first_differs": 25740
+      "all_compared": 62800,
+      "alt_blocks": 66510,
+      "alt_blocks_first_differs": 28260,
+      "alt_not_inlined": 84430,
+      "alt_not_inlined_first_differs": 84630,
+      "baseline": 14710,
+      "first_differs": 17910
     },
     "matrix6_mul": {
-      "alt_blocks": 272210,
-      "assign": 160750,
-      "baseline": 51840,
-      "fused": 160750
+      "alt_blocks": 264380,
+      "assign": 152920,
+      "baseline": 44010,
+      "fused": 152920
     },
     "matrix6_mul_vec": {
-      "alt_blocks": 62370,
-      "baseline": 26840,
-      "fused": 48750
+      "alt_blocks": 54540,
+      "baseline": 19010,
+      "fused": 40920
     },
     "matrix6_neg": {
-      "baseline": 44440,
-      "operator": 55240
+      "baseline": 36610,
+      "operator": 47410
     },
     "matrix6_new": {
-      "baseline": 37440,
-      "new": 41040
+      "baseline": 29610,
+      "new": 33210
     },
     "matrix6_scale": {
-      "baseline": 44840,
-      "blocks": 105220
+      "baseline": 37010,
+      "blocks": 97390
     },
     "matrix6_sub": {
-      "assign": 81980,
-      "baseline": 51840,
-      "operator": 81980
+      "assign": 74150,
+      "baseline": 44010,
+      "operator": 74150
     },
     "matrix6_tr_mul": {
-      "alt_transpose_then_mul": 160750,
-      "baseline": 51840,
-      "fused": 160750
+      "alt_transpose_then_mul": 152920,
+      "baseline": 44010,
+      "fused": 152920
     },
     "matrix6_tr_mul_vec": {
-      "alt_transpose_then_mul_vec": 48750,
-      "baseline": 26840,
-      "fused": 48750
+      "alt_transpose_then_mul_vec": 40920,
+      "baseline": 19010,
+      "fused": 40920
     },
     "matrix6_trace": {
-      "baseline": 22940,
-      "blocks": 26540
+      "baseline": 15110,
+      "blocks": 18710
     },
     "matrix6_transpose": {
-      "baseline": 44440,
-      "blocks": 48040
+      "baseline": 36610,
+      "blocks": 40210
     }
   },
   "nalgebra_tests_base::point2::benches": {
     "point2_abs_diff_eq": {
-      "baseline": 17150,
-      "outside": 20180,
-      "within": 21680
+      "baseline": 9320,
+      "outside": 12350,
+      "within": 13850
     },
     "point2_add_vector": {
-      "add_assign": 18820,
-      "add_vector": 18820,
-      "baseline": 17240
+      "add_assign": 10990,
+      "add_vector": 10990,
+      "baseline": 9410
     },
     "point2_center": {
-      "alt_add_div": 24860,
-      "alt_add_scale": 21980,
-      "alt_lerp": 21100,
-      "baseline": 17240
+      "alt_add_div": 17030,
+      "alt_add_scale": 14150,
+      "alt_lerp": 13270,
+      "baseline": 9410
     },
     "point2_coords": {
-      "baseline": 16640,
-      "coords": 16840,
-      "into_vector": 16840
+      "baseline": 8810,
+      "coords": 9010,
+      "into_vector": 9010
     },
     "point2_distance": {
-      "baseline": 16740
+      "baseline": 8910
     },
     "point2_distance_squared": {
-      "alt_unfused": 22220,
-      "baseline": 16740
+      "alt_unfused": 14390,
+      "baseline": 8910
     },
     "point2_from": {
-      "array": 18040,
-      "baseline": 17840,
-      "from_coordinates": 18040,
-      "vector": 18040
+      "array": 10210,
+      "baseline": 10010,
+      "from_coordinates": 10210,
+      "vector": 10210
     },
     "point2_from_homogeneous": {
-      "alt_recip": 23550,
-      "baseline": 17140,
-      "from_homogeneous": 23970
+      "alt_recip": 15720,
+      "baseline": 9310,
+      "from_homogeneous": 16140
     },
     "point2_inf_sup": {
-      "baseline": 17240,
-      "inf": 19090,
-      "inf_sup": 22040,
-      "sup": 19090
+      "baseline": 9410,
+      "inf": 11260,
+      "inf_sup": 14210,
+      "sup": 11260
     },
     "point2_into": {
-      "array": 16140,
-      "baseline": 16140
+      "array": 8310,
+      "baseline": 8310
     },
     "point2_lerp": {
-      "baseline": 17640,
-      "lerp": 21500
+      "baseline": 9810,
+      "lerp": 13670
     },
     "point2_neg": {
-      "baseline": 16640,
-      "neg": 17240
+      "baseline": 8810,
+      "neg": 9410
     },
     "point2_new": {
-      "baseline": 16840,
-      "new": 17040
+      "baseline": 9010,
+      "new": 9210
     },
     "point2_origin": {
-      "baseline": 16840,
-      "origin": 17040
+      "baseline": 9010,
+      "origin": 9210
     },
     "point2_scale": {
-      "baseline": 17040,
-      "mul_assign": 20300,
-      "scale": 20300
+      "baseline": 9210,
+      "mul_assign": 12470,
+      "scale": 12470
     },
     "point2_sub_point": {
-      "baseline": 17240,
-      "sub_point": 18820
+      "baseline": 9410,
+      "sub_point": 10990
     },
     "point2_sub_vector": {
-      "baseline": 17240,
-      "sub_assign": 18820,
-      "sub_vector": 18820
+      "baseline": 9410,
+      "sub_assign": 10990,
+      "sub_vector": 10990
     },
     "point2_to_homogeneous": {
-      "baseline": 17140,
-      "to_homogeneous": 17440
+      "baseline": 9310,
+      "to_homogeneous": 9610
     },
     "point2_unscale": {
-      "baseline": 17040,
-      "div_assign": 23670,
-      "unscale": 23670
+      "baseline": 9210,
+      "div_assign": 15840,
+      "unscale": 15840
     }
   },
   "nalgebra_tests_base::point3::benches": {
     "point3_abs_diff_eq": {
-      "baseline": 17550,
-      "outside": 20710,
-      "within": 24090
+      "baseline": 9720,
+      "outside": 12880,
+      "within": 16260
     },
     "point3_add_vector": {
-      "add_assign": 20560,
-      "add_vector": 20560,
-      "baseline": 18140
+      "add_assign": 12730,
+      "add_vector": 12730,
+      "baseline": 10310
     },
     "point3_center": {
-      "alt_add_div": 29350,
-      "alt_add_scale": 25300,
-      "alt_lerp": 23980,
-      "baseline": 18140
+      "alt_add_div": 21520,
+      "alt_add_scale": 17470,
+      "alt_lerp": 16150,
+      "baseline": 10310
     },
     "point3_coords": {
-      "baseline": 17340,
-      "coords": 17640,
-      "into_vector": 17640
+      "baseline": 9510,
+      "coords": 9810,
+      "into_vector": 9810
     },
     "point3_distance": {
-      "baseline": 17140
+      "baseline": 9310
     },
     "point3_distance_squared": {
-      "alt_unfused": 25780,
-      "baseline": 17140
+      "alt_unfused": 17950,
+      "baseline": 9310
     },
     "point3_from": {
-      "array": 19240,
-      "baseline": 18940,
-      "from_coordinates": 19240,
-      "vector": 19240
+      "array": 11410,
+      "baseline": 11110,
+      "from_coordinates": 11410,
+      "vector": 11410
     },
     "point3_from_homogeneous": {
-      "alt_recip": 25930,
-      "baseline": 17840,
-      "from_homogeneous": 27550
+      "alt_recip": 18100,
+      "baseline": 10010,
+      "from_homogeneous": 19720
     },
     "point3_inf_sup": {
-      "baseline": 18140,
-      "inf": 20970,
-      "inf_sup": 25400,
-      "sup": 20970
+      "baseline": 10310,
+      "inf": 13140,
+      "inf_sup": 17570,
+      "sup": 13140
     },
     "point3_into": {
-      "array": 16340,
-      "baseline": 16340
+      "array": 8510,
+      "baseline": 8510
     },
     "point3_lerp": {
-      "baseline": 18540,
-      "lerp": 24380
+      "baseline": 10710,
+      "lerp": 16550
     },
     "point3_neg": {
-      "baseline": 17340,
-      "neg": 18240
+      "baseline": 9510,
+      "neg": 10410
     },
     "point3_new": {
-      "baseline": 17740,
-      "new": 18040
+      "baseline": 9910,
+      "new": 10210
     },
     "point3_origin": {
-      "baseline": 17440,
-      "origin": 17740
+      "baseline": 9610,
+      "origin": 9910
     },
     "point3_scale": {
-      "baseline": 17740,
-      "mul_assign": 22680,
-      "scale": 22680
+      "baseline": 9910,
+      "mul_assign": 14850,
+      "scale": 14850
     },
     "point3_sub_point": {
-      "baseline": 18140,
-      "sub_point": 20560
+      "baseline": 10310,
+      "sub_point": 12730
     },
     "point3_sub_vector": {
-      "baseline": 18140,
-      "sub_assign": 20560,
-      "sub_vector": 20560
+      "baseline": 10310,
+      "sub_assign": 12730,
+      "sub_vector": 12730
     },
     "point3_to_homogeneous": {
-      "baseline": 17840,
-      "to_homogeneous": 18240
+      "baseline": 10010,
+      "to_homogeneous": 10410
     },
     "point3_unscale": {
-      "baseline": 17740,
-      "div_assign": 27250,
-      "unscale": 27250
+      "baseline": 9910,
+      "div_assign": 19420,
+      "unscale": 19420
     },
     "point3_xy": {
-      "baseline": 16840,
-      "xy": 17040
+      "baseline": 9010,
+      "xy": 9210
     }
   },
   "nalgebra_tests_base::unit::benches": {
     "unit2_axes": {
-      "baseline": 16840,
-      "x_axis": 17040,
-      "y_axis": 17040
+      "baseline": 9010,
+      "x_axis": 9210,
+      "y_axis": 9210
     },
     "unit2_dot": {
-      "baseline": 17340,
-      "dot": 19120
+      "baseline": 9510,
+      "dot": 11290
     },
     "unit2_new_normalize": {
-      "baseline": 17440,
-      "new_normalize": 26190
+      "baseline": 9610,
+      "new_normalize": 18360
     },
     "unit2_renormalize_fast": {
-      "baseline": 16640,
-      "fma_factor": 23560
+      "baseline": 8810,
+      "fma_factor": 15730
     },
     "unit3_abs_diff_eq": {
-      "baseline": 17550,
-      "outside": 20710,
-      "within": 24090
+      "baseline": 9720,
+      "outside": 12880,
+      "within": 16260
     },
     "unit3_axes": {
-      "baseline": 17440,
-      "x_axis": 17740,
-      "y_axis": 17740,
-      "z_axis": 17740
+      "baseline": 9610,
+      "x_axis": 9910,
+      "y_axis": 9910,
+      "z_axis": 9910
     },
     "unit3_dot": {
-      "alt_unfused": 24360,
-      "baseline": 17940,
-      "dot": 19920
+      "alt_unfused": 16530,
+      "baseline": 10110,
+      "dot": 12090
     },
     "unit3_into_inner": {
-      "baseline": 17340,
-      "into_inner": 17340
+      "baseline": 9510,
+      "into_inner": 9510
     },
     "unit3_neg": {
-      "baseline": 17340,
-      "neg": 18240
+      "baseline": 9510,
+      "neg": 10410
     },
     "unit3_new_normalize": {
-      "baseline": 18140,
-      "new_and_get": 30270,
-      "new_normalize": 29970,
-      "try_new": 30640,
-      "try_new_and_get": 31440
+      "baseline": 10310,
+      "new_and_get": 22440,
+      "new_normalize": 22140,
+      "try_new": 22810,
+      "try_new_and_get": 23610
     },
     "unit3_new_unchecked": {
-      "baseline": 17340,
-      "new_unchecked": 17340
+      "baseline": 9510,
+      "new_unchecked": 9510
     },
     "unit3_renormalize": {
-      "baseline": 17340,
-      "renormalize": 29170
+      "baseline": 9510,
+      "renormalize": 21340
     },
     "unit3_renormalize_fast": {
-      "alt_exact": 29170,
-      "alt_lerp": 29080,
-      "alt_mul_add": 27580,
-      "alt_scale": 27820,
-      "alt_upstream": 26980,
-      "baseline": 17340,
-      "fma_factor": 26140
+      "alt_exact": 21340,
+      "alt_lerp": 21250,
+      "alt_mul_add": 19750,
+      "alt_scale": 19990,
+      "alt_upstream": 19150,
+      "baseline": 9510,
+      "fma_factor": 18310
     },
     "unit3_scale": {
-      "baseline": 17740,
-      "scale": 22680
+      "baseline": 9910,
+      "scale": 14850
     },
     "unit4_axes": {
-      "baseline": 18040,
-      "w_axis": 18440,
-      "x_axis": 18440,
-      "y_axis": 18440,
-      "z_axis": 18440
+      "baseline": 10210,
+      "w_axis": 10610,
+      "x_axis": 10610,
+      "y_axis": 10610,
+      "z_axis": 10610
     },
     "unit4_dot": {
-      "baseline": 18540,
-      "dot": 20720
+      "baseline": 10710,
+      "dot": 12890
     },
     "unit4_new_normalize": {
-      "baseline": 18840,
-      "new_normalize": 33620
+      "baseline": 11010,
+      "new_normalize": 25790
     },
     "unit4_renormalize_fast": {
-      "baseline": 18040,
-      "fma_factor": 28720
+      "baseline": 10210,
+      "fma_factor": 20890
     }
   },
   "nalgebra_tests_base::vector2::benches": {
     "vector2_abs": {
-      "abs": 18610,
-      "baseline": 16640
+      "abs": 10780,
+      "baseline": 8810
     },
     "vector2_abs_diff_eq": {
-      "abs_diff_eq": 19940,
-      "baseline": 16750
+      "abs_diff_eq": 12110,
+      "baseline": 8920
     },
     "vector2_add": {
-      "add": 18820,
-      "add_assign": 18820,
-      "baseline": 17240
+      "add": 10990,
+      "add_assign": 10990,
+      "baseline": 9410
     },
     "vector2_angle": {
-      "alt_acos": 55530,
-      "baseline": 16740,
-      "half_angle": 77940
+      "alt_acos": 47700,
+      "baseline": 8910,
+      "half_angle": 70110
     },
     "vector2_cap_magnitude": {
-      "alt_normalize": 29920,
-      "baseline": 17040,
-      "capped": 26520,
-      "unchanged": 20710
+      "alt_normalize": 22090,
+      "baseline": 9210,
+      "capped": 18690,
+      "unchanged": 12880
     },
     "vector2_component_div": {
-      "baseline": 17240,
-      "component_div": 24140
+      "baseline": 9410,
+      "component_div": 16310
     },
     "vector2_component_mul": {
-      "baseline": 17240,
-      "component_mul": 20500
+      "baseline": 9410,
+      "component_mul": 12670
     },
     "vector2_dot": {
-      "alt_unfused": 20740,
-      "baseline": 16740,
-      "fused": 18520
+      "alt_unfused": 12910,
+      "baseline": 8910,
+      "fused": 10690
     },
     "vector2_fill": {
-      "baseline": 16840,
-      "from_element": 17040,
-      "repeat": 17040,
-      "x": 17040,
-      "y": 17040,
-      "zeros": 17040
+      "baseline": 9010,
+      "from_element": 9210,
+      "repeat": 9210,
+      "x": 9210,
+      "y": 9210,
+      "zeros": 9210
     },
     "vector2_from": {
-      "array": 17440,
-      "baseline": 17240
+      "array": 9610,
+      "baseline": 9410
     },
     "vector2_imin": {
-      "baseline": 16140,
-      "iamax": 18780,
-      "iamin": 18790,
-      "imax": 16920,
-      "imin": 16910
+      "baseline": 8310,
+      "iamax": 10950,
+      "iamin": 10960,
+      "imax": 9090,
+      "imin": 9080
     },
     "vector2_inf": {
-      "baseline": 17240,
-      "inf": 19090,
-      "sup": 19090
+      "baseline": 9410,
+      "inf": 11260,
+      "sup": 11260
     },
     "vector2_inf_sup": {
-      "baseline": 18240,
-      "inf_sup": 22040
+      "baseline": 10410,
+      "inf_sup": 14210
     },
     "vector2_into": {
-      "array": 16140,
-      "baseline": 16140
+      "array": 8310,
+      "baseline": 8310
     },
     "vector2_is_zero": {
-      "baseline": 16240,
-      "is_zero": 16540
+      "baseline": 8410,
+      "is_zero": 8710
     },
     "vector2_lerp": {
-      "baseline": 17640,
-      "lerp": 21500
+      "baseline": 9810,
+      "lerp": 13670
     },
     "vector2_metric_distance": {
-      "baseline": 16740,
-      "metric_distance": 20240
+      "baseline": 8910,
+      "metric_distance": 12410
     },
     "vector2_min": {
-      "amax": 18780,
-      "amin": 18780,
-      "baseline": 16140,
-      "max": 16920,
-      "min": 16920
+      "amax": 10950,
+      "amin": 10950,
+      "baseline": 8310,
+      "max": 9090,
+      "min": 9090
     },
     "vector2_neg": {
-      "baseline": 16640,
-      "neg": 17240
+      "baseline": 8810,
+      "neg": 9410
     },
     "vector2_new": {
-      "baseline": 16840,
-      "new": 17040
+      "baseline": 9010,
+      "new": 9210
     },
     "vector2_norm": {
-      "baseline": 16140,
-      "magnitude": 18160,
-      "norm": 18160
+      "baseline": 8310,
+      "magnitude": 10330,
+      "norm": 10330
     },
     "vector2_norm_squared": {
-      "baseline": 16140,
-      "magnitude_squared": 17920,
-      "norm_squared": 17920
+      "baseline": 8310,
+      "magnitude_squared": 10090,
+      "norm_squared": 10090
     },
     "vector2_normalize": {
-      "alt_recip": 24670,
-      "alt_recip_sqrt": 26350,
-      "baseline": 16640,
-      "unscale": 25390
+      "alt_recip": 16840,
+      "alt_recip_sqrt": 18520,
+      "baseline": 8810,
+      "unscale": 17560
     },
     "vector2_perp": {
-      "baseline": 16740,
-      "perp": 18520
+      "baseline": 8910,
+      "perp": 10690
     },
     "vector2_push": {
-      "baseline": 17540,
-      "push": 17840,
-      "to_homogeneous": 17540
+      "baseline": 9710,
+      "push": 10010,
+      "to_homogeneous": 9710
     },
     "vector2_scale": {
-      "baseline": 17040,
-      "mul_assign": 20300,
-      "scale": 20300
+      "baseline": 9210,
+      "mul_assign": 12470,
+      "scale": 12470
     },
     "vector2_sub": {
-      "baseline": 17240,
-      "sub": 18820,
-      "sub_assign": 18820
+      "baseline": 9410,
+      "sub": 10990,
+      "sub_assign": 10990
     },
     "vector2_sum": {
-      "baseline": 16140,
-      "sum": 16780
+      "baseline": 8310,
+      "sum": 8950
     },
     "vector2_try_normalize": {
-      "baseline": 17340,
-      "none": 20570,
-      "some": 26760
+      "baseline": 9510,
+      "none": 12740,
+      "some": 18930
     },
     "vector2_unscale": {
-      "alt_recip": 22950,
-      "baseline": 17040,
-      "div_assign": 23670,
-      "unscale": 23670
+      "alt_recip": 15120,
+      "baseline": 9210,
+      "div_assign": 15840,
+      "unscale": 15840
     }
   },
   "nalgebra_tests_base::vector3::benches": {
     "vector3_abs": {
-      "abs": 20210,
-      "baseline": 17340
+      "abs": 12380,
+      "baseline": 9510
     },
     "vector3_abs_diff_eq": {
-      "abs_diff_eq": 21680,
-      "baseline": 17150
+      "abs_diff_eq": 13850,
+      "baseline": 9320
     },
     "vector3_add": {
-      "add": 20560,
-      "add_assign": 20560,
-      "baseline": 18140
+      "add": 12730,
+      "add_assign": 12730,
+      "baseline": 10310
     },
     "vector3_angle": {
-      "alt_acos": 56260,
-      "baseline": 17140,
-      "half_angle": 88880
+      "alt_acos": 48430,
+      "baseline": 9310,
+      "half_angle": 81050
     },
     "vector3_cap_magnitude": {
-      "alt_normalize": 35380,
-      "baseline": 17740,
-      "capped": 29200,
-      "unchanged": 21910
+      "alt_normalize": 27550,
+      "baseline": 9910,
+      "capped": 21370,
+      "unchanged": 14080
     },
     "vector3_component_div": {
-      "baseline": 18140,
-      "component_div": 28270
+      "baseline": 10310,
+      "component_div": 20440
     },
     "vector3_component_mul": {
-      "baseline": 18140,
-      "component_mul": 23080
+      "baseline": 10310,
+      "component_mul": 15250
     },
     "vector3_cross": {
-      "baseline": 18140,
-      "cross": 23680
+      "baseline": 10310,
+      "cross": 15850
     },
     "vector3_dot": {
-      "alt_unfused": 23560,
-      "baseline": 17140,
-      "fused": 19120
+      "alt_unfused": 15730,
+      "baseline": 9310,
+      "fused": 11290
     },
     "vector3_fill": {
-      "baseline": 17440,
-      "from_element": 17740,
-      "repeat": 17740,
-      "x": 17740,
-      "y": 17740,
-      "z": 17740,
-      "zeros": 17740
+      "baseline": 9610,
+      "from_element": 9910,
+      "repeat": 9910,
+      "x": 9910,
+      "y": 9910,
+      "z": 9910,
+      "zeros": 9910
     },
     "vector3_from": {
-      "array": 18440,
-      "baseline": 18140
+      "array": 10610,
+      "baseline": 10310
     },
     "vector3_imin": {
-      "baseline": 16340,
-      "iamax": 20750,
-      "iamin": 20770,
-      "imax": 18090,
-      "imin": 18090
+      "baseline": 8510,
+      "iamax": 12920,
+      "iamin": 12940,
+      "imax": 10260,
+      "imin": 10260
     },
     "vector3_inf": {
-      "baseline": 18140,
-      "inf": 20970,
-      "sup": 20970
+      "baseline": 10310,
+      "inf": 13140,
+      "sup": 13140
     },
     "vector3_inf_sup": {
-      "baseline": 19640,
-      "inf_sup": 25400
+      "baseline": 11810,
+      "inf_sup": 17570
     },
     "vector3_into": {
-      "array": 16340,
-      "baseline": 16340
+      "array": 8510,
+      "baseline": 8510
     },
     "vector3_is_zero": {
-      "baseline": 16440,
-      "is_zero": 16740
+      "baseline": 8610,
+      "is_zero": 8910
     },
     "vector3_lerp": {
-      "baseline": 18540,
-      "lerp": 24380
+      "baseline": 10710,
+      "lerp": 16550
     },
     "vector3_metric_distance": {
-      "baseline": 17140,
-      "metric_distance": 21580
+      "baseline": 9310,
+      "metric_distance": 13750
     },
     "vector3_min": {
-      "amax": 20650,
-      "amin": 20650,
-      "baseline": 16340,
-      "max": 17990,
-      "min": 17990
+      "amax": 12820,
+      "amin": 12820,
+      "baseline": 8510,
+      "max": 10160,
+      "min": 10160
     },
     "vector3_neg": {
-      "baseline": 17340,
-      "neg": 18240
+      "baseline": 9510,
+      "neg": 10410
     },
     "vector3_new": {
-      "baseline": 17740,
-      "new": 18040
+      "baseline": 9910,
+      "new": 10210
     },
     "vector3_norm": {
-      "baseline": 16340,
-      "magnitude": 18560,
-      "norm": 18560
+      "baseline": 8510,
+      "magnitude": 10730,
+      "norm": 10730
     },
     "vector3_norm_squared": {
-      "baseline": 16340,
-      "magnitude_squared": 18320,
-      "norm_squared": 18320
+      "baseline": 8510,
+      "magnitude_squared": 10490,
+      "norm_squared": 10490
     },
     "vector3_normalize": {
-      "alt_per_element_div": 29520,
-      "alt_recip": 27250,
-      "alt_recip_sqrt": 28930,
-      "baseline": 17340,
-      "unscale": 29170
+      "alt_per_element_div": 21690,
+      "alt_recip": 19420,
+      "alt_recip_sqrt": 21100,
+      "baseline": 9510,
+      "unscale": 21340
     },
     "vector3_orthonormal_basis_zneg": {
-      "alt_upstream": 36780,
-      "baseline": 18840
+      "alt_upstream": 28950,
+      "baseline": 11010
     },
     "vector3_orthonormal_basis_zpos": {
-      "alt_upstream": 37050,
-      "baseline": 18840
+      "alt_upstream": 29220,
+      "baseline": 11010
     },
     "vector3_push": {
-      "baseline": 18240,
-      "push": 18640,
-      "to_homogeneous": 18340
+      "baseline": 10410,
+      "push": 10810,
+      "to_homogeneous": 10510
     },
     "vector3_scale": {
-      "baseline": 17740,
-      "mul_assign": 22680,
-      "scale": 22680
+      "baseline": 9910,
+      "mul_assign": 14850,
+      "scale": 14850
     },
     "vector3_sub": {
-      "baseline": 18140,
-      "sub": 20560,
-      "sub_assign": 20560
+      "baseline": 10310,
+      "sub": 12730,
+      "sub_assign": 12730
     },
     "vector3_sum": {
-      "baseline": 16340,
-      "sum": 17720
+      "baseline": 8510,
+      "sum": 9890
     },
     "vector3_try_normalize": {
-      "baseline": 18040,
-      "none": 21540,
-      "some": 30540
+      "baseline": 10210,
+      "none": 13710,
+      "some": 22710
     },
     "vector3_unscale": {
-      "alt_recip": 25330,
-      "baseline": 17740,
-      "div_assign": 27250,
-      "unscale": 27250
+      "alt_recip": 17500,
+      "baseline": 9910,
+      "div_assign": 19420,
+      "unscale": 19420
     },
     "vector3_xy": {
-      "baseline": 16840,
-      "xy": 17040
+      "baseline": 9010,
+      "xy": 9210
     }
   },
   "nalgebra_tests_base::vector4::benches": {
     "vector4_abs": {
-      "abs": 22080,
-      "baseline": 18040
+      "abs": 14250,
+      "baseline": 10210
     },
     "vector4_abs_diff_eq": {
-      "abs_diff_eq": 23420,
-      "baseline": 17550
+      "abs_diff_eq": 15590,
+      "baseline": 9720
     },
     "vector4_add": {
-      "add": 22300,
-      "add_assign": 22300,
-      "baseline": 19040
+      "add": 14470,
+      "add_assign": 14470,
+      "baseline": 11210
     },
     "vector4_angle": {
-      "alt_acos": 57530,
-      "baseline": 17540,
-      "half_angle": 99520
+      "alt_acos": 49700,
+      "baseline": 9710,
+      "half_angle": 91690
     },
     "vector4_cap_magnitude": {
-      "alt_normalize": 40980,
-      "baseline": 18440,
-      "capped": 31880,
-      "unchanged": 23110
+      "alt_normalize": 33150,
+      "baseline": 10610,
+      "capped": 24050,
+      "unchanged": 15280
     },
     "vector4_component_div": {
-      "baseline": 19040,
-      "component_div": 32670
+      "baseline": 11210,
+      "component_div": 24840
     },
     "vector4_component_mul": {
-      "baseline": 19040,
-      "component_mul": 25660
+      "baseline": 11210,
+      "component_mul": 17830
     },
     "vector4_dot": {
-      "alt_unfused": 26380,
-      "baseline": 17540,
-      "fused": 19720
+      "alt_unfused": 18550,
+      "baseline": 9710,
+      "fused": 11890
     },
     "vector4_fill": {
-      "baseline": 18040,
-      "from_element": 18440,
-      "repeat": 18440,
-      "w": 18440,
-      "x": 18440,
-      "y": 18440,
-      "z": 18440,
-      "zeros": 18440
+      "baseline": 10210,
+      "from_element": 10610,
+      "repeat": 10610,
+      "w": 10610,
+      "x": 10610,
+      "y": 10610,
+      "z": 10610,
+      "zeros": 10610
     },
     "vector4_from": {
-      "array": 19440,
-      "baseline": 19040
+      "array": 11610,
+      "baseline": 11210
     },
     "vector4_imin": {
-      "baseline": 16540,
-      "iamax": 23000,
-      "iamin": 23000,
-      "imax": 19270,
-      "imin": 19260
+      "baseline": 8710,
+      "iamax": 15170,
+      "iamin": 15170,
+      "imax": 11440,
+      "imin": 11430
     },
     "vector4_inf": {
-      "baseline": 19040,
-      "inf": 22840,
-      "sup": 22840
+      "baseline": 11210,
+      "inf": 15010,
+      "sup": 15010
     },
     "vector4_inf_sup": {
-      "baseline": 21040,
-      "inf_sup": 28740
+      "baseline": 13210,
+      "inf_sup": 20910
     },
     "vector4_into": {
-      "array": 16540,
-      "baseline": 16540
+      "array": 8710,
+      "baseline": 8710
     },
     "vector4_is_zero": {
-      "baseline": 16640,
-      "is_zero": 16940
+      "baseline": 8810,
+      "is_zero": 9110
     },
     "vector4_lerp": {
-      "baseline": 19440,
-      "lerp": 27260
+      "baseline": 11610,
+      "lerp": 19430
     },
     "vector4_metric_distance": {
-      "baseline": 17540,
-      "metric_distance": 22920
+      "baseline": 9710,
+      "metric_distance": 15090
     },
     "vector4_min": {
-      "amax": 22800,
-      "amin": 22800,
-      "baseline": 16540,
-      "max": 19070,
-      "min": 19060
+      "amax": 14970,
+      "amin": 14970,
+      "baseline": 8710,
+      "max": 11240,
+      "min": 11230
     },
     "vector4_neg": {
-      "baseline": 18040,
-      "neg": 19240
+      "baseline": 10210,
+      "neg": 11410
     },
     "vector4_new": {
-      "baseline": 18640,
-      "new": 19040
+      "baseline": 10810,
+      "new": 11210
     },
     "vector4_norm": {
-      "baseline": 16540,
-      "magnitude": 18960,
-      "norm": 18960
+      "baseline": 8710,
+      "magnitude": 11130,
+      "norm": 11130
     },
     "vector4_norm_squared": {
-      "baseline": 16540,
-      "magnitude_squared": 18720,
-      "norm_squared": 18720
+      "baseline": 8710,
+      "magnitude_squared": 10890,
+      "norm_squared": 10890
     },
     "vector4_normalize": {
-      "alt_recip": 29830,
-      "alt_recip_sqrt": 31510,
-      "baseline": 18040,
-      "unscale": 33090
+      "alt_recip": 22000,
+      "alt_recip_sqrt": 23680,
+      "baseline": 10210,
+      "unscale": 25260
     },
     "vector4_scale": {
-      "baseline": 18440,
-      "mul_assign": 25060,
-      "scale": 25060
+      "baseline": 10610,
+      "mul_assign": 17230,
+      "scale": 17230
     },
     "vector4_sub": {
-      "baseline": 19040,
-      "sub": 22300,
-      "sub_assign": 22300
+      "baseline": 11210,
+      "sub": 14470,
+      "sub_assign": 14470
     },
     "vector4_sum": {
-      "baseline": 16540,
-      "sum": 18660
+      "baseline": 8710,
+      "sum": 10830
     },
     "vector4_try_normalize": {
-      "baseline": 18740,
-      "none": 22490,
-      "some": 34460
+      "baseline": 10910,
+      "none": 14660,
+      "some": 26630
     },
     "vector4_unscale": {
-      "alt_recip": 27710,
-      "baseline": 18440,
-      "div_assign": 30970,
-      "unscale": 30970
+      "alt_recip": 19880,
+      "baseline": 10610,
+      "div_assign": 23140,
+      "unscale": 23140
     },
     "vector4_xy": {
-      "baseline": 17040,
-      "xy": 17240
+      "baseline": 9210,
+      "xy": 9410
     },
     "vector4_xyz": {
-      "baseline": 17540,
-      "xyz": 17840
+      "baseline": 9710,
+      "xyz": 10010
     }
   },
   "nalgebra_tests_base::vector6::benches": {
     "vector6_abs": {
-      "baseline": 19440,
-      "componentwise": 25280
+      "baseline": 11610,
+      "componentwise": 17450
     },
     "vector6_abs_diff_eq": {
-      "all_compared": 25520,
-      "baseline": 17940
+      "all_compared": 17690,
+      "baseline": 10110
     },
     "vector6_add": {
-      "assign": 25780,
-      "baseline": 20840,
-      "operator": 25780
+      "assign": 17950,
+      "baseline": 13010,
+      "operator": 17950
     },
     "vector6_component_mul": {
-      "baseline": 20840,
-      "component_mul": 30820
+      "baseline": 13010,
+      "component_mul": 22990
     },
     "vector6_dot": {
-      "alt_two_sum_prod3": 23140,
-      "alt_unfused": 32020,
-      "baseline": 18340,
-      "wide": 20920
+      "alt_two_sum_prod3": 15310,
+      "alt_unfused": 24190,
+      "baseline": 10510,
+      "wide": 13090
     },
     "vector6_fill": {
-      "baseline": 19240,
-      "zeros": 19840
+      "baseline": 11410,
+      "zeros": 12010
     },
     "vector6_inf_sup": {
-      "baseline": 20840,
-      "inf": 26590,
-      "sup": 26590
+      "baseline": 13010,
+      "inf": 18760,
+      "sup": 18760
     },
     "vector6_lerp": {
-      "baseline": 21240,
-      "fused": 33020
+      "baseline": 13410,
+      "fused": 25190
     },
     "vector6_neg": {
-      "baseline": 19440,
-      "operator": 21240
+      "baseline": 11610,
+      "operator": 13410
     },
     "vector6_new": {
-      "baseline": 18440,
-      "new": 19040
+      "baseline": 10610,
+      "new": 11210
     },
     "vector6_norm": {
-      "alt_via_norm_squared": 21440,
-      "baseline": 16940,
-      "wide_sqrt": 21880
+      "alt_via_norm_squared": 13610,
+      "baseline": 9110,
+      "wide_sqrt": 14050
     },
     "vector6_norm_squared": {
-      "alt_two_blocks": 21740,
-      "baseline": 16940,
-      "wide": 19520
+      "alt_two_blocks": 13910,
+      "baseline": 9110,
+      "wide": 11690
     },
     "vector6_normalize": {
-      "baseline": 19440,
-      "unscale_by_norm": 42510
+      "baseline": 11610,
+      "unscale_by_norm": 34680
     },
     "vector6_scale": {
-      "baseline": 19840,
-      "mul_assign": 29820,
-      "scale": 29820
+      "baseline": 12010,
+      "mul_assign": 21990,
+      "scale": 21990
     },
     "vector6_sub": {
-      "assign": 25780,
-      "baseline": 20840,
-      "operator": 25780
+      "assign": 17950,
+      "baseline": 13010,
+      "operator": 17950
     },
     "vector6_sum": {
-      "baseline": 16940,
-      "sum": 20540
+      "baseline": 9110,
+      "sum": 12710
     },
     "vector6_unscale": {
-      "baseline": 19840,
-      "div_assign": 37870,
-      "unscale": 37870
+      "baseline": 12010,
+      "div_assign": 30040,
+      "unscale": 30040
     }
   }
 }

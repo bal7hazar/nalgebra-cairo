@@ -1,152 +1,152 @@
 {
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr1x2": {
     "col_piv_qr1x2_new": {
-      "baseline": 17520,
-      "householder": 24900
+      "baseline": 9690,
+      "householder": 17070
     },
     "col_piv_qr1x2_q": {
-      "baseline": 25200,
-      "reflections": 31920
+      "baseline": 17370,
+      "reflections": 24090
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr1x3": {
     "col_piv_qr1x3_new": {
-      "baseline": 17720,
-      "householder": 28040
+      "baseline": 9890,
+      "householder": 20210
     },
     "col_piv_qr1x3_q": {
-      "baseline": 28740,
-      "reflections": 35660
+      "baseline": 20910,
+      "reflections": 27830
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr1x4": {
     "col_piv_qr1x4_new": {
-      "baseline": 17920,
-      "householder": 31280
+      "baseline": 10090,
+      "householder": 23450
     },
     "col_piv_qr1x4_q": {
-      "baseline": 32380,
-      "reflections": 39500
+      "baseline": 24550,
+      "reflections": 31670
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr1x5": {
     "col_piv_qr1x5_new": {
-      "baseline": 18120,
-      "householder": 34620
+      "baseline": 10290,
+      "householder": 26790
     },
     "col_piv_qr1x5_q": {
-      "baseline": 36120,
-      "reflections": 43440
+      "baseline": 28290,
+      "reflections": 35610
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr1x6": {
     "col_piv_qr1x6_new": {
-      "baseline": 18320,
-      "householder": 38060
+      "baseline": 10490,
+      "householder": 30230
     },
     "col_piv_qr1x6_q": {
-      "baseline": 39960,
-      "reflections": 47480
+      "baseline": 32130,
+      "reflections": 39650
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr2x3": {
     "col_piv_qr2x3_new": {
-      "baseline": 18320,
-      "householder": 70290
+      "baseline": 10490,
+      "householder": 62460
     },
     "col_piv_qr2x3_q": {
-      "baseline": 71790,
-      "reflections": 92480
+      "baseline": 63960,
+      "reflections": 84650
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr2x4": {
     "col_piv_qr2x4_new": {
-      "baseline": 18720,
-      "householder": 87000
+      "baseline": 10890,
+      "householder": 79170
     },
     "col_piv_qr2x4_q": {
-      "baseline": 89100,
-      "reflections": 110090
+      "baseline": 81270,
+      "reflections": 102260
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr2x5": {
     "col_piv_qr2x5_new": {
-      "baseline": 19120,
-      "householder": 104110
+      "baseline": 11290,
+      "householder": 96280
     },
     "col_piv_qr2x5_q": {
-      "baseline": 106810,
-      "reflections": 128100
+      "baseline": 98980,
+      "reflections": 120270
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr2x6": {
     "col_piv_qr2x6_new": {
-      "baseline": 19520,
-      "householder": 121620
+      "baseline": 16590,
+      "householder": 118690
     },
     "col_piv_qr2x6_q": {
-      "baseline": 124920,
-      "reflections": 146510
+      "baseline": 121990,
+      "reflections": 143580
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr3x4": {
     "col_piv_qr3x4_new": {
-      "baseline": 19520,
-      "householder": 150610
+      "baseline": 16890,
+      "householder": 147980
     },
     "col_piv_qr3x4_q": {
-      "baseline": 153710,
-      "reflections": 202980
+      "baseline": 151080,
+      "reflections": 200350
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr3x5": {
     "col_piv_qr3x5_new": {
-      "baseline": 20120,
-      "householder": 186620
+      "baseline": 18190,
+      "householder": 184690
     },
     "col_piv_qr3x5_q": {
-      "baseline": 190520,
-      "reflections": 240190
+      "baseline": 188590,
+      "reflections": 238260
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr3x6": {
     "col_piv_qr3x6_new": {
-      "baseline": 20720,
-      "householder": 223530
+      "baseline": 19490,
+      "householder": 222300
     },
     "col_piv_qr3x6_q": {
-      "baseline": 228230,
-      "reflections": 278300
+      "baseline": 227000,
+      "reflections": 277070
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr4x5": {
     "col_piv_qr4x5_new": {
-      "baseline": 21120,
-      "householder": 276770
+      "baseline": 20890,
+      "householder": 276540
     },
     "col_piv_qr4x5_q": {
-      "baseline": 281870,
-      "reflections": 379500
+      "baseline": 281640,
+      "reflections": 379270
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr4x6": {
     "col_piv_qr4x6_new": {
-      "baseline": 21920,
-      "householder": 338110
+      "baseline": 22590,
+      "householder": 338780
     },
     "col_piv_qr4x6_q": {
-      "baseline": 344210,
-      "reflections": 442340
+      "baseline": 344880,
+      "reflections": 443010
     }
   },
   "nalgebra_tests_linalg_pivot_qr_wide::col_piv_qr5x6": {
     "col_piv_qr5x6_new": {
-      "baseline": 23120,
-      "householder": 466130
+      "baseline": 25890,
+      "householder": 468900
     },
     "col_piv_qr5x6_q": {
-      "baseline": 473630,
-      "reflections": 644560
+      "baseline": 476400,
+      "reflections": 647330
     }
   }
 }

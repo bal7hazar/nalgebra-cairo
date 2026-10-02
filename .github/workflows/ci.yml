@@ -12,6 +12,12 @@ defaults:
   run:
     shell: bash # enables pipefail
 
+# The compiler is not deterministic on several threads (slingfall OPERATIONS.md): every build whose
+# output is hashed or snapshotted runs single-threaded. The Consumer cost jobs, which time cold
+# builds and hash nothing, set their own (the compiler's default threads).
+env:
+  RAYON_NUM_THREADS: "1"
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -79,6 +85,10 @@ jobs:
   consumer-cost-shard:
     name: Consumer cost shard (${{ matrix.shard }})
     runs-on: ubuntu-latest
+    # Wall time and memory of cold builds, nothing hashed: the compiler's default threads ("0" =
+    # all cores), as the gates were set; one thread doubles the times (CI run 37012930609, WP 10-TC).
+    env:
+      RAYON_NUM_THREADS: "0"
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -107,6 +117,10 @@ jobs:
     needs: consumer-cost-shard
     if: always()
     runs-on: ubuntu-latest
+    # Wall time and memory of cold builds, nothing hashed: the compiler's default threads ("0" =
+    # all cores), as the gates were set; one thread doubles the times (CI run 37012930609, WP 10-TC).
+    env:
+      RAYON_NUM_THREADS: "0"
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -312,6 +326,17 @@ jobs:
         run: |
           scarb fmt --check
           snforge test --workspace | python3 scripts/gas_report.py --check gas/
+      # benchmarks/libs stays on Scarb 2.19.4 / starknet-foundry 0.61.0 (its own .tool-versions): a frozen
+      # comparison of vendored third-party libraries (cubit, orion) that corelib 2.20.0 no longer compiles
+      # (u32_as_non_zero / u64_as_non_zero removed); patching them would change the compared figures.
+      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+        if: steps.changes.outputs.benchmarks == 'true'
+        with:
+          tool-versions: benchmarks/libs/.tool-versions
+      - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+        if: steps.changes.outputs.benchmarks == 'true'
+        with:
+          tool-versions: benchmarks/libs/.tool-versions
       - name: Third-party library benchmarks
         if: steps.changes.outputs.benchmarks == 'true'
         working-directory: benchmarks/libs

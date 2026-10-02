@@ -1,44 +1,44 @@
 {
   "nalgebra::geometry::isometry2::benches": {
     "isometry2_lerp_nlerp": {
-      "lerp_normalize": 40890
+      "lerp_normalize": 33060
     },
     "isometry2_renormalize": {
-      "exact": 26920
+      "exact": 19090
     },
     "isometry2_renormalize_fast": {
-      "newton": 25360
+      "newton": 17530
     }
   },
   "nalgebra::geometry::isometry3::benches": {
     "isometry3_lerp_nlerp": {
-      "lerp_normalize": 58640
+      "lerp_normalize": 50810
     },
     "isometry3_renormalize": {
-      "exact": 35220
+      "exact": 27390
     },
     "isometry3_renormalize_fast": {
-      "newton": 31120
+      "newton": 23290
     }
   },
   "nalgebra::geometry::quaternion::benches": {
     "quaternion_conj_mul": {
-      "fused": 30590
+      "fused": 22760
     }
   },
   "nalgebra::geometry::rotation3::benches": {
     "rotation3_renormalize": {
-      "alt_quaternion": 94820
+      "alt_quaternion": 86990
     }
   },
   "nalgebra::geometry::unit_complex::benches": {
     "unit_complex_rotation_between": {
-      "alt_normalized_inputs": 45820
+      "alt_normalized_inputs": 37990
     }
   },
   "nalgebra::geometry::unit_quaternion::benches": {
     "unit_quaternion_conj_mul": {
-      "fused": 30590
+      "fused": 22760
     }
   }
 }

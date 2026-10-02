@@ -274,7 +274,7 @@ and CI fails on any unreviewed gas change.
 ## Development
 
 ```bash
-asdf install            # scarb 2.19.4, starknet-foundry 0.61.0
+asdf install            # scarb 2.20.1, starknet-foundry 0.64.0
 ./scripts/check.sh      # fmt, lint, build, tests, gas snapshot
 ```
 

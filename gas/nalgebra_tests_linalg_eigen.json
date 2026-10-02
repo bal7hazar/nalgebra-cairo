@@ -1,50 +1,50 @@
 {
   "nalgebra_tests_linalg_eigen::eigen4": {
     "symmetric_eigen4_eigenvalues": {
-      "baseline": 20320,
-      "jacobi5": 1019310
+      "baseline": 12490,
+      "jacobi5": 1011480
     },
     "symmetric_eigen4_new": {
-      "baseline": 20320,
-      "jacobi5": 1631340
+      "baseline": 12490,
+      "jacobi5": 1623510
     },
     "symmetric_eigen4_recompose": {
-      "baseline": 1631170,
-      "fused": 1741690
+      "baseline": 1623340,
+      "fused": 1733860
     }
   },
   "nalgebra_tests_linalg_eigen::eigen5": {
     "symmetric_eigen5_eigenvalues": {
-      "baseline": 22120,
-      "jacobi6": 2246760
+      "baseline": 14290,
+      "jacobi6": 2238930
     },
     "symmetric_eigen5_new": {
-      "baseline": 22120,
-      "jacobi6": 3673070
+      "baseline": 14290,
+      "jacobi6": 3665240
     },
     "symmetric_eigen5_recompose": {
-      "baseline": 3673100,
-      "fused": 3846160
+      "baseline": 3665270,
+      "fused": 3838330
     }
   },
   "nalgebra_tests_linalg_eigen::eigen6": {
     "symmetric_eigen6_eigenvalues": {
-      "baseline": 29320,
-      "jacobi6": 3716460
+      "baseline": 26390,
+      "jacobi6": 3713530
     },
     "symmetric_eigen6_new": {
-      "baseline": 29320,
-      "jacobi6": 6197930
+      "baseline": 26390,
+      "jacobi6": 6195000
     },
     "symmetric_eigen6_recompose": {
-      "baseline": 6198160,
-      "fused": 6468840
+      "baseline": 6195230,
+      "fused": 6465910
     }
   },
   "nalgebra_tests_linalg_eigen::extras": {
     "wilkinson_shift": {
-      "baseline": 15950,
-      "scale_free": 30640
+      "baseline": 8120,
+      "scale_free": 22810
     }
   }
 }

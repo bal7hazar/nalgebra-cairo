@@ -2,6 +2,8 @@
 # Local equivalent of the CI gate for the library workspace. Pass `--update` to refresh the snapshot.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# The compiler is not deterministic on several threads (slingfall OPERATIONS.md).
+export RAYON_NUM_THREADS=${RAYON_NUM_THREADS:-1}
 
 scarb fmt --check
 python3 scripts/api_parity.py --check

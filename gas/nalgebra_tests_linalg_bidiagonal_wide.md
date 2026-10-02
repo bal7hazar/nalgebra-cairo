@@ -8,13 +8,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 47050 | 29530 | x1.00 |
+| `householder` | 39220 | 29530 | x1.00 |
 
 ### bidiagonal1x2_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 58350 | 10900 | x1.00 |
+| `symbolic` | 50520 | 10900 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x3
 
@@ -22,13 +22,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 56210 | 38490 | x1.00 |
+| `householder` | 48380 | 38490 | x1.00 |
 
 ### bidiagonal1x3_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 70730 | 13820 | x1.00 |
+| `symbolic` | 62900 | 13820 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x4
 
@@ -36,13 +36,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 65070 | 47150 | x1.00 |
+| `householder` | 57240 | 47150 | x1.00 |
 
 ### bidiagonal1x4_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 83210 | 17140 | x1.00 |
+| `symbolic` | 75380 | 17140 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x5
 
@@ -50,13 +50,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 83080 | 64960 | x1.00 |
+| `householder` | 75250 | 64960 | x1.00 |
 
 ### bidiagonal1x5_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 105240 | 20860 | x1.00 |
+| `symbolic` | 97410 | 20860 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x6
 
@@ -64,13 +64,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 91940 | 73620 | x1.00 |
+| `householder` | 84110 | 73620 | x1.00 |
 
 ### bidiagonal1x6_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 117720 | 24180 | x1.00 |
+| `symbolic` | 109890 | 24180 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x3
 
@@ -78,13 +78,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 112410 | 94090 | x1.00 |
+| `householder` | 104580 | 94090 | x1.00 |
 
 ### bidiagonal2x3_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 153640 | 39730 | x1.00 |
+| `symbolic` | 145810 | 39730 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x4
 
@@ -92,13 +92,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 138620 | 119900 | x1.00 |
+| `householder` | 130790 | 119900 | x1.00 |
 
 ### bidiagonal2x4_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 189670 | 49150 | x1.00 |
+| `symbolic` | 181840 | 49150 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x5
 
@@ -106,13 +106,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 173680 | 154560 | x1.00 |
+| `householder` | 165850 | 154560 | x1.00 |
 
 ### bidiagonal2x5_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 234150 | 58170 | x1.00 |
+| `symbolic` | 226320 | 58170 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x6
 
@@ -120,13 +120,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 208740 | 189220 | x1.00 |
+| `householder` | 205610 | 189220 | x1.00 |
 
 ### bidiagonal2x6_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 279430 | 67990 | x1.00 |
+| `symbolic` | 276300 | 67990 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x4
 
@@ -134,13 +134,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 242410 | 222890 | x1.00 |
+| `householder` | 240280 | 222890 | x1.00 |
 
 ### bidiagonal3x4_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 339410 | 93900 | x1.00 |
+| `symbolic` | 337280 | 93900 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x5
 
@@ -148,13 +148,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 300070 | 279950 | x1.00 |
+| `householder` | 298540 | 279950 | x1.00 |
 
 ### bidiagonal3x5_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 415270 | 111500 | x1.00 |
+| `symbolic` | 413740 | 111500 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x6
 
@@ -162,13 +162,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 357430 | 336710 | x1.00 |
+| `householder` | 356500 | 336710 | x1.00 |
 
 ### bidiagonal3x6_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 491630 | 129900 | x1.00 |
+| `symbolic` | 490700 | 129900 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal4x5
 
@@ -176,13 +176,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 439860 | 418740 | x1.00 |
+| `householder` | 440730 | 418740 | x1.00 |
 
 ### bidiagonal4x5_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 630700 | 185740 | x1.00 |
+| `symbolic` | 631570 | 185740 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal4x6
 
@@ -190,13 +190,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 525180 | 503260 | x1.00 |
+| `householder` | 526850 | 503260 | x1.00 |
 
 ### bidiagonal4x6_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 745180 | 214100 | x1.00 |
+| `symbolic` | 746850 | 214100 | x1.00 |
 
 ## nalgebra_tests_linalg_bidiagonal_wide::bidiagonal5x6
 
@@ -204,11 +204,11 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 706030 | 682910 | x1.00 |
+| `householder` | 710700 | 682910 | x1.00 |
 
 ### bidiagonal5x6_unpack
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `symbolic` | 1039210 | 325680 | x1.00 |
+| `symbolic` | 1043880 | 325680 | x1.00 |
 

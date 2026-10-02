@@ -1,8 +1,8 @@
 {
   "harness::tests": {
     "harness": {
-      "add_u64": 15910,
-      "baseline": 15540
+      "add_u64": 8080,
+      "baseline": 7710
     }
   }
 }

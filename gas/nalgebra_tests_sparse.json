@@ -1,85 +1,85 @@
 {
   "nalgebra_tests_sparse::benches": {
     "axpy_cs": {
-      "baseline": 230770,
-      "library": 335740
+      "baseline": 222940,
+      "library": 327910
     },
     "convolve": {
-      "baseline": 115090,
-      "full": 418710,
-      "same": 357390,
-      "valid": 250240
+      "baseline": 107260,
+      "full": 410880,
+      "same": 349560,
+      "valid": 242410
     },
     "convolve_vector6": {
-      "baseline": 17020,
-      "full": 137840,
-      "same": 110020
+      "baseline": 9190,
+      "full": 130010,
+      "same": 102190
     },
     "cs_add": {
-      "baseline": 6477120,
-      "library": 7137130
+      "baseline": 6469290,
+      "library": 7129300
     },
     "cs_cholesky": {
-      "alt_left_looking": 12903520,
-      "baseline": 4828740,
-      "library": 10399680,
-      "symbolic": 8407190
+      "alt_left_looking": 12895790,
+      "baseline": 4820910,
+      "library": 10391950,
+      "symbolic": 8399460
     },
     "cs_cholesky_lap1d": {
-      "baseline": 1662050,
-      "library": 4276540
+      "baseline": 1654220,
+      "library": 4268810
     },
     "cs_cholesky_numeric": {
-      "baseline": 8407190,
-      "library": 10395580
+      "baseline": 8399460,
+      "library": 10387850
     },
     "cs_from_dmatrix": {
-      "baseline": 5740440,
-      "library": 6742890
+      "baseline": 5732610,
+      "library": 6735060
     },
     "cs_from_triplet": {
-      "baseline": 2667640,
-      "library": 4828740
+      "baseline": 2659810,
+      "library": 4820910
     },
     "cs_into_dmatrix": {
-      "baseline": 4828740,
-      "library": 5740440
+      "baseline": 4820910,
+      "library": 5732610
     },
     "cs_mul": {
-      "baseline": 3310430,
-      "library": 7713990
+      "baseline": 3302600,
+      "library": 7706160
     },
     "cs_mul_lap2d": {
-      "baseline": 4828740,
-      "library": 12374650
+      "baseline": 4820910,
+      "library": 12366820
     },
     "cs_scale": {
-      "baseline": 4829440,
-      "library": 5046910
+      "baseline": 4821610,
+      "library": 5039080
     },
     "cs_solve_lower": {
-      "baseline": 10476970,
-      "library": 12874980
+      "baseline": 10469240,
+      "library": 12867250
     },
     "cs_solve_lower_cs": {
-      "baseline": 10436440,
-      "library": 12900820
+      "baseline": 10428710,
+      "library": 12893090
     },
     "cs_tr_solve_lower": {
-      "baseline": 10476970,
-      "library": 11104270
+      "baseline": 10469240,
+      "library": 11096540
     },
     "cs_transpose": {
-      "alt_dict": 8870920,
-      "alt_packed_keys": 6972820,
-      "baseline": 4828740,
-      "library": 6646580
+      "alt_dict": 8863190,
+      "alt_packed_keys": 6964990,
+      "baseline": 4820910,
+      "library": 6638750
     },
     "matrix_market": {
-      "baseline": 17210,
-      "library": 1863060,
-      "probe_bytes": 1256440,
-      "probe_iter": 1085550
+      "baseline": 9380,
+      "library": 1855230,
+      "probe_bytes": 1248610,
+      "probe_iter": 1077720
     }
   }
 }

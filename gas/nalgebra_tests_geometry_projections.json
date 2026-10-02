@@ -1,76 +1,76 @@
 {
   "nalgebra_tests_geometry_projections::orthographic3::benches": {
     "orthographic3_from_fov": {
-      "baseline": 28240,
-      "from_fov": 130670
+      "baseline": 20410,
+      "from_fov": 122840
     },
     "orthographic3_inverse": {
-      "alt_recip_mul": 43800,
-      "baseline": 28440,
-      "div": 48990
+      "alt_recip_mul": 35970,
+      "baseline": 20610,
+      "div": 41160
     },
     "orthographic3_left": {
-      "baseline": 18940,
-      "left": 23080
+      "baseline": 11110,
+      "left": 15250
     },
     "orthographic3_new": {
-      "baseline": 29040,
-      "new": 63080
+      "baseline": 21210,
+      "new": 55250
     },
     "orthographic3_project_point": {
-      "alt_split": 28200,
-      "baseline": 20740,
-      "mul_add": 26280
+      "alt_split": 20370,
+      "baseline": 12910,
+      "mul_add": 18450
     },
     "orthographic3_set_left": {
-      "baseline": 19840,
-      "set_left": 31740
+      "baseline": 12010,
+      "set_left": 23910
     },
     "orthographic3_unproject_point": {
-      "baseline": 20740,
-      "unproject": 33080
+      "baseline": 12910,
+      "unproject": 25250
     }
   },
   "nalgebra_tests_geometry_projections::perspective3::benches": {
     "perspective3_fovy": {
-      "baseline": 18940,
-      "fovy": 45690
+      "baseline": 11110,
+      "fovy": 37860
     },
     "perspective3_inverse": {
-      "baseline": 20940,
-      "inverse": 37090
+      "baseline": 13110,
+      "inverse": 29260
     },
     "perspective3_new": {
-      "baseline": 18640,
-      "new": 106770
+      "baseline": 10810,
+      "new": 98940
     },
     "perspective3_project_point": {
-      "alt_recip_mul": 34280,
-      "alt_three_div": 36140,
-      "baseline": 20740,
-      "div3": 35790
+      "alt_recip_mul": 26450,
+      "alt_three_div": 28310,
+      "baseline": 12910,
+      "div3": 27960
     },
     "perspective3_project_vector": {
-      "alt_div3": 33320,
-      "baseline": 20740,
-      "two_div": 31130
+      "alt_div3": 25490,
+      "baseline": 12910,
+      "two_div": 23300
     },
     "perspective3_set_fovy": {
-      "baseline": 19840,
-      "set_fovy": 79370
+      "baseline": 12010,
+      "set_fovy": 71540
     },
     "perspective3_set_znear_and_zfar": {
-      "baseline": 20240,
-      "set": 30840
+      "baseline": 12410,
+      "set": 23010
     },
     "perspective3_unproject_point": {
-      "baseline": 20740,
-      "unproject": 35160
+      "baseline": 12910,
+      "unproject": 27330
     },
     "perspective3_znear": {
-      "alt_upstream": 32790,
-      "baseline": 18940,
-      "one_div": 23070
+      "alt_upstream": 24960,
+      "baseline": 11110,
+      "one_div": 15240
     }
   }
 }

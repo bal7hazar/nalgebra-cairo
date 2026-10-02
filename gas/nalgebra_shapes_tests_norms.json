@@ -1,92 +1,92 @@
 {
   "nalgebra_shapes_tests_norms::benches": {
     "matrix2x3_one_norm": {
-      "baseline": 40440,
-      "library": 50290
+      "baseline": 32610,
+      "library": 42460
     },
     "matrix2x3_unscale": {
-      "alt_per_component_div": 96580,
-      "baseline": 66940,
-      "library": 85870
+      "alt_per_component_div": 88750,
+      "baseline": 59110,
+      "library": 78040
     },
     "matrix3_from_row_slice": {
-      "alt_span_index": 64730,
-      "baseline": 54870,
-      "library": 56370
+      "alt_span_index": 56900,
+      "baseline": 47040,
+      "library": 48540
     },
     "matrix3_index_linear": {
-      "baseline": 50370,
-      "library": 51840
+      "baseline": 42540,
+      "library": 44010
     },
     "matrix3_index_pair": {
-      "baseline": 50370,
-      "library": 52380
+      "baseline": 42540,
+      "library": 44550
     },
     "matrix3_lp_norm3": {
-      "baseline": 50370,
-      "library": 266490
+      "baseline": 42540,
+      "library": 258660
     },
     "matrix3_partial_cmp": {
-      "baseline": 85500,
-      "library": 88320
+      "baseline": 77670,
+      "library": 80490
     },
     "matrix3_relative_eq": {
-      "baseline": 85500,
-      "library": 103420
+      "baseline": 77670,
+      "library": 95590
     },
     "matrix3x2_angle": {
-      "baseline": 65440,
-      "library": 185840
+      "baseline": 57610,
+      "library": 178010
     },
     "matrix3x4_dot": {
-      "baseline": 105160,
-      "library": 110340
+      "baseline": 97330,
+      "library": 102510
     },
     "matrix4_component_div": {
-      "baseline": 195840,
-      "library": 253210
+      "baseline": 188010,
+      "library": 245380
     },
     "matrix4_symmetric_part": {
-      "baseline": 137740,
-      "library": 152320
+      "baseline": 129910,
+      "library": 144490
     },
     "matrix4x2_cmpy": {
-      "baseline": 112000,
-      "library": 143780
+      "baseline": 104170,
+      "library": 135950
     },
     "matrix5_norm": {
-      "baseline": 103330,
-      "library": 117600
+      "baseline": 95500,
+      "library": 109770
     },
     "matrix6_amax": {
-      "baseline": 139740,
-      "library": 206290
+      "baseline": 131910,
+      "library": 198460
     },
     "matrix6_iamax_full": {
-      "baseline": 140240,
-      "library": 213090
+      "baseline": 132410,
+      "library": 205260
     },
     "matrix6_unscale": {
-      "alt_div9": 438700,
-      "baseline": 278540,
-      "library": 437630
+      "alt_div9": 430870,
+      "baseline": 270710,
+      "library": 429800
     },
     "row_vector3_metric_distance": {
-      "baseline": 45580,
-      "library": 50520
+      "baseline": 37750,
+      "library": 42690
     },
     "vector4_slerp": {
-      "alt_acos": 212260,
-      "baseline": 71080,
-      "library": 226080
+      "alt_acos": 204430,
+      "baseline": 63250,
+      "library": 218250
     },
     "vector5_normalize": {
-      "baseline": 59620,
-      "library": 80710
+      "baseline": 51790,
+      "library": 72880
     },
     "vector6_argmax": {
-      "baseline": 40940,
-      "library": 46020
+      "baseline": 33110,
+      "library": 38190
     }
   }
 }

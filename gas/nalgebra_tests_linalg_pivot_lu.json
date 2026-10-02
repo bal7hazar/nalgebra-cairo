@@ -1,86 +1,86 @@
 {
   "nalgebra_tests_linalg_pivot_lu::full_piv_lu1": {
     "full_piv_lu1_new": {
-      "baseline": 17320,
-      "unrolled": 18310
+      "baseline": 9490,
+      "unrolled": 10480
     },
     "full_piv_lu1_solve": {
-      "baseline": 18010,
-      "substitution": 25860
+      "baseline": 10180,
+      "substitution": 18030
     },
     "full_piv_lu1_try_inverse": {
-      "baseline": 17510,
-      "unit_columns": 24480
+      "baseline": 9680,
+      "unit_columns": 16650
     }
   },
   "nalgebra_tests_linalg_pivot_lu::full_piv_lu2": {
     "full_piv_lu2_new": {
-      "baseline": 17920,
-      "unrolled": 36060
+      "baseline": 10090,
+      "unrolled": 28230
     },
     "full_piv_lu2_solve": {
-      "baseline": 36160,
-      "substitution": 53800
+      "baseline": 28330,
+      "substitution": 45970
     },
     "full_piv_lu2_try_inverse": {
-      "baseline": 35360,
-      "unit_columns": 60290
+      "baseline": 27530,
+      "unit_columns": 52460
     }
   },
   "nalgebra_tests_linalg_pivot_lu::full_piv_lu3": {
     "full_piv_lu3_new": {
-      "baseline": 18920,
-      "unrolled": 76780
+      "baseline": 11090,
+      "unrolled": 68950
     },
     "full_piv_lu3_solve": {
-      "baseline": 77180,
-      "substitution": 105920
+      "baseline": 69350,
+      "substitution": 98090
     },
     "full_piv_lu3_try_inverse": {
-      "baseline": 76080,
-      "unit_columns": 135790
+      "baseline": 68250,
+      "unit_columns": 127960
     }
   },
   "nalgebra_tests_linalg_pivot_lu::full_piv_lu4": {
     "full_piv_lu4_new": {
-      "baseline": 20320,
-      "unrolled": 151760
+      "baseline": 17990,
+      "unrolled": 149430
     },
     "full_piv_lu4_solve": {
-      "baseline": 152460,
-      "substitution": 194500
+      "baseline": 144630,
+      "substitution": 186670
     },
     "full_piv_lu4_try_inverse": {
-      "baseline": 151060,
-      "unit_columns": 270340
+      "baseline": 147930,
+      "unit_columns": 267210
     }
   },
   "nalgebra_tests_linalg_pivot_lu::full_piv_lu5": {
     "full_piv_lu5_new": {
-      "baseline": 22120,
-      "unrolled": 272410
+      "baseline": 21790,
+      "unrolled": 272080
     },
     "full_piv_lu5_solve": {
-      "baseline": 273410,
-      "substitution": 333250
+      "baseline": 270580,
+      "substitution": 330420
     },
     "full_piv_lu5_try_inverse": {
-      "baseline": 271710,
-      "unit_columns": 470560
+      "baseline": 270380,
+      "unit_columns": 469230
     }
   },
   "nalgebra_tests_linalg_pivot_lu::full_piv_lu6": {
     "full_piv_lu6_new": {
-      "baseline": 24320,
-      "unrolled": 450790
+      "baseline": 26390,
+      "unrolled": 452860
     },
     "full_piv_lu6_solve": {
-      "baseline": 452090,
-      "substitution": 530130
+      "baseline": 450560,
+      "substitution": 528600
     },
     "full_piv_lu6_try_inverse": {
-      "baseline": 450090,
-      "unit_columns": 756310
+      "baseline": 450960,
+      "unit_columns": 757180
     }
   }
 }

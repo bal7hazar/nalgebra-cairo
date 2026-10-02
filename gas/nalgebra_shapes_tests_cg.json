@@ -1,89 +1,89 @@
 {
   "nalgebra_shapes_tests_cg::benches": {
     "matrix3_append_nonuniform_scaling": {
-      "baseline": 97190,
-      "library": 108770
+      "baseline": 89360,
+      "library": 100940
     },
     "matrix3_append_translation": {
-      "baseline": 97190,
-      "library": 109970
+      "baseline": 89360,
+      "library": 102140
     },
     "matrix3_new_translation": {
-      "baseline": 62260,
-      "library": 62260
+      "baseline": 54430,
+      "library": 54430
     },
     "matrix3_prepend_translation": {
-      "alt_plain": 109680,
-      "baseline": 97190,
-      "library": 105230
+      "alt_plain": 101850,
+      "baseline": 89360,
+      "library": 97400
     },
     "matrix3_transform_point": {
-      "alt_plain": 90690,
-      "baseline": 70050,
-      "library": 89070
+      "alt_plain": 82860,
+      "baseline": 62220,
+      "library": 81240
     },
     "matrix3_transform_vector": {
-      "baseline": 70050,
-      "library": 84170
+      "baseline": 62220,
+      "library": 76340
     },
     "matrix4_append_nonuniform_scaling": {
-      "baseline": 152810,
-      "library": 175370
+      "baseline": 144980,
+      "library": 167540
     },
     "matrix4_append_translation": {
-      "alt_plain": 190380,
-      "baseline": 152810,
-      "library": 177770
+      "alt_plain": 182550,
+      "baseline": 144980,
+      "library": 169940
     },
     "matrix4_from_euler_angles": {
-      "baseline": 16740,
-      "library": 129970
+      "baseline": 8910,
+      "library": 122140
     },
     "matrix4_look_at_rh": {
-      "baseline": 60650,
-      "library": 119210
+      "baseline": 52820,
+      "library": 111380
     },
     "matrix4_new_rotation": {
-      "baseline": 30510,
-      "library": 107510
+      "baseline": 22680,
+      "library": 99680
     },
     "matrix4_new_translation": {
-      "baseline": 94710,
-      "library": 96710
+      "baseline": 86880,
+      "library": 88880
     },
     "matrix4_prepend_translation": {
-      "alt_plain": 172620,
-      "baseline": 152810,
-      "library": 165130
+      "alt_plain": 164790,
+      "baseline": 144980,
+      "library": 157300
     },
     "matrix4_transform_point": {
-      "alt_plain": 133670,
-      "baseline": 103880,
-      "library": 131510
+      "alt_plain": 125840,
+      "baseline": 96050,
+      "library": 123680
     },
     "matrix4_transform_vector": {
-      "baseline": 103880,
-      "library": 124470
+      "baseline": 96050,
+      "library": 116640
     },
     "matrix6_append_nonuniform_scaling": {
-      "baseline": 299830,
-      "library": 355030
+      "baseline": 292000,
+      "library": 347200
     },
     "matrix6_append_translation": {
-      "baseline": 299830,
-      "library": 370460
+      "baseline": 292000,
+      "library": 362630
     },
     "matrix6_new_translation": {
-      "baseline": 175530,
-      "library": 179730
+      "baseline": 167700,
+      "library": 171900
     },
     "matrix6_prepend_translation": {
-      "baseline": 299830,
-      "library": 332540
+      "baseline": 292000,
+      "library": 324710
     },
     "matrix6_transform_vector": {
-      "baseline": 183920,
-      "library": 230000
+      "baseline": 176090,
+      "library": 222170
     }
   }
 }

@@ -8,19 +8,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 20460 | 3140 | x1.00 |
+| `householder` | 12630 | 3140 | x1.00 |
 
 ### col_piv_qr1_q
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reflections` | 26980 | 6620 | x1.00 |
+| `reflections` | 19150 | 6620 | x1.00 |
 
 ### col_piv_qr1_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 37460 | 16600 | x1.00 |
+| `substitution` | 29630 | 16600 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_qr::col_piv_qr2
 
@@ -28,19 +28,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 52580 | 34660 | x1.00 |
+| `householder` | 44750 | 34660 | x1.00 |
 
 ### col_piv_qr2_q
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reflections` | 73870 | 20390 | x1.00 |
+| `reflections` | 66040 | 20390 | x1.00 |
 
 ### col_piv_qr2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 95220 | 40940 | x1.00 |
+| `substitution` | 87390 | 40940 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_qr::col_piv_qr3
 
@@ -48,19 +48,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 114100 | 95180 | x1.00 |
+| `householder` | 106270 | 95180 | x1.00 |
 
 ### col_piv_qr3_q
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reflections` | 165270 | 48870 | x1.00 |
+| `reflections` | 157440 | 48870 | x1.00 |
 
 ### col_piv_qr3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 198600 | 81100 | x1.00 |
+| `substitution` | 190770 | 81100 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_qr::col_piv_qr4
 
@@ -68,19 +68,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 215630 | 195310 | x1.00 |
+| `householder` | 214500 | 195310 | x1.00 |
 
 ### col_piv_qr4_q
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reflections` | 316860 | 97130 | x1.00 |
+| `reflections` | 315730 | 97130 | x1.00 |
 
 ### col_piv_qr4_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 363760 | 142630 | x1.00 |
+| `substitution` | 355930 | 142630 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_qr::col_piv_qr5
 
@@ -88,19 +88,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 374230 | 352110 | x1.00 |
+| `householder` | 375900 | 352110 | x1.00 |
 
 ### col_piv_qr5_q
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reflections` | 550860 | 170330 | x1.00 |
+| `reflections` | 552530 | 170330 | x1.00 |
 
 ### col_piv_qr5_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 618560 | 236330 | x1.00 |
+| `substitution` | 615730 | 236330 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_qr::col_piv_qr6
 
@@ -108,18 +108,18 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `householder` | 595160 | 570840 | x1.00 |
+| `householder` | 600230 | 570840 | x1.00 |
 
 ### col_piv_qr6_q
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reflections` | 877690 | 273630 | x1.00 |
+| `reflections` | 882760 | 273630 | x1.00 |
 
 ### col_piv_qr6_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_reflections` | 741210 | 135150 | x1.00 |
-| `substitution` | 963460 | 357400 | x2.64 |
+| `alt_reflections` | 739680 | 135150 | x1.00 |
+| `substitution` | 961930 | 357400 | x2.64 |
 

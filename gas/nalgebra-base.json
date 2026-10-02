@@ -1,135 +1,135 @@
 {
   "nalgebra::base::matrix2::tests": {
     "matrix2_adjugate": {
-      "cofactors": 18840
+      "cofactors": 11010
     },
     "matrix2_column": {
-      "second": 17240
+      "second": 9410
     },
     "matrix2_from_outer": {
-      "products": 24860
+      "products": 17030
     },
     "matrix2_mul_transpose": {
-      "baseline": 17540,
-      "generic": 27790,
-      "structured": 25210
+      "baseline": 9710,
+      "generic": 19960,
+      "structured": 17380
     },
     "matrix2_try_inverse": {
-      "alt_div": 40380,
-      "alt_div_n": 39610,
-      "alt_recip": 33330
+      "alt_div": 32550,
+      "alt_div_n": 31780,
+      "alt_recip": 25500
     }
   },
   "nalgebra::base::matrix3::benches_views": {
     "matrix3_column_internal": {
-      "baseline": 18940,
-      "column": 20150,
-      "column2": 19240
+      "baseline": 11110,
+      "column": 12320,
+      "column2": 11410
     },
     "matrix3_row_internal": {
-      "baseline": 18940,
-      "row": 20150,
-      "row2": 19240
+      "baseline": 11110,
+      "row": 12320,
+      "row2": 11410
     }
   },
   "nalgebra::base::matrix3::tests": {
     "matrix3_adjugate": {
-      "cofactors": 38360
+      "cofactors": 30530
     },
     "matrix3_column": {
-      "second": 18840
+      "second": 11010
     },
     "matrix3_cross_matrix_mul": {
-      "structured": 42090
+      "structured": 34260
     },
     "matrix3_from_outer": {
-      "products": 36160
+      "products": 28330
     },
     "matrix3_mul_transpose": {
-      "baseline": 20040,
-      "generic": 42790,
-      "structured": 35050
+      "baseline": 12210,
+      "generic": 34960,
+      "structured": 27220
     },
     "matrix3_row": {
-      "second": 18840
+      "second": 11010
     },
     "matrix3_try_inverse": {
-      "alt_div": 91470,
-      "alt_div_n": 88400,
-      "alt_recip": 70620
+      "alt_div": 83640,
+      "alt_div_n": 80570,
+      "alt_recip": 62790
     }
   },
   "nalgebra::base::matrix4::tests": {
     "matrix4_adjugate": {
-      "cofactors": 93290
+      "cofactors": 85460
     },
     "matrix4_column": {
-      "second": 20840
+      "second": 13010
     },
     "matrix4_from_outer": {
-      "products": 53820
+      "products": 45990
     },
     "matrix4_row": {
-      "second": 20840
+      "second": 13010
     },
     "matrix4_try_inverse": {
-      "alt_div": 196400,
-      "alt_div_n": 190110,
-      "alt_recip": 156230
+      "alt_div": 188570,
+      "alt_div_n": 182280,
+      "alt_recip": 148400
     }
   },
   "nalgebra::base::point2::benches": {
     "point2_center": {
-      "sum_prod2": 20900
+      "sum_prod2": 13070
     },
     "point2_distance": {
-      "alt_sqrt": 21920,
-      "norm": 20240
+      "alt_sqrt": 14090,
+      "norm": 12410
     },
     "point2_distance_squared": {
-      "fused": 20000
+      "fused": 12170
     }
   },
   "nalgebra::base::point3::benches": {
     "point3_center": {
-      "sum_prod2": 23680
+      "sum_prod2": 15850
     },
     "point3_distance": {
-      "alt_sqrt": 23260,
-      "norm": 21580
+      "alt_sqrt": 15430,
+      "norm": 13750
     },
     "point3_distance_squared": {
-      "fused": 21340
+      "fused": 13510
     }
   },
   "nalgebra::base::sym_matrix2::tests": {
     "sym_matrix2_quadform": {
-      "baseline": 18140,
-      "generic": 38440,
-      "structured": 32730
+      "baseline": 10310,
+      "generic": 30610,
+      "structured": 24900
     },
     "sym_matrix2_to_matrix": {
-      "baseline": 17840,
-      "struct": 18240
+      "baseline": 10010,
+      "struct": 10410
     }
   },
   "nalgebra::base::sym_matrix3::tests": {
     "sym_matrix3_quadform": {
-      "baseline": 20840,
-      "generic": 65840,
-      "structured": 51270
+      "baseline": 13010,
+      "generic": 58010,
+      "structured": 43440
     },
     "sym_matrix3_to_matrix": {
-      "baseline": 20940,
-      "struct": 21840
+      "baseline": 13110,
+      "struct": 14010
     }
   },
   "nalgebra::base::vector3::benches": {
     "vector3_orthonormal_basis_zneg": {
-      "duff": 34890
+      "duff": 27060
     },
     "vector3_orthonormal_basis_zpos": {
-      "duff": 34730
+      "duff": 26900
     }
   }
 }

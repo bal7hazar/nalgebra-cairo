@@ -8,25 +8,25 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `product` | 19710 | 500 | x1.00 |
+| `product` | 11880 | 500 | x1.00 |
 
 ### lblt1_l_permuted
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `moves` | 19110 | -100 | - |
+| `moves` | 11280 | -100 | - |
 
 ### lblt1_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 18510 | 1190 | x1.00 |
+| `unrolled` | 10680 | 1190 | x1.00 |
 
 ### lblt1_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 29330 | 9620 | x1.00 |
+| `substitution` | 21500 | 9620 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lblt::lblt2
 
@@ -34,25 +34,25 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `product` | 63840 | 7890 | x1.00 |
+| `product` | 56010 | 7890 | x1.00 |
 
 ### lblt2_l_permuted
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `moves` | 61270 | 5320 | x1.00 |
+| `moves` | 53440 | 5320 | x1.00 |
 
 ### lblt2_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 54250 | 36330 | x1.00 |
+| `unrolled` | 46420 | 36330 | x1.00 |
 
 ### lblt2_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 88040 | 31290 | x1.00 |
+| `substitution` | 80210 | 31290 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lblt::lblt3
 
@@ -60,25 +60,25 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `product` | 141330 | 13650 | x1.00 |
+| `product` | 133500 | 13650 | x1.00 |
 
 ### lblt3_l_permuted
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `moves` | 142170 | 14490 | x1.00 |
+| `moves` | 134340 | 14490 | x1.00 |
 
 ### lblt3_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 124580 | 105660 | x1.00 |
+| `unrolled` | 116750 | 105660 | x1.00 |
 
 ### lblt3_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 187430 | 58650 | x1.00 |
+| `substitution` | 179600 | 58650 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lblt::lblt4
 
@@ -86,25 +86,25 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `product` | 273180 | 19610 | x1.00 |
+| `product` | 265350 | 19610 | x1.00 |
 
 ### lblt4_l_permuted
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `moves` | 283160 | 29590 | x1.00 |
+| `moves` | 281630 | 29590 | x1.00 |
 
 ### lblt4_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 248670 | 228350 | x1.00 |
+| `unrolled` | 247140 | 228350 | x1.00 |
 
 ### lblt4_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 344760 | 89790 | x1.00 |
+| `substitution` | 336930 | 89790 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lblt::lblt5
 
@@ -112,25 +112,25 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `product` | 470080 | 25770 | x1.00 |
+| `product` | 462250 | 25770 | x1.00 |
 
 ### lblt5_l_permuted
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `moves` | 504400 | 60090 | x1.00 |
+| `moves` | 505570 | 60090 | x1.00 |
 
 ### lblt5_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 437210 | 415090 | x1.00 |
+| `unrolled` | 438380 | 415090 | x1.00 |
 
 ### lblt5_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 580170 | 134160 | x1.00 |
+| `substitution` | 577340 | 134160 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lblt::lblt6
 
@@ -138,23 +138,23 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `product` | 746280 | 32130 | x1.00 |
+| `product` | 743650 | 32130 | x1.00 |
 
 ### lblt6_l_permuted
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `moves` | 808940 | 94790 | x1.00 |
+| `moves` | 813410 | 94790 | x1.00 |
 
 ### lblt6_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `unrolled` | 704450 | 680130 | x1.00 |
+| `unrolled` | 708920 | 680130 | x1.00 |
 
 ### lblt6_solve
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 896350 | 180200 | x1.00 |
+| `substitution` | 894820 | 180200 | x1.00 |
 

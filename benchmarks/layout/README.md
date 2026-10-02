@@ -3,7 +3,7 @@
 Empirical Sierra-gas micro-benchmarks used to choose the data layout and the abstraction style of
 `nalgebra.cairo` (fixed-point linear algebra for a provable physics engine).
 
-Toolchain: scarb 2.19.4 / Cairo 2.19.4 / snforge 0.61.0. Full numbers: [`GAS.md`](./GAS.md)
+Toolchain: scarb 2.20.1 / Cairo 2.20.0 / snforge 0.64.0. Full numbers: [`GAS.md`](./GAS.md)
 (106 groups, 648 tests). All figures below are **net Sierra gas** (`l2_gas`, raw minus the group
 baseline); 100 gas = 1 Cairo step, 1 range check = 70 gas.
 

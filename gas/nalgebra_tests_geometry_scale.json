@@ -1,67 +1,67 @@
 {
   "nalgebra_tests_geometry_scale::reflection::benches": {
     "reflection2_reflect": {
-      "baseline": 17440,
-      "vector2": 25410
+      "baseline": 9610,
+      "vector2": 17580
     },
     "reflection3_new_containing_point": {
-      "baseline": 17140,
-      "exact_dot": 19120
+      "baseline": 9310,
+      "exact_dot": 11290
     },
     "reflection3_reflect": {
-      "alt_sum_prod": 30170,
-      "baseline": 18340,
-      "matrix3x2": 38910,
-      "vector3": 28590
+      "alt_sum_prod": 22340,
+      "baseline": 10510,
+      "matrix3x2": 31080,
+      "vector3": 20760
     },
     "reflection3_reflect_rows": {
-      "baseline": 20440,
-      "matrix2x3": 58170
+      "baseline": 12610,
+      "matrix2x3": 50340
     },
     "reflection3_reflect_with_sign": {
-      "vector3": 28890
+      "vector3": 21060
     },
     "reflection6_reflect": {
-      "baseline": 21040,
-      "vector6": 38130
+      "baseline": 13210,
+      "vector6": 30300
     }
   },
   "nalgebra_tests_geometry_scale::scale::benches": {
     "scale2_transform_point": {
-      "baseline": 17240,
-      "product": 20500
+      "baseline": 9410,
+      "product": 12670
     },
     "scale3_mul": {
-      "baseline": 18140,
-      "component_product": 23080
+      "baseline": 10310,
+      "component_product": 15250
     },
     "scale3_mul_vector": {
-      "baseline": 18140,
-      "component_product": 23080
+      "baseline": 10310,
+      "component_product": 15250
     },
     "scale3_to_homogeneous": {
-      "baseline": 16340,
-      "diagonal": 16540
+      "baseline": 8510,
+      "diagonal": 8710
     },
     "scale3_transform_point": {
-      "baseline": 18140,
-      "product": 23080
+      "baseline": 10310,
+      "product": 15250
     },
     "scale3_try_inverse": {
-      "baseline": 17340,
-      "in_place": 26160,
-      "pseudo": 26060,
-      "reciprocals": 25960,
-      "unchecked": 25760
+      "baseline": 9510,
+      "in_place": 18330,
+      "pseudo": 18230,
+      "reciprocals": 18130,
+      "unchecked": 17930
     },
     "scale3_try_inverse_transform_point": {
-      "alt_reciprocal_product": 37190,
-      "baseline": 18140,
-      "division": 28460
+      "alt_reciprocal_product": 29360,
+      "baseline": 10310,
+      "division": 20630
     },
     "scale6_transform_point": {
-      "baseline": 20840,
-      "product": 30820
+      "baseline": 13010,
+      "product": 22990
     }
   }
 }

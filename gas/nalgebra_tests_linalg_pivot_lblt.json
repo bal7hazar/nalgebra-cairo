@@ -1,110 +1,110 @@
 {
   "nalgebra_tests_linalg_pivot_lblt::lblt1": {
     "lblt1_determinant": {
-      "baseline": 19210,
-      "product": 19710
+      "baseline": 11380,
+      "product": 11880
     },
     "lblt1_l_permuted": {
-      "baseline": 19210,
-      "moves": 19110
+      "baseline": 11380,
+      "moves": 11280
     },
     "lblt1_new": {
-      "baseline": 17320,
-      "unrolled": 18510
+      "baseline": 9490,
+      "unrolled": 10680
     },
     "lblt1_solve": {
-      "baseline": 19710,
-      "substitution": 29330
+      "baseline": 11880,
+      "substitution": 21500
     }
   },
   "nalgebra_tests_linalg_pivot_lblt::lblt2": {
     "lblt2_determinant": {
-      "baseline": 55950,
-      "product": 63840
+      "baseline": 48120,
+      "product": 56010
     },
     "lblt2_l_permuted": {
-      "baseline": 55950,
-      "moves": 61270
+      "baseline": 48120,
+      "moves": 53440
     },
     "lblt2_new": {
-      "baseline": 17920,
-      "unrolled": 54250
+      "baseline": 10090,
+      "unrolled": 46420
     },
     "lblt2_solve": {
-      "baseline": 56750,
-      "substitution": 88040
+      "baseline": 48920,
+      "substitution": 80210
     }
   },
   "nalgebra_tests_linalg_pivot_lblt::lblt3": {
     "lblt3_determinant": {
-      "baseline": 127680,
-      "product": 141330
+      "baseline": 119850,
+      "product": 133500
     },
     "lblt3_l_permuted": {
-      "baseline": 127680,
-      "moves": 142170
+      "baseline": 119850,
+      "moves": 134340
     },
     "lblt3_new": {
-      "baseline": 18920,
-      "unrolled": 124580
+      "baseline": 11090,
+      "unrolled": 116750
     },
     "lblt3_solve": {
-      "baseline": 128780,
-      "substitution": 187430
+      "baseline": 120950,
+      "substitution": 179600
     }
   },
   "nalgebra_tests_linalg_pivot_lblt::lblt4": {
     "lblt4_determinant": {
-      "baseline": 253570,
-      "product": 273180
+      "baseline": 245740,
+      "product": 265350
     },
     "lblt4_l_permuted": {
-      "baseline": 253570,
-      "moves": 283160
+      "baseline": 252040,
+      "moves": 281630
     },
     "lblt4_new": {
-      "baseline": 20320,
-      "unrolled": 248670
+      "baseline": 18790,
+      "unrolled": 247140
     },
     "lblt4_solve": {
-      "baseline": 254970,
-      "substitution": 344760
+      "baseline": 247140,
+      "substitution": 336930
     }
   },
   "nalgebra_tests_linalg_pivot_lblt::lblt5": {
     "lblt5_determinant": {
-      "baseline": 444310,
-      "product": 470080
+      "baseline": 436480,
+      "product": 462250
     },
     "lblt5_l_permuted": {
-      "baseline": 444310,
-      "moves": 504400
+      "baseline": 445480,
+      "moves": 505570
     },
     "lblt5_new": {
-      "baseline": 22120,
-      "unrolled": 437210
+      "baseline": 23290,
+      "unrolled": 438380
     },
     "lblt5_solve": {
-      "baseline": 446010,
-      "substitution": 580170
+      "baseline": 443180,
+      "substitution": 577340
     }
   },
   "nalgebra_tests_linalg_pivot_lblt::lblt6": {
     "lblt6_determinant": {
-      "baseline": 714150,
-      "product": 746280
+      "baseline": 711520,
+      "product": 743650
     },
     "lblt6_l_permuted": {
-      "baseline": 714150,
-      "moves": 808940
+      "baseline": 718620,
+      "moves": 813410
     },
     "lblt6_new": {
-      "baseline": 24320,
-      "unrolled": 704450
+      "baseline": 28790,
+      "unrolled": 708920
     },
     "lblt6_solve": {
-      "baseline": 716150,
-      "substitution": 896350
+      "baseline": 714620,
+      "substitution": 894820
     }
   }
 }

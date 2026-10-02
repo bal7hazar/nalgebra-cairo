@@ -1,27 +1,27 @@
 {
   "nalgebra_tests_linalg_solve_rhs::solve::benches": {
     "matrix2_solve_matrix2": {
-      "baseline": 17640,
-      "lower": 35160,
-      "lower_unchecked": 34460
+      "baseline": 9810,
+      "lower": 27330,
+      "lower_unchecked": 26630
     },
     "matrix3_solve_matrix3": {
-      "alt_columns": 61270,
-      "baseline": 19640,
-      "lower": 74350,
-      "lower_unchecked": 74050
+      "alt_columns": 53440,
+      "baseline": 11810,
+      "lower": 66520,
+      "lower_unchecked": 66220
     },
     "matrix4_solve_matrix4": {
-      "alt_columns": 100070,
-      "baseline": 22440,
-      "lower": 120660,
-      "lower_unchecked": 120260
+      "alt_columns": 92240,
+      "baseline": 14610,
+      "lower": 112830,
+      "lower_unchecked": 112430
     },
     "matrix6_solve_matrix6": {
-      "alt_columns": 216940,
-      "baseline": 30440,
-      "lower": 258040,
-      "lower_unchecked": 257440
+      "alt_columns": 209110,
+      "baseline": 22610,
+      "lower": 250210,
+      "lower_unchecked": 249610
     }
   }
 }
