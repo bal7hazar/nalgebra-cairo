@@ -132,7 +132,7 @@ interleaved rounds:
 
 The two combined closures, **static 6 + SVD / eigen 6 (21.5 s / 4.70 GB) and static 6 + spectral 6
 (21.5 s / 4.64 GB)**, are a little over the 20 s / 4.5 GB budget in the 15-round measurement (11.6 s / 4.38 GB and
-15.2 s / 4.13 GB in the last CI run, whose runners were faster); they are documented
+15.2 s / 4.13 GB in CI run 36767869070, whose runners were faster); they are documented
 here and not gated (owner decision, docs/SPLIT.md §18.7). The decomposition itself does not need the
 dimension-6 methods (`Matrix6::svd()` and the products live in `nalgebra_types6` and
 `nalgebra_linalg_*6`): SVD / eigen 6 alone costs 12.1 s / 3.00 GB, and the overrun is the methods of
