@@ -1,66 +1,66 @@
 {
   "nalgebra_shapes_tests_functional::benches": {
     "matrix2x3_mul_to": {
-      "alt_mul_mat": 96870,
-      "baseline": 84320,
-      "library": 96870
+      "alt_mul_mat": 89040,
+      "baseline": 76490,
+      "library": 89040
     },
     "matrix2x3_zip_map": {
-      "baseline": 91540,
-      "library": 97880
+      "baseline": 83710,
+      "library": 90050
     },
     "matrix3_apply_norm": {
-      "alt_norm": 56010,
-      "baseline": 50370,
-      "library": 56010
+      "alt_norm": 48180,
+      "baseline": 42540,
+      "library": 48180
     },
     "matrix3_map": {
-      "baseline": 87700,
-      "library": 96360
+      "baseline": 79870,
+      "library": 88530
     },
     "matrix3_swap": {
-      "baseline": 87300,
-      "library": 96660
+      "baseline": 79470,
+      "library": 88830
     },
     "matrix3_swap_rows": {
-      "alt_pair_match": 93500,
-      "baseline": 87300,
-      "library": 94440
+      "alt_pair_match": 85670,
+      "baseline": 79470,
+      "library": 86610
     },
     "matrix3_transpose_mut": {
-      "baseline": 87300,
-      "library": 89200
+      "baseline": 79470,
+      "library": 81370
     },
     "matrix4_apply": {
-      "baseline": 138140,
-      "library": 153380
+      "baseline": 130310,
+      "library": 145550
     },
     "matrix4_fill_lower_triangle": {
-      "alt_per_component": 154230,
-      "baseline": 138140,
-      "library": 144160
+      "alt_per_component": 146400,
+      "baseline": 130310,
+      "library": 136330
     },
     "matrix4_fill_row": {
-      "alt_per_component": 151340,
-      "baseline": 138140,
-      "library": 144350
+      "alt_per_component": 143510,
+      "baseline": 130310,
+      "library": 136520
     },
     "matrix6_set_column": {
-      "baseline": 303140,
-      "library": 324450
+      "baseline": 295310,
+      "library": 316620
     },
     "row_vector3_apply_metric_distance": {
-      "alt_amax": 52900,
-      "baseline": 45580,
-      "library": 52900
+      "alt_amax": 45070,
+      "baseline": 37750,
+      "library": 45070
     },
     "vector3_normalize_mut": {
-      "baseline": 45780,
-      "library": 58380
+      "baseline": 37950,
+      "library": 50550
     },
     "vector4_fold": {
-      "baseline": 34220,
-      "library": 37180
+      "baseline": 26390,
+      "library": 29350
     }
   }
 }

@@ -1,62 +1,62 @@
 {
   "nalgebra_tests_linalg_bidiagonal::bidiagonal1": {
     "bidiagonal1_new": {
-      "baseline": 17320,
-      "householder": 19990
+      "baseline": 9490,
+      "householder": 12160
     },
     "bidiagonal1_unpack": {
-      "baseline": 20290,
-      "symbolic": 27970
+      "baseline": 12460,
+      "symbolic": 20140
     }
   },
   "nalgebra_tests_linalg_bidiagonal::bidiagonal2": {
     "bidiagonal2_new": {
-      "baseline": 17920,
-      "householder": 68310
+      "baseline": 10090,
+      "householder": 60480
     },
     "bidiagonal2_unpack": {
-      "baseline": 69410,
-      "symbolic": 99720
+      "baseline": 61580,
+      "symbolic": 91890
     }
   },
   "nalgebra_tests_linalg_bidiagonal::bidiagonal3": {
     "bidiagonal3_new": {
-      "baseline": 18920,
-      "householder": 176010
+      "baseline": 16190,
+      "householder": 173280
     },
     "bidiagonal3_unpack": {
-      "baseline": 178510,
-      "symbolic": 254010
+      "baseline": 175780,
+      "symbolic": 251280
     }
   },
   "nalgebra_tests_linalg_bidiagonal::bidiagonal4": {
     "bidiagonal4_new": {
-      "baseline": 20320,
-      "householder": 336650
+      "baseline": 20390,
+      "householder": 336720
     },
     "bidiagonal4_unpack": {
-      "baseline": 340950,
-      "symbolic": 497130
+      "baseline": 341020,
+      "symbolic": 497200
     }
   },
   "nalgebra_tests_linalg_bidiagonal::bidiagonal5": {
     "bidiagonal5_new": {
-      "baseline": 22120,
-      "householder": 569800
+      "baseline": 25790,
+      "householder": 573470
     },
     "bidiagonal5_unpack": {
-      "baseline": 576300,
-      "symbolic": 858680
+      "baseline": 579970,
+      "symbolic": 862350
     }
   },
   "nalgebra_tests_linalg_bidiagonal::bidiagonal6": {
     "bidiagonal6_new": {
-      "baseline": 24320,
-      "householder": 886180
+      "baseline": 32390,
+      "householder": 894250
     },
     "bidiagonal6_unpack": {
-      "baseline": 895280,
-      "symbolic": 1356900
+      "baseline": 903350,
+      "symbolic": 1364970
     }
   }
 }

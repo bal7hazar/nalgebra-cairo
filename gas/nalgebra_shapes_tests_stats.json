@@ -1,70 +1,70 @@
 {
   "nalgebra_shapes_tests_stats::benches": {
     "matrix2x3_row_variance_tr": {
-      "baseline": 55710,
-      "library": 94170
+      "baseline": 47880,
+      "library": 86340
     },
     "matrix3_column_variance": {
-      "baseline": 65640,
-      "library": 109440
+      "baseline": 57810,
+      "library": 101610
     },
     "matrix3_mean": {
-      "baseline": 50370,
-      "library": 60110
+      "baseline": 42540,
+      "library": 52280
     },
     "matrix3_product": {
-      "baseline": 50370,
-      "library": 63810
+      "baseline": 42540,
+      "library": 55980
     },
     "matrix3_row_mean": {
-      "alt_div_each": 85360,
-      "baseline": 65640,
-      "library": 85160
+      "alt_div_each": 77530,
+      "baseline": 57810,
+      "library": 77330
     },
     "matrix3_sum": {
-      "alt_checked": 58820,
-      "baseline": 50370,
-      "library": 53650
+      "alt_checked": 50990,
+      "baseline": 42540,
+      "library": 45820
     },
     "matrix3_variance": {
-      "baseline": 50370,
-      "library": 73910
+      "baseline": 42540,
+      "library": 66080
     },
     "matrix6_mean": {
-      "baseline": 139740,
-      "library": 157580
+      "baseline": 131910,
+      "library": 149750
     },
     "matrix6_sum": {
-      "alt_checked": 170870,
-      "baseline": 139740,
-      "library": 148420
+      "alt_checked": 163040,
+      "baseline": 131910,
+      "library": 140590
     },
     "matrix6_variance": {
-      "baseline": 139740,
-      "library": 196760
+      "baseline": 131910,
+      "library": 188930
     },
     "row_vector2_sum": {
-      "alt_wide": 27210,
-      "baseline": 25330,
-      "library": 26070
+      "alt_wide": 19380,
+      "baseline": 17500,
+      "library": 18240
     },
     "row_vector3_sum": {
-      "alt_wide": 32590,
-      "baseline": 30510,
-      "library": 31990
+      "alt_wide": 24760,
+      "baseline": 22680,
+      "library": 24160
     },
     "row_vector4_sum": {
-      "alt_wide": 36100,
-      "baseline": 33820,
-      "library": 36040
+      "alt_wide": 28270,
+      "baseline": 25990,
+      "library": 28210
     },
     "vector6_mean": {
-      "baseline": 40440,
-      "library": 49280
+      "baseline": 32610,
+      "library": 41450
     },
     "vector6_variance": {
-      "baseline": 40440,
-      "library": 60260
+      "baseline": 32610,
+      "library": 52430
     }
   }
 }

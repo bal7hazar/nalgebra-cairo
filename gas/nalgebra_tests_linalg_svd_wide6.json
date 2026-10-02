@@ -1,65 +1,65 @@
 {
   "nalgebra_tests_linalg_svd_wide6::svd1x6": {
     "svd1x6_new": {
-      "baseline": 18320,
-      "eigen_of_gram": 69720,
-      "without_u": 70520,
-      "without_v": 70520
+      "baseline": 10490,
+      "eigen_of_gram": 61890,
+      "without_u": 62690,
+      "without_v": 62690
     },
     "svd1x6_pseudo_inverse": {
-      "baseline": 70550,
-      "scaled_product": 100640
+      "baseline": 62720,
+      "scaled_product": 92810
     },
     "svd1x6_singular_values": {
-      "baseline": 18320,
-      "eigen_of_gram": 41270,
-      "svd_without_factors": 70420
+      "baseline": 10490,
+      "eigen_of_gram": 33440,
+      "svd_without_factors": 62590
     },
     "svd1x6_to_polar": {
-      "baseline": 70550,
-      "products": 89720
+      "baseline": 62720,
+      "products": 81890
     }
   },
   "nalgebra_tests_linalg_svd_wide6::svd2x6": {
     "svd2x6_new": {
-      "baseline": 19520,
-      "eigen_of_gram": 365260,
-      "without_u": 366160,
-      "without_v": 366160
+      "baseline": 11690,
+      "eigen_of_gram": 357430,
+      "without_u": 358330,
+      "without_v": 358330
     },
     "svd2x6_pseudo_inverse": {
-      "baseline": 365990,
-      "scaled_product": 424770
+      "baseline": 358160,
+      "scaled_product": 416940
     },
     "svd2x6_singular_values": {
-      "baseline": 19520,
-      "eigen_of_gram": 194900,
-      "svd_without_factors": 366160
+      "baseline": 11690,
+      "eigen_of_gram": 187070,
+      "svd_without_factors": 358330
     },
     "svd2x6_to_polar": {
-      "baseline": 365990,
-      "products": 409240
+      "baseline": 358160,
+      "products": 401410
     }
   },
   "nalgebra_tests_linalg_svd_wide6::svd3x6": {
     "svd3x6_new": {
-      "baseline": 20720,
-      "eigen_of_gram": 1180400,
-      "without_u": 1181300,
-      "without_v": 1181300
+      "baseline": 12890,
+      "eigen_of_gram": 1172570,
+      "without_u": 1173470,
+      "without_v": 1173470
     },
     "svd3x6_pseudo_inverse": {
-      "baseline": 1182330,
-      "scaled_product": 1272700
+      "baseline": 1174500,
+      "scaled_product": 1264870
     },
     "svd3x6_singular_values": {
-      "baseline": 20720,
-      "eigen_of_gram": 864050,
-      "svd_without_factors": 1181300
+      "baseline": 12890,
+      "eigen_of_gram": 856220,
+      "svd_without_factors": 1173470
     },
     "svd3x6_to_polar": {
-      "baseline": 1182330,
-      "products": 1259000
+      "baseline": 1174500,
+      "products": 1251170
     }
   }
 }

@@ -1,38 +1,38 @@
 {
   "nalgebra_tests_linalg_schur56::schur5": {
     "eigen5_new": {
-      "baseline": 22120,
-      "schur": 16385850
+      "baseline": 14290,
+      "schur": 16378020
     },
     "schur5_complex_eigenvalues": {
-      "baseline": 22120,
-      "without_q": 4583050
+      "baseline": 19290,
+      "without_q": 4580220
     },
     "schur5_eigenvalues": {
-      "baseline": 22120,
-      "without_q": 12468770
+      "baseline": 14290,
+      "without_q": 12460940
     },
     "schur5_new": {
-      "baseline": 22120,
-      "francis": 5776640
+      "baseline": 19290,
+      "francis": 5773810
     }
   },
   "nalgebra_tests_linalg_schur56::schur6": {
     "eigen6_new": {
-      "baseline": 24320,
-      "schur": 10895440
+      "baseline": 22190,
+      "schur": 10893310
     },
     "schur6_complex_eigenvalues": {
-      "baseline": 24320,
-      "without_q": 6219960
+      "baseline": 22790,
+      "without_q": 6218430
     },
     "schur6_eigenvalues": {
-      "baseline": 24320,
-      "without_q": 7750550
+      "baseline": 22190,
+      "without_q": 7748420
     },
     "schur6_new": {
-      "baseline": 24320,
-      "francis": 7899130
+      "baseline": 22790,
+      "francis": 7897600
     }
   }
 }

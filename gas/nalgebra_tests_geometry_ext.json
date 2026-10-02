@@ -1,174 +1,174 @@
 {
   "nalgebra_tests_geometry_ext::abstract_rotation::benches": {
     "abstract_rotation_transform_vector": {
-      "baseline": 40410,
-      "direct": 62580,
-      "trait": 62580
+      "baseline": 32580,
+      "direct": 54750,
+      "trait": 54750
     }
   },
   "nalgebra_tests_geometry_ext::inplace::benches": {
     "point3_apply": {
-      "alt_map": 16640,
-      "apply": 16640,
-      "baseline": 15940
+      "alt_map": 8810,
+      "apply": 8810,
+      "baseline": 8110
     },
     "rotation2_mul_assign_unit_complex": {
-      "alt_by_value": 68880,
-      "baseline": 58730,
-      "mul_assign": 68780
+      "alt_by_value": 61050,
+      "baseline": 50900,
+      "mul_assign": 60950
     }
   },
   "nalgebra_tests_geometry_ext::point::benches": {
     "point3_from_slice": {
-      "baseline": 17840,
-      "checked": 20580
+      "baseline": 10010,
+      "checked": 12750
     },
     "point3_index": {
-      "baseline": 16340,
-      "match": 16340
+      "baseline": 8510,
+      "match": 8510
     },
     "point3_relative_eq": {
-      "baseline": 16740,
-      "component_wise": 51590
+      "baseline": 8910,
+      "component_wise": 43760
     },
     "point4_from_homogeneous": {
-      "baseline": 18240,
-      "div4": 30700
+      "baseline": 10410,
+      "div4": 22870
     },
     "point4_index": {
-      "baseline": 16540,
-      "match": 16540
+      "baseline": 8710,
+      "match": 8710
     },
     "point4_lerp": {
-      "baseline": 24460,
-      "fused": 32380
+      "baseline": 16630,
+      "fused": 24550
     },
     "point4_partial_ord": {
-      "baseline": 17140,
-      "le": 18220
+      "baseline": 9310,
+      "le": 10390
     },
     "point4_relative_eq": {
-      "baseline": 17140,
-      "component_wise": 63370,
-      "ulps_eq": 36980
+      "baseline": 9310,
+      "component_wise": 55540,
+      "ulps_eq": 29150
     },
     "point4_unscale": {
-      "baseline": 26740,
-      "div4": 38110
+      "baseline": 18910,
+      "div4": 30280
     },
     "point6_lerp": {
-      "baseline": 29020,
-      "fused": 40900
+      "baseline": 21190,
+      "fused": 33070
     }
   },
   "nalgebra_tests_geometry_ext::rotation2::benches": {
     "rotation2_from_matrix_eps": {
-      "baseline": 29590,
-      "closed_form": 42240,
-      "iterate_8": 342560
+      "baseline": 21760,
+      "closed_form": 34410,
+      "iterate_8": 334730
     },
     "rotation2_from_scaled_axis": {
-      "baseline": 38150,
-      "new": 69850
+      "baseline": 30320,
+      "new": 62020
     },
     "rotation2_mul_unit_complex": {
-      "baseline": 105080,
-      "div": 108840,
-      "first_column": 108840
+      "baseline": 97250,
+      "div": 101010,
+      "first_column": 101010
     },
     "rotation2_rotation_to": {
-      "baseline": 110240,
-      "div": 120290,
-      "four_kernels": 117760
+      "baseline": 102410,
+      "div": 112460,
+      "four_kernels": 109930
     },
     "rotation2_slerp": {
-      "baseline": 174880,
-      "through_unit_complex": 247240
+      "baseline": 167050,
+      "through_unit_complex": 239410
     }
   },
   "nalgebra_tests_geometry_ext::rotation3::benches": {
     "rotation3_angle_to": {
-      "alt_rotation_to_angle": 584320,
-      "baseline": 504370,
-      "fused_trace": 536600
+      "alt_rotation_to_angle": 576490,
+      "baseline": 496540,
+      "fused_trace": 528770
     },
     "rotation3_axis_angle": {
-      "axis_then_angle": 353500,
-      "baseline": 299550
+      "axis_then_angle": 345670,
+      "baseline": 291720
     },
     "rotation3_euler_angles_ordered": {
-      "baseline": 468660,
-      "shuster_markley": 694920
+      "baseline": 460830,
+      "shuster_markley": 687090
     },
     "rotation3_from_matrix": {
-      "alt_matrix_iterate_8": 2164840,
-      "baseline": 538980,
-      "closed_form": 1068580,
-      "iterate_8": 1943680
+      "alt_matrix_iterate_8": 2157010,
+      "baseline": 531150,
+      "closed_form": 1060750,
+      "iterate_8": 1935850
     },
     "rotation3_index": {
-      "baseline": 243900,
-      "match": 243900
+      "baseline": 236070,
+      "match": 236070
     },
     "rotation3_look_at_lh": {
-      "baseline": 61970,
-      "face_towards_transposed": 107140
+      "baseline": 54140,
+      "face_towards_transposed": 99310
     },
     "rotation3_mul_unit_quaternion": {
-      "baseline": 286130,
-      "div": 327060,
-      "shepperd_then_hamilton": 325860
+      "baseline": 278300,
+      "div": 319230,
+      "shepperd_then_hamilton": 318030
     },
     "rotation3_new": {
-      "baseline": 94400,
-      "rodrigues": 171300
+      "baseline": 86570,
+      "rodrigues": 163470
     },
     "rotation3_powf": {
-      "axis_angle": 479700,
-      "baseline": 363800
+      "axis_angle": 471870,
+      "baseline": 355970
     },
     "rotation3_relative_eq": {
-      "baseline": 245600,
-      "component_wise": 348730,
-      "ulps_eq": 289740
+      "baseline": 237770,
+      "component_wise": 340900,
+      "ulps_eq": 281910
     },
     "rotation3_rotation_to": {
-      "baseline": 498610,
-      "div": 520860,
-      "product_with_transpose": 520860
+      "baseline": 490780,
+      "div": 513030,
+      "product_with_transpose": 513030
     },
     "rotation3_slerp": {
-      "baseline": 681540,
-      "through_quaternions": 886720,
-      "try_slerp": 888220
+      "baseline": 673710,
+      "through_quaternions": 878890,
+      "try_slerp": 880390
     }
   },
   "nalgebra_tests_geometry_ext::translation::benches": {
     "translation2_mul_unit_complex": {
-      "baseline": 16340,
-      "wrap": 16640
+      "baseline": 8510,
+      "wrap": 8810
     },
     "translation3_div": {
-      "baseline": 18140,
-      "relative_eq": 54610,
-      "subtract": 20560
+      "baseline": 10310,
+      "relative_eq": 46780,
+      "subtract": 12730
     },
     "translation3_mul_isometry": {
-      "add_translation": 20560,
-      "baseline": 17540,
-      "mul_unit_quaternion": 17540
+      "add_translation": 12730,
+      "baseline": 9710,
+      "mul_unit_quaternion": 9710
     },
     "translation4_to_homogeneous": {
-      "baseline": 16140,
-      "matrix5": 16140
+      "baseline": 8310,
+      "matrix5": 8310
     },
     "translation4_transform_point": {
-      "add": 22300,
-      "baseline": 19040
+      "add": 14470,
+      "baseline": 11210
     },
     "translation6_mul": {
-      "add": 22280,
-      "baseline": 17940
+      "add": 14450,
+      "baseline": 10110
     }
   }
 }

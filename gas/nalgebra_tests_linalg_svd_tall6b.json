@@ -1,44 +1,44 @@
 {
   "nalgebra_tests_linalg_svd_tall6b::svd6x4": {
     "svd6x4_new": {
-      "baseline": 21920,
-      "eigen_of_gram": 2402440,
-      "without_u": 2403340,
-      "without_v": 2403340
+      "baseline": 14090,
+      "eigen_of_gram": 2394610,
+      "without_u": 2395510,
+      "without_v": 2395510
     },
     "svd6x4_pseudo_inverse": {
-      "baseline": 2405970,
-      "scaled_product": 2518090
+      "baseline": 2398140,
+      "scaled_product": 2510260
     },
     "svd6x4_singular_values": {
-      "baseline": 21920,
-      "eigen_of_gram": 1932940,
-      "svd_without_factors": 2403340
+      "baseline": 14090,
+      "eigen_of_gram": 1925110,
+      "svd_without_factors": 2395510
     },
     "svd6x4_to_polar": {
-      "baseline": 2405970,
-      "products": 2566220
+      "baseline": 2398140,
+      "products": 2558390
     }
   },
   "nalgebra_tests_linalg_svd_tall6b::svd6x5": {
     "svd6x5_new": {
-      "baseline": 27520,
-      "eigen_of_gram": 4717460,
-      "without_u": 4718360,
-      "without_v": 4718360
+      "baseline": 20290,
+      "eigen_of_gram": 4710230,
+      "without_u": 4711130,
+      "without_v": 4711130
     },
     "svd6x5_pseudo_inverse": {
-      "baseline": 4722990,
-      "scaled_product": 4877070
+      "baseline": 4715760,
+      "scaled_product": 4869840
     },
     "svd6x5_singular_values": {
-      "baseline": 27520,
-      "eigen_of_gram": 4076250,
-      "svd_without_factors": 4718360
+      "baseline": 20290,
+      "eigen_of_gram": 4069020,
+      "svd_without_factors": 4711130
     },
     "svd6x5_to_polar": {
-      "baseline": 4722990,
-      "products": 4920900
+      "baseline": 4715760,
+      "products": 4913670
     }
   }
 }

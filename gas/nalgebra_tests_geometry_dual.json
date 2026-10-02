@@ -1,82 +1,82 @@
 {
   "nalgebra_tests_geometry_dual::dual_quaternion::benches": {
     "dual_quaternion_lerp": {
-      "baseline": 23040,
-      "lerp": 38780
+      "baseline": 15210,
+      "lerp": 30950
     },
     "dual_quaternion_mul": {
-      "alt_two_products": 61250,
-      "baseline": 22640,
-      "fused": 50640
+      "alt_two_products": 53420,
+      "baseline": 14810,
+      "fused": 42810
     },
     "dual_quaternion_normalize": {
-      "baseline": 20840,
-      "normalize": 48250
+      "baseline": 13010,
+      "normalize": 40420
     },
     "dual_quaternion_try_inverse": {
-      "baseline": 20840,
-      "try_inverse": 67410
+      "baseline": 13010,
+      "try_inverse": 59580
     }
   },
   "nalgebra_tests_geometry_dual::unit_dual_quaternion::benches": {
     "unit_dual_quaternion_div": {
-      "baseline": 22640,
-      "div": 75340
+      "baseline": 14810,
+      "div": 67510
     },
     "unit_dual_quaternion_from_parts": {
-      "alt_upstream": 47450,
-      "baseline": 20840,
-      "fused": 32690
+      "alt_upstream": 39620,
+      "baseline": 13010,
+      "fused": 24860
     },
     "unit_dual_quaternion_inverse": {
-      "alt_conjugate": 22840,
-      "baseline": 20840,
-      "literal": 46240
+      "alt_conjugate": 15010,
+      "baseline": 13010,
+      "literal": 38410
     },
     "unit_dual_quaternion_inverse_transform_point": {
-      "alt_to_isometry": 55300,
-      "baseline": 19140,
-      "literal": 70880
+      "alt_to_isometry": 47470,
+      "baseline": 11310,
+      "literal": 63050
     },
     "unit_dual_quaternion_mul": {
-      "baseline": 22640,
-      "mul": 50640
+      "baseline": 14810,
+      "mul": 42810
     },
     "unit_dual_quaternion_mul_isometry": {
-      "baseline": 28510,
-      "mul_isometry": 67760
+      "baseline": 20680,
+      "mul_isometry": 59930
     },
     "unit_dual_quaternion_mul_translation": {
-      "alt_from_parts": 61190,
-      "baseline": 22040,
-      "fused": 36650
+      "alt_from_parts": 53360,
+      "baseline": 14210,
+      "fused": 28820
     },
     "unit_dual_quaternion_mul_unit_quaternion": {
-      "alt_from_rotation": 49840,
-      "baseline": 21840,
-      "fused": 45840
+      "alt_from_rotation": 42010,
+      "baseline": 14010,
+      "fused": 38010
     },
     "unit_dual_quaternion_nlerp": {
-      "baseline": 23040,
-      "nlerp": 66290
+      "baseline": 15210,
+      "nlerp": 58460
     },
     "unit_dual_quaternion_sclerp": {
-      "baseline": 23040,
-      "sclerp": 208450
+      "baseline": 15210,
+      "sclerp": 200620
     },
     "unit_dual_quaternion_to_isometry": {
-      "baseline": 20740,
-      "to_isometry": 31310
+      "baseline": 12910,
+      "to_isometry": 23480
     },
     "unit_dual_quaternion_transform_point": {
-      "alt_to_isometry": 52380,
-      "baseline": 19140,
-      "literal": 46180
+      "alt_to_isometry": 44550,
+      "baseline": 11310,
+      "literal": 38350
     },
     "unit_dual_quaternion_translation": {
-      "alt_upstream": 33010,
-      "baseline": 18340,
-      "fused": 28210
+      "alt_upstream": 25180,
+      "baseline": 10510,
+      "fused": 20380
     }
   }
 }

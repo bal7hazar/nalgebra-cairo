@@ -8,28 +8,28 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 2402440 | 2380520 | x1.00 |
-| `without_u` | 2403340 | 2381420 | x1.00 |
-| `without_v` | 2403340 | 2381420 | x1.00 |
+| `eigen_of_gram` | 2394610 | 2380520 | x1.00 |
+| `without_u` | 2395510 | 2381420 | x1.00 |
+| `without_v` | 2395510 | 2381420 | x1.00 |
 
 ### svd6x4_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 2518090 | 112120 | x1.00 |
+| `scaled_product` | 2510260 | 112120 | x1.00 |
 
 ### svd6x4_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 1932940 | 1911020 | x1.00 |
-| `svd_without_factors` | 2403340 | 2381420 | x1.25 |
+| `eigen_of_gram` | 1925110 | 1911020 | x1.00 |
+| `svd_without_factors` | 2395510 | 2381420 | x1.25 |
 
 ### svd6x4_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `products` | 2566220 | 160250 | x1.00 |
+| `products` | 2558390 | 160250 | x1.00 |
 
 ## nalgebra_tests_linalg_svd_tall6b::svd6x5
 
@@ -37,26 +37,26 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 4717460 | 4689940 | x1.00 |
-| `without_u` | 4718360 | 4690840 | x1.00 |
-| `without_v` | 4718360 | 4690840 | x1.00 |
+| `eigen_of_gram` | 4710230 | 4689940 | x1.00 |
+| `without_u` | 4711130 | 4690840 | x1.00 |
+| `without_v` | 4711130 | 4690840 | x1.00 |
 
 ### svd6x5_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 4877070 | 154080 | x1.00 |
+| `scaled_product` | 4869840 | 154080 | x1.00 |
 
 ### svd6x5_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 4076250 | 4048730 | x1.00 |
-| `svd_without_factors` | 4718360 | 4690840 | x1.16 |
+| `eigen_of_gram` | 4069020 | 4048730 | x1.00 |
+| `svd_without_factors` | 4711130 | 4690840 | x1.16 |
 
 ### svd6x5_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `products` | 4920900 | 197910 | x1.00 |
+| `products` | 4913670 | 197910 | x1.00 |
 

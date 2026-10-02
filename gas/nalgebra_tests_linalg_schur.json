@@ -1,74 +1,74 @@
 {
   "nalgebra_tests_linalg_schur::schur1": {
     "eigen1_new": {
-      "baseline": 17320,
-      "schur": 20170
+      "baseline": 9490,
+      "schur": 12340
     },
     "schur1_complex_eigenvalues": {
-      "baseline": 17320,
-      "without_q": 17820
+      "baseline": 9490,
+      "without_q": 9990
     },
     "schur1_eigenvalues": {
-      "baseline": 17320,
-      "without_q": 16910
+      "baseline": 9490,
+      "without_q": 9080
     },
     "schur1_new": {
-      "baseline": 17320,
-      "francis": 17820
+      "baseline": 9490,
+      "francis": 9990
     }
   },
   "nalgebra_tests_linalg_schur::schur2": {
     "eigen2_new": {
-      "baseline": 17920,
-      "schur": 114340
+      "baseline": 10090,
+      "schur": 106510
     },
     "schur2_complex_eigenvalues": {
-      "baseline": 17920,
-      "without_q": 104230
+      "baseline": 10090,
+      "without_q": 96400
     },
     "schur2_eigenvalues": {
-      "baseline": 17920,
-      "without_q": 41920
+      "baseline": 10090,
+      "without_q": 34090
     },
     "schur2_new": {
-      "baseline": 17920,
-      "francis": 80300
+      "baseline": 10090,
+      "francis": 72470
     }
   },
   "nalgebra_tests_linalg_schur::schur3": {
     "eigen3_new": {
-      "baseline": 18920,
-      "schur": 1841330
+      "baseline": 11090,
+      "schur": 1833500
     },
     "schur3_complex_eigenvalues": {
-      "baseline": 18920,
-      "without_q": 2045470
+      "baseline": 11090,
+      "without_q": 2037640
     },
     "schur3_eigenvalues": {
-      "baseline": 18920,
-      "without_q": 1518830
+      "baseline": 11090,
+      "without_q": 1511000
     },
     "schur3_new": {
-      "baseline": 18920,
-      "francis": 2341510
+      "baseline": 11090,
+      "francis": 2333680
     }
   },
   "nalgebra_tests_linalg_schur::schur4": {
     "eigen4_new": {
-      "baseline": 20320,
-      "schur": 2785350
+      "baseline": 12490,
+      "schur": 2777520
     },
     "schur4_complex_eigenvalues": {
-      "baseline": 20320,
-      "without_q": 2880260
+      "baseline": 12490,
+      "without_q": 2872430
     },
     "schur4_eigenvalues": {
-      "baseline": 20320,
-      "without_q": 2205180
+      "baseline": 12490,
+      "without_q": 2197350
     },
     "schur4_new": {
-      "baseline": 20320,
-      "francis": 3476000
+      "baseline": 12490,
+      "francis": 3468170
     }
   }
 }

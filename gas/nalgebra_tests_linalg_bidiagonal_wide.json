@@ -1,152 +1,152 @@
 {
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x2": {
     "bidiagonal1x2_new": {
-      "baseline": 17520,
-      "householder": 47050
+      "baseline": 9690,
+      "householder": 39220
     },
     "bidiagonal1x2_unpack": {
-      "baseline": 47450,
-      "symbolic": 58350
+      "baseline": 39620,
+      "symbolic": 50520
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x3": {
     "bidiagonal1x3_new": {
-      "baseline": 17720,
-      "householder": 56210
+      "baseline": 9890,
+      "householder": 48380
     },
     "bidiagonal1x3_unpack": {
-      "baseline": 56910,
-      "symbolic": 70730
+      "baseline": 49080,
+      "symbolic": 62900
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x4": {
     "bidiagonal1x4_new": {
-      "baseline": 17920,
-      "householder": 65070
+      "baseline": 10090,
+      "householder": 57240
     },
     "bidiagonal1x4_unpack": {
-      "baseline": 66070,
-      "symbolic": 83210
+      "baseline": 58240,
+      "symbolic": 75380
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x5": {
     "bidiagonal1x5_new": {
-      "baseline": 18120,
-      "householder": 83080
+      "baseline": 10290,
+      "householder": 75250
     },
     "bidiagonal1x5_unpack": {
-      "baseline": 84380,
-      "symbolic": 105240
+      "baseline": 76550,
+      "symbolic": 97410
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal1x6": {
     "bidiagonal1x6_new": {
-      "baseline": 18320,
-      "householder": 91940
+      "baseline": 10490,
+      "householder": 84110
     },
     "bidiagonal1x6_unpack": {
-      "baseline": 93540,
-      "symbolic": 117720
+      "baseline": 85710,
+      "symbolic": 109890
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x3": {
     "bidiagonal2x3_new": {
-      "baseline": 18320,
-      "householder": 112410
+      "baseline": 10490,
+      "householder": 104580
     },
     "bidiagonal2x3_unpack": {
-      "baseline": 113910,
-      "symbolic": 153640
+      "baseline": 106080,
+      "symbolic": 145810
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x4": {
     "bidiagonal2x4_new": {
-      "baseline": 18720,
-      "householder": 138620
+      "baseline": 10890,
+      "householder": 130790
     },
     "bidiagonal2x4_unpack": {
-      "baseline": 140520,
-      "symbolic": 189670
+      "baseline": 132690,
+      "symbolic": 181840
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x5": {
     "bidiagonal2x5_new": {
-      "baseline": 19120,
-      "householder": 173680
+      "baseline": 11290,
+      "householder": 165850
     },
     "bidiagonal2x5_unpack": {
-      "baseline": 175980,
-      "symbolic": 234150
+      "baseline": 168150,
+      "symbolic": 226320
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal2x6": {
     "bidiagonal2x6_new": {
-      "baseline": 19520,
-      "householder": 208740
+      "baseline": 16390,
+      "householder": 205610
     },
     "bidiagonal2x6_unpack": {
-      "baseline": 211440,
-      "symbolic": 279430
+      "baseline": 208310,
+      "symbolic": 276300
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x4": {
     "bidiagonal3x4_new": {
-      "baseline": 19520,
-      "householder": 242410
+      "baseline": 17390,
+      "householder": 240280
     },
     "bidiagonal3x4_unpack": {
-      "baseline": 245510,
-      "symbolic": 339410
+      "baseline": 243380,
+      "symbolic": 337280
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x5": {
     "bidiagonal3x5_new": {
-      "baseline": 20120,
-      "householder": 300070
+      "baseline": 18590,
+      "householder": 298540
     },
     "bidiagonal3x5_unpack": {
-      "baseline": 303770,
-      "symbolic": 415270
+      "baseline": 302240,
+      "symbolic": 413740
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal3x6": {
     "bidiagonal3x6_new": {
-      "baseline": 20720,
-      "householder": 357430
+      "baseline": 19790,
+      "householder": 356500
     },
     "bidiagonal3x6_unpack": {
-      "baseline": 361730,
-      "symbolic": 491630
+      "baseline": 360800,
+      "symbolic": 490700
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal4x5": {
     "bidiagonal4x5_new": {
-      "baseline": 21120,
-      "householder": 439860
+      "baseline": 21990,
+      "householder": 440730
     },
     "bidiagonal4x5_unpack": {
-      "baseline": 444960,
-      "symbolic": 630700
+      "baseline": 445830,
+      "symbolic": 631570
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal4x6": {
     "bidiagonal4x6_new": {
-      "baseline": 21920,
-      "householder": 525180
+      "baseline": 23590,
+      "householder": 526850
     },
     "bidiagonal4x6_unpack": {
-      "baseline": 531080,
-      "symbolic": 745180
+      "baseline": 532750,
+      "symbolic": 746850
     }
   },
   "nalgebra_tests_linalg_bidiagonal_wide::bidiagonal5x6": {
     "bidiagonal5x6_new": {
-      "baseline": 23120,
-      "householder": 706030
+      "baseline": 27790,
+      "householder": 710700
     },
     "bidiagonal5x6_unpack": {
-      "baseline": 713530,
-      "symbolic": 1039210
+      "baseline": 718200,
+      "symbolic": 1043880
     }
   }
 }

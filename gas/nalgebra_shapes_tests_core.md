@@ -8,83 +8,83 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 96870 | 12550 | x1.00 |
+| `mul_mat` | 89040 | 12550 | x1.00 |
 
 ### matrix2x3_mul_vector3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 70460 | 5160 | x1.00 |
+| `mul_mat` | 62630 | 5160 | x1.00 |
 
 ### matrix2x3_tr_mul_matrix2x3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_transpose_then_mul_mat` | 123520 | 21150 | x1.00 |
-| `tr_mul` | 123520 | 21150 | x1.00 |
+| `alt_transpose_then_mul_mat` | 115690 | 21150 | x1.00 |
+| `tr_mul` | 115690 | 21150 | x1.00 |
 
 ### matrix3x2_mul_matrix2x3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 123520 | 21150 | x1.00 |
+| `mul_mat` | 115690 | 21150 | x1.00 |
 
 ### matrix3x2_tr_mul_vector3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_transpose_then_mul_mat` | 70460 | 5160 | x1.00 |
-| `tr_mul` | 70460 | 5160 | x1.00 |
+| `alt_transpose_then_mul_mat` | 62630 | 5160 | x1.00 |
+| `tr_mul` | 62630 | 5160 | x1.00 |
 
 ### matrix4_mul_matrix4
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 242150 | 46310 | x1.00 |
-| `operator` | 242150 | 46310 | x1.00 |
+| `mul_mat` | 234320 | 46310 | x1.00 |
+| `operator` | 234320 | 46310 | x1.00 |
 
 ### matrix5_mul_matrix5
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 365140 | 76330 | x1.00 |
-| `operator` | 365140 | 76330 | x1.00 |
+| `mul_mat` | 357310 | 76330 | x1.00 |
+| `operator` | 357310 | 76330 | x1.00 |
 
 ### matrix5_mul_vector5
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 167740 | 20230 | x1.00 |
+| `mul_mat` | 159910 | 20230 | x1.00 |
 
 ### matrix5_tr_mul_vector5
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_transpose_then_mul_mat` | 167740 | 20230 | x1.00 |
-| `tr_mul` | 167740 | 20230 | x1.00 |
+| `alt_transpose_then_mul_mat` | 159910 | 20230 | x1.00 |
+| `tr_mul` | 159910 | 20230 | x1.00 |
 
 ### matrix6x4_mul_matrix4x6
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 420110 | 97110 | x1.00 |
+| `mul_mat` | 412280 | 97110 | x1.00 |
 
 ### row_vector3_mul_vector3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 54740 | 2780 | x1.00 |
+| `mul_mat` | 46910 | 2780 | x1.00 |
 
 ### row_vector6_mul_vector6
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_nested` | 75800 | 3980 | x1.00 |
-| `mul_mat` | 75800 | 3980 | x1.00 |
+| `alt_nested` | 67970 | 3980 | x1.00 |
+| `mul_mat` | 67970 | 3980 | x1.00 |
 
 ### vector3_mul_row_vector3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `mul_mat` | 100660 | 18150 | x1.00 |
+| `mul_mat` | 92830 | 18150 | x1.00 |
 

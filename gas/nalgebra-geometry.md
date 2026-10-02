@@ -8,19 +8,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `lerp_normalize` | 40890 | - | x1.00 |
+| `lerp_normalize` | 33060 | - | x1.00 |
 
 ### isometry2_renormalize
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `exact` | 26920 | - | x1.00 |
+| `exact` | 19090 | - | x1.00 |
 
 ### isometry2_renormalize_fast
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `newton` | 25360 | - | x1.00 |
+| `newton` | 17530 | - | x1.00 |
 
 ## nalgebra::geometry::isometry3::benches
 
@@ -28,19 +28,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `lerp_normalize` | 58640 | - | x1.00 |
+| `lerp_normalize` | 50810 | - | x1.00 |
 
 ### isometry3_renormalize
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `exact` | 35220 | - | x1.00 |
+| `exact` | 27390 | - | x1.00 |
 
 ### isometry3_renormalize_fast
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `newton` | 31120 | - | x1.00 |
+| `newton` | 23290 | - | x1.00 |
 
 ## nalgebra::geometry::quaternion::benches
 
@@ -48,7 +48,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 30590 | - | x1.00 |
+| `fused` | 22760 | - | x1.00 |
 
 ## nalgebra::geometry::rotation3::benches
 
@@ -56,7 +56,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_quaternion` | 94820 | - | x1.00 |
+| `alt_quaternion` | 86990 | - | x1.00 |
 
 ## nalgebra::geometry::unit_complex::benches
 
@@ -64,7 +64,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_normalized_inputs` | 45820 | - | x1.00 |
+| `alt_normalized_inputs` | 37990 | - | x1.00 |
 
 ## nalgebra::geometry::unit_quaternion::benches
 
@@ -72,5 +72,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 30590 | - | x1.00 |
+| `fused` | 22760 | - | x1.00 |
 

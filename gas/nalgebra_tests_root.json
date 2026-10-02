@@ -1,61 +1,61 @@
 {
   "nalgebra_tests_root::benches": {
     "center_point3": {
-      "baseline": 17260,
-      "coords": 24890,
-      "root": 23270
+      "baseline": 9430,
+      "coords": 17060,
+      "root": 15440
     },
     "distance_point3": {
-      "baseline": 17260,
-      "coords": 22370,
-      "root": 22370
+      "baseline": 9430,
+      "coords": 14540,
+      "root": 14540
     },
     "distance_point5": {
-      "baseline": 18280,
-      "coords": 27390,
-      "root": 27390
+      "baseline": 10450,
+      "coords": 19560,
+      "root": 19560
     },
     "dmatrix_macro3": {
-      "alt_usize_check": 81520,
-      "baseline": 17740,
-      "from_row_slice": 81220,
-      "macro": 81220
+      "alt_usize_check": 73690,
+      "baseline": 9910,
+      "from_row_slice": 73390,
+      "macro": 73390
     },
     "inf_matrix3": {
-      "baseline": 23920,
-      "method": 31040,
-      "root": 31040
+      "baseline": 16090,
+      "method": 23210,
+      "root": 23210
     },
     "matrix_macro3": {
-      "baseline": 17740,
-      "macro": 26300,
-      "new": 26300
+      "baseline": 9910,
+      "macro": 18470,
+      "new": 18470
     },
     "product_matrix3_4": {
-      "baseline": 22040,
-      "chain": 89690,
-      "owned_corelib": 127390,
-      "snapshots": 102930
+      "baseline": 14210,
+      "chain": 81860,
+      "owned_corelib": 119560,
+      "snapshots": 95100
     },
     "stack_2x2_blocks": {
-      "baseline": 20000,
-      "macro": 23700,
-      "new": 23700
+      "baseline": 12170,
+      "macro": 15870,
+      "new": 15870
     },
     "sum_dmatrix3_4": {
-      "baseline": 28240,
-      "chain": 95220,
-      "library": 102280
+      "baseline": 20410,
+      "chain": 87390,
+      "library": 94450
     },
     "sum_matrix3_4": {
-      "alt_fold": 69790,
-      "alt_unrolled2": 56360,
-      "alt_unrolled4": 56090,
-      "baseline": 22040,
-      "chain": 42420,
-      "library": 56360,
-      "snapshots": 57160,
-      "upstream_from_zero": 60070
+      "alt_fold": 61960,
+      "alt_unrolled2": 48530,
+      "alt_unrolled4": 48260,
+      "baseline": 14210,
+      "chain": 34590,
+      "library": 48530,
+      "snapshots": 49330,
+      "upstream_from_zero": 52240
     }
   }
 }

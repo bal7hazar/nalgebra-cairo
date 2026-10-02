@@ -1,100 +1,100 @@
 {
   "nalgebra_glam::benches": {
     "isometry2_to_mat3": {
-      "baseline": 16140,
-      "into": 16340
+      "baseline": 8310,
+      "into": 8510
     },
     "isometry2_to_vec2_angle": {
-      "baseline": 16140,
-      "into": 45940
+      "baseline": 8310,
+      "into": 38110
     },
     "isometry3_to_mat4": {
-      "baseline": 16740,
-      "into": 39110
+      "baseline": 8910,
+      "into": 31280
     },
     "isometry3_to_vec3_quat": {
-      "baseline": 16740,
-      "into": 16740
+      "baseline": 8910,
+      "into": 8910
     },
     "mat2_to_rotation2": {
-      "baseline": 16140,
-      "into": 24310
+      "baseline": 8310,
+      "into": 16480
     },
     "mat3_to_isometry2": {
-      "baseline": 17140,
-      "try_into": 39200
+      "baseline": 9310,
+      "try_into": 31370
     },
     "mat3_to_similarity2": {
-      "baseline": 17140,
-      "try_into": 51130
+      "baseline": 9310,
+      "try_into": 43300
     },
     "mat4_to_isometry3": {
-      "baseline": 18540,
-      "try_into": 97440
+      "baseline": 10710,
+      "try_into": 89610
     },
     "mat4_to_isometry3_reject": {
-      "baseline": 21940,
-      "bottom_first": 23150,
-      "orthogonal_first": 101140,
-      "single_function": 101140
+      "baseline": 14110,
+      "bottom_first": 15320,
+      "orthogonal_first": 93310,
+      "single_function": 93310
     },
     "mat4_to_matrix4": {
-      "baseline": 18540,
-      "into": 18540
+      "baseline": 10710,
+      "into": 10710
     },
     "mat4_to_similarity3": {
-      "baseline": 18540,
-      "one_pass": 117880,
-      "two_pass": 163170
+      "baseline": 10710,
+      "one_pass": 110050,
+      "two_pass": 155340
     },
     "matrix4_to_mat4": {
-      "baseline": 21940,
-      "into": 21940
+      "baseline": 14110,
+      "into": 14110
     },
     "quat_to_rotation3": {
-      "baseline": 16410,
-      "into": 53090
+      "baseline": 8580,
+      "into": 45260
     },
     "quat_to_unit_quaternion": {
-      "baseline": 16140,
-      "into": 30120
+      "baseline": 8310,
+      "into": 22290
     },
     "rotation3_to_quat": {
-      "baseline": 55090,
-      "into": 83170
+      "baseline": 47260,
+      "into": 75340
     },
     "similarity3_to_mat4": {
-      "baseline": 18540,
-      "into": 59260
+      "baseline": 10710,
+      "into": 51430
     },
     "unit_quaternion_to_quat": {
-      "baseline": 16140,
-      "into": 16140
+      "baseline": 8310,
+      "into": 8310
     },
     "vec2_angle_to_isometry2": {
-      "baseline": 16710,
-      "into": 47140
+      "baseline": 8880,
+      "into": 39310
     },
     "vec2_to_isometry2": {
-      "angle_zero": 33050,
-      "baseline": 15740,
-      "identity": 15240
+      "angle_zero": 25220,
+      "baseline": 7910,
+      "identity": 7410
     },
     "vec3_quat_to_isometry3": {
-      "baseline": 17510,
-      "into": 30650
+      "baseline": 9680,
+      "into": 22820
     },
     "vec3_to_unit_vector3": {
-      "baseline": 15940,
-      "try_into": 27770
+      "baseline": 8110,
+      "try_into": 19940
     },
     "vec3_to_vector3": {
-      "baseline": 15940,
-      "into": 15940
+      "baseline": 8110,
+      "into": 8110
     },
     "vector3_to_vec3": {
-      "baseline": 15940,
-      "into": 15940
+      "baseline": 8110,
+      "into": 8110
     }
   }
 }

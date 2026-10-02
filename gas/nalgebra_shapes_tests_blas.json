@@ -1,98 +1,98 @@
 {
   "nalgebra_shapes_tests_blas::benches": {
     "matrix2_quadform_matrix3": {
-      "baseline": 113430,
-      "library": 150710
+      "baseline": 105600,
+      "library": 142880
     },
     "matrix2_quadform_tr_matrix3": {
-      "baseline": 113430,
-      "library": 150710
+      "baseline": 105600,
+      "library": 142880
     },
     "matrix2x3_gemm": {
-      "baseline": 143820,
-      "library": 176210
+      "baseline": 135990,
+      "library": 168380
     },
     "matrix2x3_gemm_tr": {
-      "alt_direct": 176210,
-      "baseline": 143820,
-      "library": 176210
+      "alt_direct": 168380,
+      "baseline": 135990,
+      "library": 168380
     },
     "matrix3_gemm": {
-      "alt_upstream": 201230,
-      "baseline": 157960,
-      "library": 201230
+      "alt_upstream": 193400,
+      "baseline": 150130,
+      "library": 193400
     },
     "matrix3_gemm_tr": {
-      "alt_direct": 201230,
-      "baseline": 157960,
-      "library": 201230
+      "alt_direct": 193400,
+      "baseline": 150130,
+      "library": 193400
     },
     "matrix3_ger": {
-      "alt_scaled": 155510,
-      "baseline": 118240,
-      "library": 145430
+      "alt_scaled": 147680,
+      "baseline": 110410,
+      "library": 137600
     },
     "matrix3_quadform_matrix3": {
-      "baseline": 157960,
-      "library": 223480
+      "baseline": 150130,
+      "library": 215650
     },
     "matrix3_quadform_tr_matrix3": {
-      "baseline": 157960,
-      "library": 223480
+      "baseline": 150130,
+      "library": 215650
     },
     "matrix3_tr_dot": {
-      "baseline": 50370,
-      "library": 53650
+      "baseline": 42540,
+      "library": 45820
     },
     "matrix4_gemm": {
-      "baseline": 254740,
-      "library": 334730
+      "baseline": 246910,
+      "library": 326900
     },
     "matrix6_gemm": {
-      "alt_direct": 719130,
-      "baseline": 527540,
-      "library": 719130
+      "alt_direct": 711300,
+      "baseline": 519710,
+      "library": 711300
     },
     "matrix6_ger": {
-      "alt_scaled": 472530,
-      "baseline": 328940,
-      "library": 422130
+      "alt_scaled": 464700,
+      "baseline": 321110,
+      "library": 414300
     },
     "matrix6_tr_dot": {
-      "baseline": 139740,
-      "library": 157250
+      "baseline": 131910,
+      "library": 149420
     },
     "vector3_axpy": {
-      "baseline": 61650,
-      "library": 68190
+      "baseline": 53820,
+      "library": 60360
     },
     "vector3_gemv": {
-      "baseline": 96580,
-      "library": 110260
+      "baseline": 88750,
+      "library": 102430
     },
     "vector3_gemv_tr": {
-      "baseline": 96580,
-      "library": 110260
+      "baseline": 88750,
+      "library": 102430
     },
     "vector3_sygemv": {
-      "baseline": 96580,
-      "library": 110260
+      "baseline": 88750,
+      "library": 102430
     },
     "vector6_axpy": {
-      "baseline": 92340,
-      "library": 108250
+      "baseline": 84510,
+      "library": 100420
     },
     "vector6_gemv": {
-      "baseline": 216640,
-      "library": 249100
+      "baseline": 208810,
+      "library": 241270
     },
     "vector6_gemv_tr": {
-      "baseline": 216640,
-      "library": 249100
+      "baseline": 208810,
+      "library": 241270
     },
     "vector6_sygemv": {
-      "baseline": 216640,
-      "library": 255830
+      "baseline": 208810,
+      "library": 248000
     }
   }
 }
