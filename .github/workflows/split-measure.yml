@@ -73,8 +73,8 @@ env:
   COMPARE: ${{ inputs.compare || 'false' }}
   MAP: ${{ inputs.map }}
   SOURCE: ${{ inputs.source }}
-  # The compiler is not deterministic on several threads (slingfall OPERATIONS.md): every measured
-  # build runs single-threaded.
+  # The compiler is not deterministic on several threads (slingfall OPERATIONS.md): builds run
+  # single-threaded, except the timing jobs (marginal, closure), which set their own.
   RAYON_NUM_THREADS: "1"
 
 jobs:
@@ -152,6 +152,10 @@ jobs:
     if: needs.prepare.outputs.crates != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    # Wall time and memory of cold builds, nothing hashed: the compiler's default threads ("0" =
+    # all cores), as the gates were set; one thread doubles the times (CI run 37012930609, WP 10-TC).
+    env:
+      RAYON_NUM_THREADS: "0"
     strategy:
       fail-fast: false
       matrix:
@@ -184,6 +188,10 @@ jobs:
     if: needs.prepare.outputs.closures != '[]'
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    # Wall time and memory of cold builds, nothing hashed: the compiler's default threads ("0" =
+    # all cores), as the gates were set; one thread doubles the times (CI run 37012930609, WP 10-TC).
+    env:
+      RAYON_NUM_THREADS: "0"
     strategy:
       fail-fast: false
       matrix:
