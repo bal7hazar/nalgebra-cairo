@@ -226,7 +226,10 @@ waiter=""
 pids=()
 stop_jobs() {
     local g
-    for g in $waiter ${pids[@]+"${pids[@]}"}; do [[ -n "$g" ]] && { kill -TERM -- "-$g" 2> /dev/null || true; }; done
+    for g in $waiter ${pids[@]+"${pids[@]}"}; do
+        [[ -z "$g" ]] || kill -TERM -- "-$g" 2> /dev/null || true # a cleared id (job ended and waited) is skipped
+    done
+    return 0
 }
 trap 'rc=$?; [[ -e "$gate" ]] || set_gate stop 2> /dev/null || true; stop_jobs; rm -rf "$logs"; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
 
