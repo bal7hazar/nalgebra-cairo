@@ -35,8 +35,8 @@
 # are therefore run as ONE block under `flock -E 75 -w 90 <that same lock file>`: this takes the real lock,
 # waiting at most 90 s for its turn. The wait starts FIRST, in the background, alongside the fixed checks (which
 # need no lock): the lock-busy case costs about the 90 s, not the 90 s plus the checks. A waiter that obtains the
-# lock holds it idle until the fixed checks have passed (a few seconds), then runs the block; if they fail, or
-# this script ends, it lets the lock go (it never compiles for a push that is refused). Inside the lock the
+# lock runs the block at once (the lock is never held idle), its output kept and printed after the fixed checks; if
+# a fixed check fails, it stops at its next step boundary (nothing is signalled). Inside the lock the
 # scarb/snforge SHIMS are still called, with HEAVY_BUILD_LOCK_HELD=1 exported (the lock really is held), which
 # they honour as a pass-through: they never wait on the lock a second time. It never bypasses the lock, and it
 # only gives up waiting: it never signals or kills the process holding the lock, nor a compile that runs (the
@@ -62,7 +62,16 @@ start=$SECONDS
 step="start"
 trap 'rc=$?; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
 
-run() { step="$1"; shift; local t=$SECONDS; echo "prepush: $step"; "$@"; echo "prepush: $step: $((SECONDS - t))s"; }
+# Inner mode only: stop at a step boundary when the caller has refused the push (a fixed check failed) or is gone.
+stop_if_refused() {
+    [[ "${PREPUSH_INNER:-}" == 1 ]] || return 0
+    if [[ -s "$PREPUSH_GATE" && "$(< "$PREPUSH_GATE")" == stop ]] || ! kill -0 "$PREPUSH_PARENT" 2> /dev/null; then
+        echo "prepush: stopped before step '$1': the push is already refused"
+        exit 0
+    fi
+}
+
+run() { stop_if_refused "$1"; step="$1"; shift; local t=$SECONDS; echo "prepush: $step"; "$@"; echo "prepush: $step: $((SECONDS - t))s"; }
 
 lock="${HEAVY_BUILD_LOCK:-$HOME/orchestrator/heavy-build.lock}"
 
@@ -93,6 +102,7 @@ cairo_block() {
     if [[ "$PREPUSH_DO_GAS" == 1 ]]; then
         local t2=$SECONDS output="" out2
         if [[ "$PREPUSH_PKGS" == "*" || -z "$PREPUSH_PKGS" || "$PREPUSH_GAS_FULL" == 1 ]]; then
+            stop_if_refused "snforge test --workspace"
             step="snforge test --workspace"
             echo "prepush: $step, then the gas snapshot check"
             output=$(snforge test --workspace) || { echo "$output"; exit 1; }
@@ -104,6 +114,7 @@ cairo_block() {
             for pkg in $PREPUSH_PKGS; do
                 local -a extra=()
                 [[ "$pkg" == "nalgebra" ]] && extra=(--no-default-features --features eigen,svd,qr)
+                stop_if_refused "snforge test -p $pkg"
                 step="snforge test -p $pkg"
                 echo "prepush: $step ${extra[*]:-}"
                 out2=$(snforge test -p "$pkg" "${extra[@]}") || { echo "$out2"; exit 1; }
@@ -118,19 +129,13 @@ cairo_block() {
     echo "prepush: Cairo block: $((SECONDS - t))s of work"
 }
 
-# Inner mode: re-executed by flock, so the lock is held. It tells the caller (PREPUSH_MARK), holds the lock idle
-# until the caller says the fixed checks passed (PREPUSH_GATE), then runs the block with its output sent to the
-# caller through a pipe (PREPUSH_OUT). It gives up, without compiling, when the caller says stop or has gone.
+# Inner mode: re-executed by flock, so the lock is held. It tells the caller (PREPUSH_MARK), then runs the block at
+# once, alongside the fixed checks, so the lock is never held idle; its output goes to a file (PREPUSH_OUT) that the
+# caller prints after the fixed checks. When the caller refuses the push (PREPUSH_GATE says stop) or is gone, it
+# stops at the next step boundary: nothing is signalled, a running compile ends by itself.
 if [[ "${PREPUSH_INNER:-}" == 1 ]]; then
     : > "$PREPUSH_MARK"
     waited=$(($(date +%s) - PREPUSH_T0))
-    verdict=""
-    for ((i = 0; i < 3000; i++)); do # 10 minutes at most
-        if [[ -s "$PREPUSH_GATE" ]]; then verdict=$(< "$PREPUSH_GATE"); break; fi
-        kill -0 "$PREPUSH_PARENT" 2> /dev/null || break
-        sleep 0.2
-    done
-    [[ "$verdict" == go ]] || exit 0
     exec > "$PREPUSH_OUT" 2>&1
     export HEAVY_BUILD_LOCK_HELD=1 # the lock really is held here: the shims run nested, without re-locking
     echo "prepush: heavy lock obtained after ${waited}s of waiting (the wait ran alongside the fixed checks)"
@@ -216,13 +221,12 @@ use_lock=0
 if [[ "$PREPUSH_DO_BUILD" == 1 || "$PREPUSH_DO_GAS" == 1 ]]; then
     if [[ -z "${HEAVY_BUILD_LOCK_HELD:-}" ]] && ! ancestor_holds_lock && command -v flock > /dev/null && [[ -d "$(dirname "$lock")" ]]; then
         use_lock=1
-        mkfifo "$logs/out"
         # flock exits 75 when the lock is not obtained in 90 s; its exit status lands in $logs/flock.rc. PREPUSH_MARK
         # appears only once the lock is held: a failed step is told apart from a lock that was not obtained and
         # from any other flock error.
         (
             rc=0
-            PREPUSH_INNER=1 PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/out" PREPUSH_PARENT=$$ \
+            PREPUSH_INNER=1 PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/cairo.log" PREPUSH_PARENT=$$ \
                 PREPUSH_T0=$(date +%s) flock -E 75 -w 90 "$lock" "$self" "$base" 2> "$logs/flock.err" || rc=$?
             echo "$rc" > "$logs/flock.rc.tmp" && mv -f "$logs/flock.rc.tmp" "$logs/flock.rc"
         ) > /dev/null 2>&1 < /dev/null &
@@ -252,11 +256,16 @@ if [[ "$PREPUSH_DO_BUILD" == 0 && "$PREPUSH_DO_GAS" == 0 ]]; then
     echo "prepush: Cairo compile skipped (no Cairo source, manifest or gas input changed against $base)"
 elif [[ $use_lock == 1 ]]; then
     step="Cairo compile (the failing step is named above)"
-    set_gate go
-    while [[ ! -e "$mark" && ! -e "$logs/flock.rc" ]]; do sleep 0.2; done
+    # the block started as soon as the lock was obtained; print its output as it grows, until the waiter ends
+    off=0
+    flush() {
+        local size
+        size=$(wc -c 2> /dev/null < "$logs/cairo.log" || echo 0)
+        if ((size > off)); then tail -c +$((off + 1)) "$logs/cairo.log" | head -c $((size - off)); off=$size; fi
+    }
+    while [[ ! -e "$logs/flock.rc" ]]; do flush; sleep 0.5; done
+    flush
     if [[ -e "$mark" ]]; then
-        [[ -e "$logs/flock.rc" ]] || cat "$logs/out" # the block's output, until the waiter ends
-        while [[ ! -e "$logs/flock.rc" ]]; do sleep 0.1; done
         [[ "$(< "$logs/flock.rc")" -eq 0 ]] || exit 1 # a step failed inside the lock; it printed its own message
     else
         rc=$(< "$logs/flock.rc")
