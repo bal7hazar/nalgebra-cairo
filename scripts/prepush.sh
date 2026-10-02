@@ -5,7 +5,7 @@
 # Usage: scripts/prepush.sh [BASE]    BASE: the ref the push is compared against (default: origin/main).
 #
 # Always run (seconds, no lock):
-#   scarb fmt --check                              formatting
+#   scarb fmt --check                              formatting (this and the three checks below run side by side)
 #   python3 scripts/consumer_cost.py --self-test   the self-tests of the scripts (no scarb, no network);
 #   python3 scripts/packages_table.py --self-test  these three are the only scripts under scripts/ or
 #   python3 scripts/release.py --self-test         tools/ that have one
@@ -107,13 +107,29 @@ git rev-parse --verify --quiet "$base^{commit}" > /dev/null || { echo "prepush: 
 merge_base=$(git merge-base "$base" HEAD)
 changed=$(git diff --name-only --no-renames "$merge_base")
 
-run "scarb fmt --check" scarb fmt --check
+# The independent checks (none holds the lock, none writes) run side by side to keep the wall time down; they
+# are judged in this order, and the first failing one is named.
+logs=$(mktemp -d)
+trap 'rm -rf "$logs"; rc=$?; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
+names=("scarb fmt --check" "api_parity.py --check" "shapegen.py --check" "linalggen/generate.py --check")
+cmds=("scarb fmt --check" "python3 scripts/api_parity.py --check" "python3 tools/shapegen/shapegen.py --check" "python3 tools/linalggen/generate.py --check")
+pids=()
+step="scripts' self-tests"
 run "consumer_cost.py --self-test" python3 scripts/consumer_cost.py --self-test
 run "packages_table.py --self-test" python3 scripts/packages_table.py --self-test
 run "release.py --self-test" python3 scripts/release.py --self-test
-run "api_parity.py --check" python3 scripts/api_parity.py --check
-run "shapegen.py --check" python3 tools/shapegen/shapegen.py --check
-run "linalggen/generate.py --check" python3 tools/linalggen/generate.py --check
+for i in "${!cmds[@]}"; do
+    ( t=$SECONDS; ${cmds[$i]} > "$logs/$i.log" 2>&1; rc=$?; echo "prepush: ${names[$i]}: $((SECONDS - t))s" >> "$logs/$i.log"; exit $rc ) &
+    pids+=($!)
+done
+failed=""
+for i in "${!cmds[@]}"; do
+    if wait "${pids[$i]}"; then rc=0; else rc=$?; fi
+    echo "prepush: ${names[$i]}"
+    cat "$logs/$i.log"
+    if [[ $rc -ne 0 && -z "$failed" ]]; then failed="${names[$i]}"; fi
+done
+if [[ -n "$failed" ]]; then step="$failed"; exit 1; fi
 
 PREPUSH_DO_BUILD=0
 PREPUSH_DO_GAS=0
