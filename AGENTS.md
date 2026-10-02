@@ -57,6 +57,12 @@ machine is CPU-capped (programme rule, 2026-09-25).
   `nalgebra_testing::black_box`, results asserted, one `bench_<group>__baseline` per group.
 - `gas/<module>.json` + `.md` regenerated for the packages touched (`snforge test -p <pkg> |
   python3 scripts/gas_report.py --update gas/`); the PR explains any gas increase.
+- Before every push run `scripts/prepush.sh` (the `.githooks/pre-push` hook does it): formatting, the
+  script self-tests, the generated-artefact checks and, when Cairo sources or manifests changed,
+  lint, build and gas of the touched packages under the heavy-build lock (it skips the compile with
+  `heavy lock busy: Cairo compile left to CI` after 90 s of waiting). Never push red, never
+  `--no-verify`. A fresh clone enables the hook once with `git config core.hooksPath .githooks`
+  (the owner sets it; an agent pushes with `git -c core.hooksPath=.githooks push` and writes no config).
 - Crate-scoped checks run in the foreground, conventional commits with the trailer, push, PR following
   `.github/PULL_REQUEST_TEMPLATE.md`, `gh pr checks --watch` until green, never merge. One work
   package per PR, plus a `REPORT.md` (git-ignored) at the worktree root: summary, API, gas table,

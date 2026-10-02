@@ -20,7 +20,7 @@ env:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Once for the whole workspace (the shards below only test their package).
@@ -29,7 +29,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: scarb
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - if: steps.scarb.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - name: Format, API parity and generated-code freshness
         run: |
           scarb fmt --check
@@ -96,7 +102,13 @@ jobs:
         shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: scarb2
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - if: steps.scarb2.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb2.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - name: Measure the shard's crates and closures (cold builds, interleaved rounds)
         run: |
           [ -x /usr/bin/time ] || sudo apt-get install -y time > /dev/null
@@ -168,7 +180,13 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: scarb3
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - if: steps.scarb3.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb3.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - name: Consumers naming the no-op features build against the workspace facade
         run: python3 scripts/facade_features.py
 
@@ -181,7 +199,13 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: scarb4
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - if: steps.scarb4.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb4.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
       - name: Public paths of the facade against 0.1.0, consumer build
         run: python3 tools/split/public_paths.py --check
 
@@ -267,8 +291,20 @@ jobs:
           - { name: "shapes gemm large", package: nalgebra_shapes_tests_gemm_large, filters: "nalgebra_shapes_tests_gemm_large" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
-      - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - id: scarb5
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - if: steps.scarb5.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb5.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: snfoundry
+        continue-on-error: true
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - if: steps.snfoundry.outcome == 'failure'
+        run: sleep 20
+      - if: steps.snfoundry.outcome == 'failure'
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
       - name: Test the shard and check the benchmarks it ran against the snapshot
         run: |
           : > snforge.out
@@ -316,10 +352,22 @@ jobs:
               - 'benchmarks/**'
               - 'scripts/gas_report.py'
               - '.tool-versions'
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: scarb6
         if: steps.changes.outputs.benchmarks == 'true'
-      - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - if: steps.scarb6.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb6.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: snfoundry2
         if: steps.changes.outputs.benchmarks == 'true'
+        continue-on-error: true
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - if: steps.snfoundry2.outcome == 'failure'
+        run: sleep 20
+      - if: steps.snfoundry2.outcome == 'failure'
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
       - name: Workspace benchmarks
         if: steps.changes.outputs.benchmarks == 'true'
         working-directory: benchmarks
@@ -329,12 +377,28 @@ jobs:
       # benchmarks/libs stays on Scarb 2.19.4 / starknet-foundry 0.61.0 (its own .tool-versions): a frozen
       # comparison of vendored third-party libraries (cubit, orion) that corelib 2.20.0 no longer compiles
       # (u32_as_non_zero / u64_as_non_zero removed); patching them would change the compared figures.
-      - uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+      - id: scarb7
         if: steps.changes.outputs.benchmarks == 'true'
+        continue-on-error: true
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
         with:
           tool-versions: benchmarks/libs/.tool-versions
-      - uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - if: steps.scarb7.outcome == 'failure'
+        run: sleep 20
+      - if: steps.scarb7.outcome == 'failure'
+        uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+        with:
+          tool-versions: benchmarks/libs/.tool-versions
+      - id: snfoundry3
         if: steps.changes.outputs.benchmarks == 'true'
+        continue-on-error: true
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+        with:
+          tool-versions: benchmarks/libs/.tool-versions
+      - if: steps.snfoundry3.outcome == 'failure'
+        run: sleep 20
+      - if: steps.snfoundry3.outcome == 'failure'
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
         with:
           tool-versions: benchmarks/libs/.tool-versions
       - name: Third-party library benchmarks
