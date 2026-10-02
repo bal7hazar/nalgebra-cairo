@@ -7,7 +7,7 @@
 # Every check is gated on its inputs, as CI is (the changed paths are those between the merge base of BASE and
 # the working tree). Prose `.md` files trigger nothing, so a push that changes only those takes seconds. A change
 # of `.github/workflows/**`, `.tool-versions`, any `Scarb.toml` or `Scarb.lock` (the toolchain and manifests)
-# triggers every check. Otherwise:
+# triggers every fixed check below (the Cairo steps are gated on their own inputs, further down). Otherwise:
 #   scarb fmt --check                              when a `.cairo` file changed
 #   python3 scripts/consumer_cost.py --self-test   the self-tests of the scripts (no scarb, no network), each
 #   python3 scripts/packages_table.py --self-test  when its own script changed (these three are the only
@@ -153,7 +153,7 @@ changed_code=$(grep -Ev '\.md$' <<< "$changed" || true) # prose `.md` triggers n
 # has RE: a changed path matches; any RE: it matches, or the toolchain / manifests / workflows changed (all trigger)
 has() { grep -Eq "$1" <<< "$changed"; }
 has_code() { grep -Eq "$1" <<< "$changed_code"; }
-all_re='^\.github/workflows/|^\.tool-versions$|^Scarb\.lock$|(^|/)Scarb\.toml$'
+all_re='^\.github/workflows/|^\.tool-versions$|(^|/)Scarb\.lock$|(^|/)Scarb\.toml$'
 everything=0
 if has "$all_re"; then everything=1; fi
 gen_re='^(tools/(shapegen|linalggen|split)/|crates/.*\.cairo$)'
@@ -178,9 +178,9 @@ fi
 PREPUSH_DO_BUILD=0
 PREPUSH_DO_GAS=0
 PREPUSH_GAS_FULL=0
-if has '^(crates/|tests/|(.*/)?Scarb\.toml$|Scarb\.lock$|\.tool-versions$)'; then PREPUSH_DO_BUILD=1; fi
-if has '^(crates/|tests/|gas/|(.*/)?Scarb\.toml$|Scarb\.lock$|\.tool-versions$|scripts/gas_report\.py$)'; then PREPUSH_DO_GAS=1; fi
-if has '^(gas/|scripts/gas_report\.py$)'; then PREPUSH_GAS_FULL=1; fi
+if has_code '^(crates/|tests/|(.*/)?Scarb\.toml$|(.*/)?Scarb\.lock$|\.tool-versions$)'; then PREPUSH_DO_BUILD=1; fi
+if has_code '^(crates/|tests/|gas/|(.*/)?Scarb\.toml$|(.*/)?Scarb\.lock$|\.tool-versions$|scripts/gas_report\.py$)'; then PREPUSH_DO_GAS=1; fi
+if has_code '^(gas/|scripts/gas_report\.py$)'; then PREPUSH_GAS_FULL=1; fi
 export PREPUSH_DO_BUILD PREPUSH_DO_GAS PREPUSH_GAS_FULL
 PREPUSH_PKGS=""
 if [[ "$PREPUSH_DO_BUILD" == 1 || "$PREPUSH_DO_GAS" == 1 ]]; then
@@ -214,7 +214,19 @@ gate="$logs/gate"
 mark="$logs/mark"
 set_gate() { echo "$1" > "$gate.tmp" && mv -f "$gate.tmp" "$gate"; }
 # on any exit the lock waiter, if it holds the lock idle, is told to stop (and stops anyway when this script is gone)
-trap 'rc=$?; [[ -e "$gate" ]] || set_gate stop 2> /dev/null || true; rm -rf "$logs"; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
+# Interrupted (INT, TERM, HUP): exit through the EXIT trap below, which stops this script's own background jobs.
+trap 'step=interrupted; exit 130' INT
+trap 'step=interrupted; exit 143' TERM
+trap 'step=interrupted; exit 129' HUP
+# Each background job is its own process group (job control on while it is launched), so that the EXIT trap can
+# stop the whole tree of a job THIS script started, and nothing else: `kill -TERM -- -<pgid>`.
+waiter=""
+pids=()
+stop_jobs() {
+    local g
+    for g in $waiter ${pids[@]+"${pids[@]}"}; do kill -TERM -- "-$g" 2> /dev/null || true; done
+}
+trap 'rc=$?; [[ -e "$gate" ]] || set_gate stop 2> /dev/null || true; stop_jobs; rm -rf "$logs"; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
 
 # The lock wait starts now, before the fixed checks, when the Cairo block will run under the lock.
 use_lock=0
@@ -224,12 +236,15 @@ if [[ "$PREPUSH_DO_BUILD" == 1 || "$PREPUSH_DO_GAS" == 1 ]]; then
         # flock exits 75 when the lock is not obtained in 90 s; its exit status lands in $logs/flock.rc. PREPUSH_MARK
         # appears only once the lock is held: a failed step is told apart from a lock that was not obtained and
         # from any other flock error.
+        set -m
         (
             rc=0
             PREPUSH_INNER=1 PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/cairo.log" PREPUSH_PARENT=$$ \
                 PREPUSH_T0=$(date +%s) flock -E 75 -w 90 "$lock" "$self" "$base" 2> "$logs/flock.err" || rc=$?
             echo "$rc" > "$logs/flock.rc.tmp" && mv -f "$logs/flock.rc.tmp" "$logs/flock.rc"
         ) > /dev/null 2>&1 < /dev/null &
+        waiter=$!
+        set +m
     fi
 fi
 
@@ -237,14 +252,16 @@ fi
 if [[ ${#cmds[@]} -eq 0 ]]; then
     echo "prepush: fixed checks skipped (no changed path feeds one of them)"
 else
-    pids=()
+    set -m
     for i in "${!cmds[@]}"; do
         ( t=$SECONDS; ${cmds[$i]} > "$logs/$i.log" 2>&1; rc=$?; echo "prepush: ${names[$i]}: $((SECONDS - t))s" >> "$logs/$i.log"; exit $rc ) &
         pids+=($!)
     done
+    set +m
     failed=""
     for i in "${!cmds[@]}"; do
         if wait "${pids[$i]}"; then rc=0; else rc=$?; fi
+        pids[$i]=""
         echo "prepush: ${names[$i]}"
         cat "$logs/$i.log"
         if [[ $rc -ne 0 && -z "$failed" ]]; then failed="${names[$i]}"; fi
@@ -261,10 +278,11 @@ elif [[ $use_lock == 1 ]]; then
     flush() {
         local size
         size=$(wc -c 2> /dev/null < "$logs/cairo.log" || echo 0)
-        if ((size > off)); then tail -c +$((off + 1)) "$logs/cairo.log" | head -c $((size - off)); off=$size; fi
+        if ((size > off)); then tail -c +$((off + 1)) "$logs/cairo.log" | head -c $((size - off)) || true; off=$size; fi
     }
     while [[ ! -e "$logs/flock.rc" ]]; do flush; sleep 0.5; done
     flush
+    waiter="" # ended by itself
     if [[ -e "$mark" ]]; then
         [[ "$(< "$logs/flock.rc")" -eq 0 ]] || exit 1 # a step failed inside the lock; it printed its own message
     else

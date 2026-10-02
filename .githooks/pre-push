@@ -43,13 +43,17 @@ if ! git diff --quiet HEAD; then
     exit 1
 fi
 untracked=()
-while IFS= read -r -d '' entry; do
+while IFS= read -r -d '' entry <&3; do
     [[ "$entry" == '?? '* ]] || continue
     path=${entry#'?? '}
     if [[ "$path" =~ ^(crates|tests|benchmarks|tools|scripts|gas)/ || "$path" =~ (^|/)Scarb\.toml$ || "$path" =~ ^(Scarb\.lock|\.tool-versions)$ ]]; then
         untracked+=("$path")
     fi
-done < <(git --no-optional-locks status --porcelain --untracked-files=all -z)
+done 3< <(git --no-optional-locks status --porcelain --untracked-files=all -z)
+if ! wait "$!"; then
+    echo "pre-push: refusing: 'git status' failed, so untracked files cannot be checked." >&2
+    exit 1
+fi
 if [[ ${#untracked[@]} -gt 0 ]]; then
     echo "pre-push: refusing: untracked files that can change a build or a check (CI will not have them):" >&2
     printf '  %s\n' "${untracked[@]}" >&2
