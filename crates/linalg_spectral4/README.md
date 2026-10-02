@@ -24,7 +24,7 @@ Features (all on by default, forwarded by the facade's features of the same name
 
 ## When to depend on it
 
-No declared closure names it; its marginal cost over its direct dependencies is in `docs/PACKAGES.md`.
+No declared closure names it; its marginal cost over its direct dependencies is 0.2 s / 0.15 GB (CI run 37019191074 of the Scarb 2.20.1 bump, `docs/PACKAGES.md`).
 
 Depend on the `linalg_spectral` packages for the bidiagonal, Schur, eigen, Hessenberg, symmetric tridiagonal decompositions and the matrix `exp` / `pow`.
 
