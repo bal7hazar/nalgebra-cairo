@@ -8,5 +8,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `add_u64` | 15910 | 370 | x1.00 |
+| `add_u64` | 8080 | 370 | x1.00 |
 
