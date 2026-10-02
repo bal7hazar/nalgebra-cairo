@@ -11,7 +11,7 @@ proven, so gas is a first-class requirement, on par with correctness.
 
 ## Toolchain
 
-`.tool-versions` pins scarb 2.19.4 and snforge 0.61.0 (asdf). Gate: the pull-request CI (fmt,
+`.tool-versions` pins scarb 2.20.1 and snforge 0.64.0 (asdf). Gate: the pull-request CI (fmt,
 lint, build, every test shard, gas snapshots). Locally, work packages run crate-scoped checks only:
 `scarb build -p <pkg>`, `scarb lint -p <pkg> --deny-warnings`, `snforge test -p <pkg>` (unfiltered,
 piped into `python3 scripts/gas_report.py --update gas/` to refresh that package's snapshot), plus
