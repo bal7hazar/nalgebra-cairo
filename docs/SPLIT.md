@@ -1404,6 +1404,30 @@ A new orchestrator session, created by the project manager on 2026-09-30, replac
 - Reports archived under `~/orchestrator/nalgebra-cairo/reports/`: `wp-9-r2.md`, `wp-9-ns12b-phase1.md`,
   `wp-9-ns12b.md`, `wp-9-r3.md`.
 
+**Update 2026-10-02: after the post-release and toolchain lots (WP 10-ST).** Facts are checked
+against the merged pull requests and files; shas are squash commits.
+- **Merged on 2026-10-02.** nalgebra-cairo #90 (`2880920`), the post-release documents of 0.1.1
+  (reviews: Sonnet, then Opus, PASS WITH FINDINGS at `fa1543c`); nalgebra-cairo #92 (`9dc3360`), WP
+  10-REL-FU: `scripts/release.py --self-test` in CI, the continuation check covers ignore files of
+  intermediate directories and an inherited readme / license-file, and a package in flight whose index
+  lags is verified, never republished; simba-cairo #4 (`33fba0d`), TC-S: Scarb 2.20.1 / starknet-foundry
+  0.64.0 (Cairo 2.20.0), no release, results unchanged, gas moved by the snforge 0.64.0 harness offset
+  (−7830 per bench); simba-cairo #5 (`811e3ab`), pre-push check, hook and CI retries; nalgebra-cairo
+  #93 (`d87c4e5`), WP 10-TC.
+- **WP 10-TC (#93).** Every test passes unchanged; path proof 9,289 / 9,289; gas: every entry moved,
+  uniformly within each test group (−7830 typical, between −7830 and +8070 across groups); 89 margins
+  over a baseline changed, all explained (snforge 0.64 charges +100 per test using a builtin or a
+  dictionary; the `exp4`–`exp6` baselines' setup moved) and accepted by the orchestrator. Consumer cost
+  with the compiler's default threads: every gate passes, facade 35.8 s → 33.9 s. One compiler thread
+  roughly doubles cold-build times on the runners, so timing jobs run on default threads and gas / hash
+  / test jobs on one. `benchmarks/libs` stays on Scarb 2.19.4 / starknet-foundry 0.61.0 (vendored cubit
+  and orion do not compile on corelib 2.20.0). No release: version stays 0.1.1.
+- **In progress:** nalgebra-cairo's own pre-push lot (WP 10-PP).
+- **Deferred follow-ups**, recorded as rows of `docs/PLAN.md` (none blocking): REL-FU2 (notes of #92's
+  review), PP-S2 (notes of #5's review), TC2 (what #93 left on the old toolchain), PUB (publishing by
+  hand under the organisation's rule of 2026-10-02: `scripts/release.py` to be reconciled before the
+  next release), TC3 (a Scarb release with path-free closure names gets its own lot).
+
 ## 22. Release 0.1.1: readiness (2026-09-30, orchestrator)
 
 The conditions of the release go (§17, §19, `slingfall/OPERATIONS.md` §6-§7) and where each is met.
