@@ -3,7 +3,7 @@
 name = "libs"
 version = "0.1.0"
 edition = "2024_07"
-cairo-version = "2.20.0"
+cairo-version = "2.19.4"
 
 [dependencies]
 harness = { path = "../harness" }
@@ -14,8 +14,8 @@ alexandria_math = "0.10.0"
 alexandria_linalg = "0.10.0"
 
 [dev-dependencies]
-snforge_std = "0.64.0"
-assert_macros = "2.20.0"
+snforge_std = "0.61.0"
+assert_macros = "2.19.4"
 
 [tool.scarb]
 allow-prebuilt-plugins = ["snforge_std"]
