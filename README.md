@@ -59,7 +59,7 @@ it uses and pays only for them. Every package is at most 40,000 library lines an
 5 s / 1 GB to a cold build over its own dependencies (CI job `Consumer cost`).
 
 The costs below are cold builds over an empty consumer on a GitHub runner (medians of interleaved
-rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of a row is the cost of the whole set, not a sum. The facade and `dynamic` figures are those of the last CI run (5 rounds, one runner per shard, so absolute figures move by several tens of percent from one run to another); the closure figures are the 15-round measurements of docs/SPLIT.md §18.2 (views / blocks: after the move of the fixed-size edition to `nalgebra_blocks`), and [`docs/PACKAGES.md`](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/PACKAGES.md) holds the last CI run.
+rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of a row is the cost of the whole set, not a sum. The package marginals and the facade and `dynamic` figures are those of CI run 36767869070, before the release (5 rounds, one runner per shard, so absolute figures move by several tens of percent from one run to another); the closure figures are the 15-round measurements of docs/SPLIT.md §18.2 (views / blocks: after the move of the fixed-size edition to `nalgebra_blocks`), and [`docs/PACKAGES.md`](https://github.com/bal7hazar/nalgebra-cairo/blob/main/docs/PACKAGES.md) holds the last CI run.
 
 | What you need | Depend on | Measured cost |
 |---|---|---:|
@@ -132,7 +132,7 @@ interleaved rounds:
 
 The two combined closures, **static 6 + SVD / eigen 6 (21.5 s / 4.70 GB) and static 6 + spectral 6
 (21.5 s / 4.64 GB)**, are a little over the 20 s / 4.5 GB budget in the 15-round measurement (11.6 s / 4.38 GB and
-15.2 s / 4.13 GB in the last CI run, whose runners were faster); they are documented
+15.2 s / 4.13 GB in CI run 36767869070, whose runners were faster); they are documented
 here and not gated (owner decision, docs/SPLIT.md §18.7). The decomposition itself does not need the
 dimension-6 methods (`Matrix6::svd()` and the products live in `nalgebra_types6` and
 `nalgebra_linalg_*6`): SVD / eigen 6 alone costs 12.1 s / 3.00 GB, and the overrun is the methods of

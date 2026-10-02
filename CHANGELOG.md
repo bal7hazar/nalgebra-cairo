@@ -5,7 +5,7 @@ release that changes results is scheduled so that consumers regenerate their gol
 package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates since 0.1.1, and
 `nalgebra_glam`) is versioned together.
 
-## 0.1.1 (2026-09-30)
+## 0.1.1 (2026-10-01)
 
 - **The package split** (docs/PLAN.md M9, docs/SPLIT.md): the library is cut into sub-crates
   `nalgebra_*` behind the `nalgebra` facade, published together at one version in dependency order
@@ -80,9 +80,11 @@ package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates s
   (static 2-3 + SVD 5.5 s, static 2-4 + factorisations 8.3 s, static 2-4 + geometry 10.4 s,
   static 2-4 + BLAS 11.7 s / 2.83 GB; the dimension 5-6 closures have
   their own budget, below); `nalgebra_glam` 7.6 s / 1.69 GB (0.1.0 on `nalgebra` + `glam`: 37 s /
-  5.5 GB). Figures of [CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070) (5 interleaved rounds, one runner per shard); the per-package
-  table of that run is [docs/PACKAGES.md](docs/PACKAGES.md). The highest package marginal is 2.6 s /
-  0.77 GB (`nalgebra_dynamic`, `nalgebra_linalg_svd_eigen6`), under the gate of 5 s / 1 GB.
+  5.5 GB). Figures of [CI run 36767869070](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36767869070) (5 interleaved rounds, one runner per shard); [docs/PACKAGES.md](docs/PACKAGES.md)
+  holds the per-package table of the release commit's run ([36841314574](https://github.com/bal7hazar/nalgebra-cairo/actions/runs/36841314574)),
+  whose medians differ from these by the runners' spread (same code, same line counts). The highest package marginal is 2.6 s
+  (`nalgebra_dynamic`, `nalgebra_static5`) and 0.77 GB (`nalgebra_linalg_svd_eigen6`) in run 36767869070, and
+  3.5 s / 0.77 GB (`nalgebra_linalg_svd_eigen6`) in the release run, under the gate of 5 s / 1 GB in both.
 - **Dimensions 5 and 6** (docs/SPLIT.md §19): dimension k builds on every dimension below it, so a
   closure that includes dimension 5 or 6 costs more than all of dimensions 2-4. It has its own
   budget, **20 s / 4.5 GB** on the runner (15 s / 3 GB up to dimension 4), declared and enforced in
