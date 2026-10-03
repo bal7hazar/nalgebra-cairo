@@ -56,6 +56,18 @@
 # script is bounded by the length of its own block.) If the inner script alone is signalled, the caller sees the
 # waiter gone without a result and fails the push.
 #
+# The memory cap. Wherever the heavy-build lock exists (the lock file's directory exists and `flock` is installed:
+# the shared VPS; also a private $HEAVY_BUILD_LOCK in an existing directory), every scarb and snforge command of
+# the Cairo block runs under `prlimit --as=8589934592 -- ...` (8 GB of address space; a workspace build peaks near
+# 11 GB), inside the lock: the hook never compiles uncapped there. $PREPUSH_MEM_CAP overrides the figure (the tests
+# of this script inject a low one). Where the lock does not exist (the Mac) the Cairo block runs uncapped, as before.
+# If the cap kills a step, the block stops at once, prints the single line `memory cap reached: Cairo compile left
+# to CI`, and the push is not blocked (CI runs the compile and the tests, as for a busy lock). A step is judged
+# killed by the cap when it exits 134 (SIGABRT: Rust's abort after "memory allocation of N bytes failed") or 137
+# (SIGKILL), or when its output holds an allocation failure ("memory allocation of N bytes failed", "Cannot allocate
+# memory", the Go runtime's "failed to reserve ... memory" or "out of memory", std::bad_alloc). Any other failure (a
+# Cairo error, a failing test, a gas mismatch) still fails the push, with its output.
+#
 # Bash: needs bash >= 4.4 (`wait $!` on a process substitution in the hook, empty arrays under `set -u`); an older
 # bash fails at once with a clear message (the macOS system bash is 3.2: use a newer one first in PATH).
 #
@@ -101,18 +113,76 @@ ancestor_holds_lock() {
     return 1
 }
 
+# The memory cap (see the header): the prefix of every scarb/snforge command of the Cairo block. Empty where the
+# lock does not exist (the Mac).
+cap_prefix=()
+set_cap() {
+    local cap="${PREPUSH_MEM_CAP:-8589934592}"
+    [[ "$cap" =~ ^[0-9]+$ ]] || { echo "prepush: PREPUSH_MEM_CAP must be a number of bytes (got '$cap')" >&2; exit 1; }
+    if command -v flock > /dev/null && [[ -d "$(dirname "$lock")" ]]; then
+        command -v prlimit > /dev/null || { echo "prepush: prlimit (util-linux) not found: the Cairo compile may not run uncapped here" >&2; exit 1; }
+        cap_prefix=(prlimit "--as=$cap" --)
+    fi
+}
+
+# Did the cap kill this step? $1 is the exit status, the rest are the files holding its output.
+cap_killed() {
+    local rc=$1
+    shift
+    ((rc == 134 || rc == 137)) && return 0 # SIGABRT (Rust aborts on a failed allocation), SIGKILL
+    grep -Eqi 'memory allocation of [0-9]+ bytes failed|Cannot allocate memory|failed to reserve .*memory|runtime: out of memory|std::bad_alloc' "$@"
+}
+
+# The cap killed a step: the one line, then the whole Cairo block ends and the push goes on (CI runs the compile).
+cap_reached() {
+    echo "memory cap reached: Cairo compile left to CI"
+    if [[ "${PREPUSH_INNER:-}" == 1 ]]; then
+        trap - EXIT
+        exit 0
+    fi
+    echo "prepush: ok in $((SECONDS - start))s"
+    exit 0
+}
+
+# cairo_cmd OUTFILE CMD...: run a scarb/snforge command under the cap (where there is one), its stdout in OUTFILE and
+# its stderr passed on to ours. Returns its status; ends the block (cap_reached) when the cap killed it.
+cairo_cmd() {
+    local out=$1 rc=0 err
+    shift
+    err="$out.err"
+    # in a subshell, so that bash's "Aborted" notice of a signal death lands in $err, not on our stderr
+    ( "${cap_prefix[@]}" "$@"; exit $? ) > "$out" 2> "$err" || rc=$?
+    if ((rc != 0 && ${#cap_prefix[@]} > 0)) && cap_killed "$rc" "$out" "$err"; then
+        cap_reached
+    fi
+    cat "$err" >&2
+    return "$rc"
+}
+
+# cairo_show CMD...: cairo_cmd, then print the stdout (what `run` shows).
+cairo_show() {
+    local rc=0 out
+    out=$(mktemp "$cairo_tmp/out.XXXXXX")
+    cairo_cmd "$out" "$@" || rc=$?
+    cat "$out"
+    return "$rc"
+}
+
 # The Cairo block: run inside the lock (inner mode, re-executed by flock) or directly.
 # PREPUSH_PKGS: the touched packages, space separated, or "*" for the whole workspace.
 cairo_block() {
     local t=$SECONDS pkg
     local -a pflags=()
+    set_cap
+    # scratch files of the capped commands: in the folder that the caller removes
+    cairo_tmp="${logs:-$(dirname "$PREPUSH_OUT")}"
     if [[ "$PREPUSH_DO_BUILD" == 1 ]]; then
         if [[ "$PREPUSH_PKGS" != "*" ]]; then
             for pkg in $PREPUSH_PKGS; do pflags+=(-p "$pkg"); done
         fi
         if [[ "$PREPUSH_PKGS" == "*" || -n "$PREPUSH_PKGS" ]]; then
-            run "scarb lint --deny-warnings ${pflags[*]}" scarb lint --deny-warnings "${pflags[@]}"
-            run "scarb build ${pflags[*]}" scarb build "${pflags[@]}"
+            run "scarb lint --deny-warnings ${pflags[*]}" cairo_show scarb lint --deny-warnings "${pflags[@]}"
+            run "scarb build ${pflags[*]}" cairo_show scarb build "${pflags[@]}"
         fi
     fi
     if [[ "$PREPUSH_DO_GAS" == 1 ]]; then
@@ -121,7 +191,8 @@ cairo_block() {
             stop_if_refused "snforge test --workspace"
             step="snforge test --workspace"
             echo "prepush: $step, then the gas snapshot check"
-            output=$(snforge test --workspace) || { echo "$output"; exit 1; }
+            cairo_cmd "$cairo_tmp/snforge.out" snforge test --workspace || { cat "$cairo_tmp/snforge.out"; exit 1; }
+            output=$(< "$cairo_tmp/snforge.out")
             echo "$output" | tail -n 1
             echo "prepush: $step: $((SECONDS - t2))s"
             step="gas_report.py --check gas/"
@@ -133,7 +204,8 @@ cairo_block() {
                 stop_if_refused "snforge test -p $pkg"
                 step="snforge test -p $pkg"
                 echo "prepush: $step ${extra[*]:-}"
-                out2=$(snforge test -p "$pkg" "${extra[@]}") || { echo "$out2"; exit 1; }
+                cairo_cmd "$cairo_tmp/snforge.out" snforge test -p "$pkg" "${extra[@]}" || { cat "$cairo_tmp/snforge.out"; exit 1; }
+                out2=$(< "$cairo_tmp/snforge.out")
                 echo "$out2" | tail -n 1
                 output+="$out2"$'\n'
             done
