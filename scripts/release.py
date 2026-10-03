@@ -380,9 +380,12 @@ def index_entry(template, name, version):
 
 
 def gh_check_runs(repo, sha):
-    out = sh(["gh", "api", "--paginate", f"repos/{repo}/commits/{sha}/check-runs",
-              "-q", ".check_runs[] | {name, status, conclusion}"]).stdout
-    return [json.loads(line) for line in out.splitlines() if line.strip()]
+    """The check runs of SHA, or (None, the error) when GitHub cannot give them (e.g. not pushed)."""
+    p = sh(["gh", "api", "--paginate", f"repos/{repo}/commits/{sha}/check-runs",
+            "-q", ".check_runs[] | {name, status, conclusion}"], check=False)
+    if p.returncode != 0:
+        return None, (p.stderr.strip().splitlines() or ["gh api failed"])[-1]
+    return [json.loads(line) for line in p.stdout.splitlines() if line.strip()], None
 
 
 def unpacked_size(path):
@@ -441,8 +444,11 @@ def request(args):
 
     repo = args.repo or sh(["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
                            cwd=root).stdout.strip()
-    runs = gh_check_runs(repo, commit)
-    ok, ci = check_runs_verdict(runs)
+    runs, error = gh_check_runs(repo, commit)
+    ok, ci = check_runs_verdict(runs or [])
+    if error:
+        ci = [f"cannot read the check runs of {commit[:10]}: {error}"]
+        runs = []
     if len(ci) > 6:
         ci = ci[:5] + [f"... and {len(ci) - 5} more"]
     print(f"CI of {commit[:10]} ({repo}): {'green, `' + REQUIRED_CHECK + '` included' if ok else 'NOT green'}")
