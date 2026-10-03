@@ -1485,51 +1485,6 @@ pub mod errors {
     pub const EMPTY_MEAN: felt252 = 'nalgebra: mean of nothing';
 }
 
-// crate-map: generated items (tools/split/cratemap.py) [shapegen]
-// crate-map: from base/matrix3.cairo
-// crate-map: from base/matrix4.cairo
-/// `unitquaternion.into()`: the rotation matrix. Exact (no arithmetic). Upstream:
-/// `From<UnitQuaternion> for Matrix3`.
-pub impl Matrix3FromUnitQuaternion<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of Into<UnitQuaternion<T>, Matrix3<T>> {
-    #[inline(always)]
-    fn into(self: UnitQuaternion<T>) -> Matrix3<T> {
-        UnitQuaternionTrait::to_rotation_matrix(self).matrix
-    }
-}
-
-/// `unitquaternion.into()`: the homogeneous rotation. Exact (no arithmetic). Upstream:
-/// `From<UnitQuaternion> for Matrix4`.
-pub impl Matrix4FromUnitQuaternion<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of Into<UnitQuaternion<T>, Matrix4<T>> {
-    #[inline(always)]
-    fn into(self: UnitQuaternion<T>) -> Matrix4<T> {
-        UnitQuaternionTrait::to_homogeneous(self)
-    }
-}
-// crate-map: end
 
 #[cfg(test)]
 mod tests {
@@ -1662,3 +1617,49 @@ mod tests {
         assert!(n >= 200);
     }
 }
+
+// crate-map: generated items (tools/split/cratemap.py) [shapegen]
+// crate-map: from base/matrix3.cairo
+// crate-map: from base/matrix4.cairo
+/// `unitquaternion.into()`: the rotation matrix. Exact (no arithmetic). Upstream:
+/// `From<UnitQuaternion> for Matrix3`.
+pub impl Matrix3FromUnitQuaternion<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitQuaternion<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: UnitQuaternion<T>) -> Matrix3<T> {
+        UnitQuaternionTrait::to_rotation_matrix(self).matrix
+    }
+}
+
+/// `unitquaternion.into()`: the homogeneous rotation. Exact (no arithmetic). Upstream:
+/// `From<UnitQuaternion> for Matrix4`.
+pub impl Matrix4FromUnitQuaternion<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<UnitQuaternion<T>, Matrix4<T>> {
+    #[inline(always)]
+    fn into(self: UnitQuaternion<T>) -> Matrix4<T> {
+        UnitQuaternionTrait::to_homogeneous(self)
+    }
+}
+// crate-map: end

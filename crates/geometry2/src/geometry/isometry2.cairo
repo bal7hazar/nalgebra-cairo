@@ -663,29 +663,6 @@ pub impl Isometry2FromRotation2<
     }
 }
 
-// crate-map: generated items (tools/split/cratemap.py) [shapegen]
-// crate-map: from base/matrix3.cairo
-/// `isometry2.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream: `From<Isometry2>
-/// for Matrix3`.
-pub impl Matrix3FromIsometry2<
-    T,
-    impl R: Real<T>,
-    +Copy<T>,
-    +Drop<T>,
-    +Drop<R::Wide>,
-    +Add<T>,
-    +Sub<T>,
-    +Mul<T>,
-    +Neg<T>,
-    +PartialEq<T>,
-    +PartialOrd<T>,
-> of Into<Isometry2<T>, Matrix3<T>> {
-    #[inline(always)]
-    fn into(self: Isometry2<T>) -> Matrix3<T> {
-        Isometry2Trait::to_homogeneous(self)
-    }
-}
-// crate-map: end
 
 #[cfg(test)]
 mod tests {
@@ -780,3 +757,27 @@ mod tests {
         assert!(n >= 200);
     }
 }
+
+// crate-map: generated items (tools/split/cratemap.py) [shapegen]
+// crate-map: from base/matrix3.cairo
+/// `isometry2.into()`: the homogeneous matrix. Exact (no arithmetic). Upstream: `From<Isometry2>
+/// for Matrix3`.
+pub impl Matrix3FromIsometry2<
+    T,
+    impl R: Real<T>,
+    +Copy<T>,
+    +Drop<T>,
+    +Drop<R::Wide>,
+    +Add<T>,
+    +Sub<T>,
+    +Mul<T>,
+    +Neg<T>,
+    +PartialEq<T>,
+    +PartialOrd<T>,
+> of Into<Isometry2<T>, Matrix3<T>> {
+    #[inline(always)]
+    fn into(self: Isometry2<T>) -> Matrix3<T> {
+        Isometry2Trait::to_homogeneous(self)
+    }
+}
+// crate-map: end
