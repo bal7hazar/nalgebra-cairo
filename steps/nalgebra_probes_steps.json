@@ -20,19 +20,19 @@
   "nalgebra_probes_steps::isometry3": {
     "isometry3_inv_mul": {
       "baseline": 136,
-      "op": 457
+      "op": 401
     },
     "isometry3_inverse": {
       "baseline": 122,
-      "op": 322
+      "op": 299
     },
     "isometry3_mul": {
       "baseline": 136,
-      "op": 428
+      "op": 389
     },
     "isometry3_transform_point": {
       "baseline": 108,
-      "op": 301
+      "op": 281
     }
   },
   "nalgebra_probes_steps::lu": {
@@ -106,7 +106,7 @@
   "nalgebra_probes_steps::unit_quaternion": {
     "unit_quaternion_from_axis_angle": {
       "baseline": 101,
-      "op": 408
+      "op": 397
     },
     "unit_quaternion_inverse": {
       "baseline": 101,
@@ -114,15 +114,15 @@
     },
     "unit_quaternion_mul": {
       "baseline": 109,
-      "op": 203
+      "op": 188
     },
     "unit_quaternion_slerp": {
       "baseline": 111,
-      "op": 1031
+      "op": 1018
     },
     "unit_quaternion_transform_vector": {
       "baseline": 102,
-      "op": 283
+      "op": 269
     }
   },
   "nalgebra_probes_steps::vector3": {

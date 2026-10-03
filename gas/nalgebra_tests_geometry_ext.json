@@ -1,9 +1,9 @@
 {
   "nalgebra_tests_geometry_ext::abstract_rotation::benches": {
     "abstract_rotation_transform_vector": {
-      "baseline": 32580,
-      "direct": 54750,
-      "trait": 54750
+      "baseline": 29250,
+      "direct": 48990,
+      "trait": 48990
     }
   },
   "nalgebra_tests_geometry_ext::inplace::benches": {
@@ -104,7 +104,7 @@
       "alt_matrix_iterate_8": 2157010,
       "baseline": 531150,
       "closed_form": 1060750,
-      "iterate_8": 1935850
+      "iterate_8": 1893770
     },
     "rotation3_index": {
       "baseline": 236070,
@@ -115,9 +115,9 @@
       "face_towards_transposed": 99310
     },
     "rotation3_mul_unit_quaternion": {
-      "baseline": 278300,
+      "baseline": 275370,
       "div": 319230,
-      "shepperd_then_hamilton": 318030
+      "shepperd_then_hamilton": 312570
     },
     "rotation3_new": {
       "baseline": 86570,
@@ -138,9 +138,9 @@
       "product_with_transpose": 513030
     },
     "rotation3_slerp": {
-      "baseline": 673710,
-      "through_quaternions": 878890,
-      "try_slerp": 880390
+      "baseline": 670440,
+      "through_quaternions": 872350,
+      "try_slerp": 873250
     }
   },
   "nalgebra_tests_geometry_ext::translation::benches": {
