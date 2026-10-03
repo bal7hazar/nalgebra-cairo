@@ -560,6 +560,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "nalgebra_probes_steps"
+version = "0.1.1"
+dependencies = [
+ "fixed",
+ "nalgebra_core",
+ "nalgebra_geometry3",
+ "nalgebra_linalg3",
+ "nalgebra_linalg6",
+ "nalgebra_linalg_svd_eigen3",
+ "nalgebra_static3",
+ "nalgebra_static6_wide",
+ "nalgebra_testing",
+ "nalgebra_types3",
+ "nalgebra_types6",
+ "simba",
+ "snforge_std",
+]
+
+[[package]]
 name = "nalgebra_shapes_tests_blas"
 version = "0.1.1"
 dependencies = [
