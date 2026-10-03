@@ -19,10 +19,11 @@ dependencies first. A published package with a path dependency on an unpublished
 
 Request mode, from a clean checkout detached at the release commit (`--commit`). It refuses
 (`--dry-run` reports the same checks and goes on) unless:
+  * it covers every published package (`--packages`, a subset, is for dry runs only);
   * the working tree is clean, HEAD is detached and is `--commit`;
   * every check run of that commit on GitHub (`gh api .../commits/SHA/check-runs`) has completed
     with success / neutral / skipped, and one of them is `Consumer cost` (the enforcing
-    package-granularity gate, docs/SPLIT.md §12.2) with success;
+    package-granularity gate, docs/SPLIT.md §12.2) with success (skipped refuses);
   * every published package has the workspace version (`[workspace.package] version`);
   * that version of each package is not on the registry index yet.
 It then builds each package's archive, in publication order, with `scarb package --no-verify -p NAME`
@@ -37,8 +38,8 @@ compressed and unpacked) in publication order, then the ordered publication comm
 Verify mode reads the request's table back and compares, for each package (or `--packages`), the
 registry index checksum with the requested sha256. `--wait` polls the index every VERIFY_DELAY s
 until it lists every package checked or `--verify-timeout` s have passed (a wall-clock cap: the last
-check may start just before it and take up to the 30 s of one index fetch). Exit 0 only when every
-package checked is on the index with the requested checksum.
+check may start just before it and take up to 30 s, one index fetch, per package checked). Exit 0
+only when every package checked is on the index with the requested checksum.
 """
 
 import argparse
@@ -123,7 +124,9 @@ def index_prefix(name):
 
 
 def check_runs_verdict(runs, required=REQUIRED_CHECK):
-    """(ok, problems) for the check runs of a commit (`gh api` JSON `check_runs`)."""
+    """(ok, problems) for the check runs of a commit (`gh api` JSON `check_runs`). Every run must
+    have completed with success / neutral / skipped, and the REQUIRED one with success: a skipped
+    enforcing gate (CI path gating) vouches for nothing."""
     problems = []
     if not runs:
         problems.append("no check run on the release commit")
@@ -132,11 +135,21 @@ def check_runs_verdict(runs, required=REQUIRED_CHECK):
         names.add(r["name"])
         if r["status"] != "completed":
             problems.append(f"`{r['name']}` is {r['status']}")
+        elif r["name"] == required and r["conclusion"] != "success":
+            problems.append(f"`{r['name']}` concluded {r['conclusion']} (it must succeed)")
         elif r["conclusion"] not in OK_CONCLUSIONS:
             problems.append(f"`{r['name']}` concluded {r['conclusion']}")
     if required not in names:
         problems.insert(0, f"no `{required}` check run on the release commit")
     return not problems, problems
+
+
+def request_problems(packages, dry_run):
+    """Why the options cannot make a real request: a release request lists every published
+    package, so `--packages` is for dry runs only."""
+    if packages and not dry_run:
+        return ["`--packages` is for a dry run only: a release request lists every published package"]
+    return []
 
 
 def checkout_problems(head, commit, detached, dirty):
@@ -269,6 +282,11 @@ def self_test():
     assert not ok
     ok, p = check_runs_verdict([{"name": "Consumer cost", "status": "completed", "conclusion": "failure"}])
     assert not ok
+    for skipped in ("skipped", "neutral"):  # the enforcing gate must have run and succeeded
+        ok, p = check_runs_verdict([{"name": "Consumer cost", "status": "completed", "conclusion": skipped}])
+        assert not ok and "must succeed" in p[0], p
+    assert request_problems(None, True) == [] and request_problems("a", True) == []
+    assert request_problems(None, False) == [] and "dry run" in request_problems("a,b", False)[0]
     sha, other = "a" * 40, "b" * 40
     assert checkout_problems(sha, sha, True, False) == []
     assert len(checkout_problems(other, sha, False, True)) == 3
@@ -424,6 +442,9 @@ def build_archive(scarb, root, name, version):
 
 
 def request(args):
+    refused = request_problems(args.packages, args.dry_run)
+    if refused:
+        sys.exit(f"error: {refused[0]}")
     root, version, pkgs, graph = workspace(args.scarb)
     try:
         order = publication_order(graph)
@@ -531,7 +552,7 @@ def main():
     sub = ap.add_subparsers(dest="mode")
     rq = sub.add_parser("request", help="build the archives and write docs/releases/VERSION.md")
     rq.add_argument("--commit", required=True, help="the release commit (HEAD must be detached at it)")
-    rq.add_argument("--packages", help="comma-separated subset (default: every published package)")
+    rq.add_argument("--packages", help="with --dry-run only: comma-separated subset (default: every published package)")
     rq.add_argument("--dry-run", action="store_true", help="report the refusing checks and go on")
     rq.add_argument("--out", help="output file (default: docs/releases/VERSION.md)")
     rq.add_argument("--repo", help="GitHub OWNER/REPO (default: from `gh repo view`)")
