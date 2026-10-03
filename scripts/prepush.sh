@@ -150,7 +150,8 @@ cairo_cmd() {
     local out=$1 rc=0 err
     shift
     err="$out.err"
-    "${cap_prefix[@]}" "$@" > "$out" 2> "$err" || rc=$?
+    # in a subshell, so that bash's "Aborted" notice of a signal death lands in $err, not on our stderr
+    ( "${cap_prefix[@]}" "$@"; exit $? ) > "$out" 2> "$err" || rc=$?
     if ((rc != 0 && ${#cap_prefix[@]} > 0)) && cap_killed "$rc" "$out" "$err"; then
         cap_reached
     fi
