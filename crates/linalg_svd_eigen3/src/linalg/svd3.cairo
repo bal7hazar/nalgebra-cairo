@@ -119,6 +119,7 @@ pub impl Svd3Impl<
     /// Cost: constant — four Jacobi sweeps whatever the input, no convergence test, no iteration
     /// count. Panics with the scalar's overflow error if a component of `MᵀM` does not fit (the
     /// squares of the entries must be representable, unlike `norm3`).
+    #[inline(always)]
     fn new(matrix: Matrix3<T>, compute_u: bool, compute_v: bool) -> Svd3<T> {
         Svd3InternalTrait::from_eigen(
             matrix,
@@ -428,4 +429,139 @@ pub fn svd_ordered3<
     m: Matrix3<T>, compute_u: bool, compute_v: bool, eps: T, niter: usize,
 ) -> Option<Svd3<T>> {
     Svd3Trait::try_new(m, compute_u, compute_v, eps, niter)
+}
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types3::base::matrix3::Matrix3;
+    use crate::internal::linalg::svd3::Svd3InternalTrait;
+    use crate::internal::linalg::symmetric_eigen3::SymmetricEigen3InternalTrait;
+    use super::{Svd3, Svd3Trait};
+
+    /// `Svd3Trait::new` before WP 11-OPT-2 (the same body, called, not inlined).
+    fn new_reference(matrix: Matrix3<Fixed>, compute_u: bool, compute_v: bool) -> Svd3<Fixed> {
+        Svd3InternalTrait::from_eigen(
+            matrix,
+            SymmetricEigen3InternalTrait::new_sym(Svd3InternalTrait::gram(matrix)),
+            compute_u,
+            compute_v,
+        )
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn same(a: Svd3<Fixed>, b: Svd3<Fixed>) -> bool {
+        a.u == b.u && a.singular_values == b.singular_values && a.v_t == b.v_t
+    }
+
+    fn m3(m: (i64, i64, i64, i64, i64, i64, i64, i64, i64)) -> Matrix3<Fixed> {
+        let (m11, m12, m13, m21, m22, m23, m31, m32, m33) = m;
+        Matrix3 {
+            m11: fx(m11),
+            m12: fx(m12),
+            m13: fx(m13),
+            m21: fx(m21),
+            m22: fx(m22),
+            m23: fx(m23),
+            m31: fx(m31),
+            m32: fx(m32),
+            m33: fx(m33),
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// `new` against the reference, bit for bit, for the four `(compute_u, compute_v)` choices:
+    /// edge cases (zero, identity, a rank-1 and a rank-2 matrix, a rotation by 180° about z,
+    /// 1-ulp entries, the probe's matrix, entries of 2^13) and a deterministic sweep of matrices
+    /// with entries from 2^-24 to 2^13 (the Gram matrix stays in range).
+    #[test]
+    fn test_new_matches_reference() {
+        let one: i64 = 0x100000000;
+        let mut cases: Array<Matrix3<Fixed>> = array![
+            m3((0, 0, 0, 0, 0, 0, 0, 0, 0)), m3((one, 0, 0, 0, one, 0, 0, 0, one)),
+            m3((one, 2 * one, 3 * one, 2 * one, 4 * one, 6 * one, -one, -2 * one, -3 * one)),
+            m3((one, 0, 0, 0, one, 0, 0, 0, 0)), m3((-one, 0, 0, 0, -one, 0, 0, 0, one)),
+            m3((1, -1, 1, 1, 1, -1, -1, 1, 1)),
+            m3(
+                (
+                    -163144510,
+                    -950958694,
+                    -1188067349,
+                    1679219748,
+                    749014508,
+                    -1278117059,
+                    887659363,
+                    -1272926972,
+                    1082801323,
+                ),
+            ),
+            m3(
+                (
+                    0x200000000000,
+                    -0x100000000000,
+                    0x80000000000,
+                    0x100000000000,
+                    0x200000000000,
+                    -0x80000000000,
+                    -0x80000000000,
+                    0x100000000000,
+                    0x200000000000,
+                ),
+            ),
+        ];
+        let mut state: u128 = 0x5d3;
+        for k in 0..200_u32 {
+            let b: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x200000000000,
+            };
+            cases
+                .append(
+                    m3(
+                        (
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                        ),
+                    ),
+                );
+        }
+        let mut n = 0_u32;
+        let mut k = 0_u32;
+        for m in cases.span() {
+            let (cu, cv) = match k % 4 {
+                0 => (true, true),
+                1 => (true, false),
+                2 => (false, true),
+                _ => (false, false),
+            };
+            assert!(same(Svd3Trait::new(*m, cu, cv), new_reference(*m, cu, cv)));
+            n += 1;
+            k += 1;
+        }
+        assert!(n >= 200);
+    }
 }

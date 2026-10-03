@@ -78,6 +78,7 @@ pub impl Jacobi3Impl<
     }
 
     /// One cyclic sweep: the rotations annihilating `m12`, then `m13`, then `m23`.
+    #[inline(always)]
     fn sweep(self: Jacobi3<T>) -> Jacobi3<T> {
         Self::rotate23(Self::rotate13(Self::rotate12(self)))
     }
@@ -159,6 +160,7 @@ pub impl Jacobi3Impl<
     /// `rotate12_s` with the matching update of the accumulated rotation. The identity
     /// `(c, s) = (1, 0)` leaves `v` bit-identical, so the early exit of `rotate12_s` needs no
     /// counterpart here.
+    #[inline(always)]
     fn rotate12(self: Jacobi3<T>) -> Jacobi3<T> {
         let v = self.v;
         let (s, c, sn) = Self::rotate12_s(self.s);
@@ -200,6 +202,7 @@ pub impl Jacobi3Impl<
     }
 
     /// `rotate13_s` with the matching update of the accumulated rotation, see `rotate12`.
+    #[inline(always)]
     fn rotate13(self: Jacobi3<T>) -> Jacobi3<T> {
         let v = self.v;
         let (s, c, sn) = Self::rotate13_s(self.s);
@@ -241,6 +244,7 @@ pub impl Jacobi3Impl<
     }
 
     /// `rotate23_s` with the matching update of the accumulated rotation, see `rotate12`.
+    #[inline(always)]
     fn rotate23(self: Jacobi3<T>) -> Jacobi3<T> {
         let v = self.v;
         let (s, c, sn) = Self::rotate23_s(self.s);
@@ -263,6 +267,7 @@ pub impl Jacobi3Impl<
     /// The diagonal of `s` sorted ascending, with the matching columns of `v`. The off-diagonal
     /// entries of `s` are dropped (measured below 1 ulp per unit of `max |m_ij|` after four
     /// sweeps). Three conditional swaps, the sorting network of 3 elements; branches are cheap.
+    #[inline(always)]
     fn sorted(self: Jacobi3<T>) -> (Vector3<T>, Matrix3<T>) {
         let (mut l1, mut l2, mut l3) = (self.s.m11, self.s.m22, self.s.m33);
         let (mut c1, mut c2, mut c3) = (self.v.column1(), self.v.column2(), self.v.column3());
@@ -300,6 +305,7 @@ pub impl Jacobi3Impl<
     /// (37 -> 26 ulp per unit of `max |m_ij|`); it is kept because the type promises unit columns
     /// and because the cross product of column 3 is only unit if its factors are. The variant
     /// that skips it is `bench_symmetric_eigen3_new__no_renormalisation`.
+    #[inline(always)]
     fn finish(self: Jacobi3<T>) -> SymmetricEigen3<T> {
         let (eigenvalues, v) = self.sorted();
         let c1 = Self::canonical_sign(v.column1().normalize());
@@ -391,5 +397,281 @@ pub impl SymmetricEigen3InternalImpl<
     #[inline(always)]
     fn recompose_sym(self: SymmetricEigen3<T>) -> SymMatrix3<T> {
         SymMatrix3Trait::quadform(self.eigenvectors, self.eigenvalues)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::internal::revoke_ap_tracking;
+    use fixed::Fixed;
+    use nalgebra_static3::base::matrix3::Matrix3Trait;
+    use nalgebra_static3::base::vector3::Vector3Trait;
+    use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
+    use nalgebra_types3::base::matrix3::Matrix3;
+    use nalgebra_types3::base::vector3::Vector3;
+    use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
+    use simba::scalar::FixedReal as R;
+    use crate::linalg::symmetric_eigen3::SymmetricEigen3;
+    use super::{Jacobi3, Jacobi3Impl, SymmetricEigen3InternalTrait};
+
+    // The Jacobi steps before WP 11-OPT-2 (the same bodies, called, not inlined; the plane
+    // rotations of the matrix alone, `rotation` and `canonical_sign`, were already inlined and are
+    // shared).
+
+    fn rotate12_reference(self: Jacobi3<Fixed>) -> Jacobi3<Fixed> {
+        let v = self.v;
+        let (s, c, sn) = Jacobi3Impl::<Fixed>::rotate12_s(self.s);
+        Jacobi3 {
+            s,
+            v: Matrix3 {
+                m11: R::diff_prod(c, v.m11, sn, v.m12),
+                m12: R::sum_prod2(sn, v.m11, c, v.m12),
+                m13: v.m13,
+                m21: R::diff_prod(c, v.m21, sn, v.m22),
+                m22: R::sum_prod2(sn, v.m21, c, v.m22),
+                m23: v.m23,
+                m31: R::diff_prod(c, v.m31, sn, v.m32),
+                m32: R::sum_prod2(sn, v.m31, c, v.m32),
+                m33: v.m33,
+            },
+        }
+    }
+
+    fn rotate13_reference(self: Jacobi3<Fixed>) -> Jacobi3<Fixed> {
+        let v = self.v;
+        let (s, c, sn) = Jacobi3Impl::<Fixed>::rotate13_s(self.s);
+        Jacobi3 {
+            s,
+            v: Matrix3 {
+                m11: R::diff_prod(c, v.m11, sn, v.m13),
+                m12: v.m12,
+                m13: R::sum_prod2(sn, v.m11, c, v.m13),
+                m21: R::diff_prod(c, v.m21, sn, v.m23),
+                m22: v.m22,
+                m23: R::sum_prod2(sn, v.m21, c, v.m23),
+                m31: R::diff_prod(c, v.m31, sn, v.m33),
+                m32: v.m32,
+                m33: R::sum_prod2(sn, v.m31, c, v.m33),
+            },
+        }
+    }
+
+    fn rotate23_reference(self: Jacobi3<Fixed>) -> Jacobi3<Fixed> {
+        let v = self.v;
+        let (s, c, sn) = Jacobi3Impl::<Fixed>::rotate23_s(self.s);
+        Jacobi3 {
+            s,
+            v: Matrix3 {
+                m11: v.m11,
+                m12: R::diff_prod(c, v.m12, sn, v.m13),
+                m13: R::sum_prod2(sn, v.m12, c, v.m13),
+                m21: v.m21,
+                m22: R::diff_prod(c, v.m22, sn, v.m23),
+                m23: R::sum_prod2(sn, v.m22, c, v.m23),
+                m31: v.m31,
+                m32: R::diff_prod(c, v.m32, sn, v.m33),
+                m33: R::sum_prod2(sn, v.m32, c, v.m33),
+            },
+        }
+    }
+
+    fn sweep_reference(self: Jacobi3<Fixed>) -> Jacobi3<Fixed> {
+        rotate23_reference(rotate13_reference(rotate12_reference(self)))
+    }
+
+    fn sorted_reference(self: Jacobi3<Fixed>) -> (Vector3<Fixed>, Matrix3<Fixed>) {
+        let (mut l1, mut l2, mut l3) = (self.s.m11, self.s.m22, self.s.m33);
+        let (mut c1, mut c2, mut c3) = (self.v.column1(), self.v.column2(), self.v.column3());
+        if l2 < l1 {
+            let (tl, tc) = (l1, c1);
+            l1 = l2;
+            c1 = c2;
+            l2 = tl;
+            c2 = tc;
+        }
+        if l3 < l1 {
+            let (tl, tc) = (l1, c1);
+            l1 = l3;
+            c1 = c3;
+            l3 = tl;
+            c3 = tc;
+        }
+        if l3 < l2 {
+            let (tl, tc) = (l2, c2);
+            l2 = l3;
+            c2 = c3;
+            l3 = tl;
+            c3 = tc;
+        }
+        (Vector3 { x: l1, y: l2, z: l3 }, Matrix3Trait::from_columns(c1, c2, c3))
+    }
+
+    fn finish_reference(self: Jacobi3<Fixed>) -> SymmetricEigen3<Fixed> {
+        let (eigenvalues, v) = sorted_reference(self);
+        let c1 = Jacobi3Impl::<Fixed>::canonical_sign(v.column1().normalize());
+        let c2 = Jacobi3Impl::<Fixed>::canonical_sign(v.column2().normalize());
+        SymmetricEigen3 {
+            eigenvalues, eigenvectors: Matrix3Trait::from_columns(c1, c2, c1.cross(c2)),
+        }
+    }
+
+    /// `SymmetricEigen3InternalTrait::new_sym` before WP 11-OPT-2.
+    fn new_sym_reference(s: SymMatrix3<Fixed>) -> SymmetricEigen3<Fixed> {
+        revoke_ap_tracking();
+        finish_reference(
+            sweep_reference(
+                sweep_reference(sweep_reference(sweep_reference(Jacobi3Impl::<Fixed>::start(s)))),
+            ),
+        )
+    }
+
+    /// `SymmetricEigen3InternalTrait::try_new_sym` before WP 11-OPT-2.
+    fn try_new_sym_reference(s: SymMatrix3<Fixed>, eps: Fixed) -> Option<SymmetricEigen3<Fixed>> {
+        revoke_ap_tracking();
+        let j = sweep_reference(
+            sweep_reference(sweep_reference(sweep_reference(Jacobi3Impl::<Fixed>::start(s)))),
+        );
+        let s = j.s;
+        if s.m12.abs() <= R::sum_prod2(eps, s.m11.abs(), eps, s.m22.abs())
+            && s.m13.abs() <= R::sum_prod2(eps, s.m11.abs(), eps, s.m33.abs())
+            && s.m23.abs() <= R::sum_prod2(eps, s.m22.abs(), eps, s.m33.abs()) {
+            Some(finish_reference(j))
+        } else {
+            None
+        }
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn same(a: SymmetricEigen3<Fixed>, b: SymmetricEigen3<Fixed>) -> bool {
+        a.eigenvalues == b.eigenvalues && a.eigenvectors == b.eigenvectors
+    }
+
+    fn same_option(a: Option<SymmetricEigen3<Fixed>>, b: Option<SymmetricEigen3<Fixed>>) -> bool {
+        match (a, b) {
+            (Some(x), Some(y)) => same(x, y),
+            (None, None) => true,
+            _ => false,
+        }
+    }
+
+    fn sym(m: (i64, i64, i64, i64, i64, i64)) -> SymMatrix3<Fixed> {
+        let (m11, m12, m13, m22, m23, m33) = m;
+        SymMatrix3 {
+            m11: fx(m11), m12: fx(m12), m13: fx(m13), m22: fx(m22), m23: fx(m23), m33: fx(m33),
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// The edge cases: zero, the identity, diagonal (already sorted, reversed, with ties), an
+    /// isotropic 2x2 block (`h = 0`: the 45° rotation), 1-ulp entries, the probe's matrix, large
+    /// entries (2^14).
+    fn edges() -> Array<SymMatrix3<Fixed>> {
+        let one: i64 = 0x100000000;
+        array![
+            sym((0, 0, 0, 0, 0, 0)), sym((one, 0, 0, one, 0, one)),
+            sym((one, 0, 0, 2 * one, 0, 3 * one)), sym((3 * one, 0, 0, 2 * one, 0, one)),
+            sym((one, 0, 0, one, 0, -one)), sym((one, one / 2, 0, one, 0, 2 * one)),
+            sym((1, 1, -1, 1, 1, 1)), sym((one, one, one, one, one, one)),
+            sym((4317911657, 360208987, -398750113, 4088348811, -684321863, 4267097999)),
+            sym(
+                (
+                    0x400000000000,
+                    -0x100000000000,
+                    0x80000000000,
+                    -0x400000000000,
+                    0x200000000000,
+                    0x100000000000,
+                ),
+            ),
+        ]
+    }
+
+    /// `n` symmetric matrices of a deterministic sweep: entries from 2^-24 to 2^14 (the Gram matrix
+    /// of the SVD and the rotations keep every intermediate in range), definite and indefinite.
+    fn sweep_inputs(seed: u128, n: u32) -> Array<SymMatrix3<Fixed>> {
+        let mut state = seed;
+        let mut out = array![];
+        for k in 0..n {
+            let b: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x400000000000,
+            };
+            out
+                .append(
+                    sym(
+                        (
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                            draw(ref state, b),
+                        ),
+                    ),
+                );
+        }
+        out
+    }
+
+    /// `new_sym` (the inlined Jacobi steps) against the reference, bit for bit, on the edge cases
+    /// and a deterministic sweep.
+    #[test]
+    fn test_new_sym_matches_reference() {
+        let mut cases = edges();
+        for s in sweep_inputs(0xe193, 200).span() {
+            cases.append(*s);
+        }
+        let mut n = 0_u32;
+        for s in cases.span() {
+            assert!(same(SymmetricEigen3InternalTrait::new_sym(*s), new_sym_reference(*s)));
+            n += 1;
+        }
+        assert!(n >= 200);
+    }
+
+    /// `try_new_sym` against the reference, bit for bit, on the edge cases and a deterministic
+    /// sweep, for a tolerance that accepts and one that rejects (`eps = 0`, accepted only when the
+    /// sweeps annihilate every off-diagonal entry exactly).
+    #[test]
+    fn test_try_new_sym_matches_reference() {
+        let mut cases = edges();
+        for s in sweep_inputs(0xe194, 200).span() {
+            cases.append(*s);
+        }
+        let mut n = 0_u32;
+        let mut k = 0_u32;
+        for s in cases.span() {
+            let eps = if k % 2 == 0 {
+                fx(0x10000)
+            } else {
+                fx(0)
+            };
+            assert!(
+                same_option(
+                    SymmetricEigen3InternalTrait::try_new_sym(*s, eps),
+                    try_new_sym_reference(*s, eps),
+                ),
+            );
+            n += 1;
+            k += 1;
+        }
+        assert!(n >= 200);
     }
 }
