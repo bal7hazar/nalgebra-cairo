@@ -5,6 +5,81 @@ release that changes results is scheduled so that consumers regenerate their gol
 package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates since 0.1.1, and
 `nalgebra_glam`) is versioned together.
 
+## 0.2.0 (unreleased)
+
+No numeric result moves: every test, golden and oracle vector of 0.1.1 passes unedited. MINOR:
+consumers need Cairo 2.20.0 (below).
+
+### Changed
+
+- **Version 0.2.0 for every package** (the 54 published ones and the unpublished test crates), and
+  every inter-crate requirement `0.2.0`.
+- Dependencies unchanged: simba 0.2.0 / fixed 0.4.0. simba 0.3.0 / fixed 0.5.0 are not taken yet:
+  `nalgebra_glam` depends on `glam_core` 0.4.1, which requires `fixed ^0.4.0`, and Scarb resolves
+  one `fixed` per build; they come in a later release once `glam_core` moves to fixed 0.5.0.
+- **Toolchain**: Scarb 2.20.1 / Cairo 2.20.0 (`cairo-version = "2.20.0"`), snforge 0.64.0 (WP 10-TC,
+  #93).
+- **`UnitQuaternion::from_rotation_matrix`** selects its trace branch with nalgebra-rs's own
+  `tr > 0` instead of `Real::is_sign_positive(tr)`. Same bits for every input today (simba 0.2.0's
+  `is_sign_positive(0)` is false); it keeps nalgebra-rs's result at a trace of exactly 0 once simba
+  0.3.0 (`is_sign_positive(0)` true, as simba-rs) is taken: the -120° turn about `(1, 1, 1)` gives
+  `(w, i, j, k) = (-0.5, 0.5, 0.5, 0.5)`, pinned by
+  `test_from_rotation_matrix_zero_trace` (`docs/research/rel-zero.md`: the other five
+  `is_sign_positive` sites cannot see a zero a caller can pass).
+- The facade features `statistics`, `blas`, `dynamic`, `sparse` and `io` (deprecated in 0.1.1) are
+  still declared: their removal, announced for 0.2.0, would change the public API and is left to a
+  later release.
+
+### Performance
+
+Fewer Cairo steps on the hot paths, every result bit-identical (all tests, goldens and probes
+unchanged, plus in-file equivalence sweeps against the previous bodies). Net steps per call
+(`docs/STEPS.md`, probes of `crates/probes_steps`, WP 11-OPT-0, #101), 0.1.1 → 0.2.0:
+
+| probe | 0.1.1 | 0.2.0 | saved |
+|---|---:|---:|---:|
+| `unit_quaternion_mul` | 94 | 79 | 15 |
+| `unit_quaternion_transform_vector` | 181 | 167 | 14 |
+| `unit_quaternion_from_axis_angle` | 307 | 296 | 11 |
+| `unit_quaternion_slerp` | 920 | 907 | 13 |
+| `isometry3_mul` | 292 | 253 | 39 |
+| `isometry3_transform_point` | 193 | 173 | 20 |
+| `isometry3_inverse` | 200 | 177 | 23 |
+| `isometry3_inv_mul` | 321 | 265 | 56 |
+| `cholesky3_factor` | 220 | 205 | 15 |
+| `cholesky3_solve` | 246 | 226 | 20 |
+| `cholesky6_factor` | 897 | 822 | 75 |
+| `cholesky6_solve` | 569 | 529 | 40 |
+| `lu3_solve` | 198 | 173 | 25 |
+| `lu6_factor` | 1919 | 1857 | 62 |
+| `lu6_solve` | 542 | 483 | 59 |
+| `symmetric_eigen3` | 4049 | 3532 | 517 |
+| `svd3` | 5250 | 4713 | 537 |
+
+- **Geometry** (WP 11-OPT-1, #102): inlined Hamilton product, quaternion sandwiches and isometry
+  products; the shortest-arc flip of `try_slerp` folded into the sign of one weight; the negation of
+  the translation in `Isometry2/3::inverse` folded into the sandwich. A removed panic, not a result
+  change: `slerp` no longer panics when a component of `other` is the minimum of the scalar (the
+  flip no longer negates it).
+- **Small linear algebra** (WP 11-OPT-2, #103): inlined Jacobi steps of `SymmetricEigen3`,
+  `Svd3::new`, the Cholesky 3 / 6 and LU 3 / 6 factor and solve paths; `Cholesky6::new` shares one
+  prepared divisor per column (`Real::div3`, `div4`, bit-identical to per-element division); the
+  row swap of step 1 of `Lu6::new` is a `match` on the pivot row.
+- Unchanged: `vector3_normalize` (100), `lu3_factor` (286) and the generated `matrix3_*` /
+  `matrix6_mul_vec` kernels.
+
+### Tooling
+
+- **Steps probes** (WP 11-OPT-0, #101): `crates/probes_steps` and the `steps/` snapshot, checked in
+  CI, measure the net Cairo steps of the hot primitives (`docs/STEPS.md`).
+- **CI and pre-push** (#95-#99, #104): `scripts/prepush.sh` behind `.githooks/pre-push` runs the
+  checks of the files a push touches, with the Cairo compile under the shared build lock and an
+  8 GB memory cap (left to CI when either is not available); CI test jobs run only when their files
+  change, behind one always-run `CI result` check.
+- **Release** (WP 12-REL-a, #105): `scripts/release.py` no longer publishes; `request` builds each
+  published package's archive at a commit and writes `docs/releases/<version>.md`, `verify` reads the
+  registry back against it.
+
 ## 0.1.1 (2026-10-01)
 
 - **The package split** (docs/PLAN.md M9, docs/SPLIT.md): the library is cut into sub-crates
