@@ -122,7 +122,9 @@ pub impl Cholesky6Impl<
     /// the square root); each sub-diagonal entry `l_ij = (a_ij - Σ_(k<j) l_ik·l_jk) / l_jj` costs
     /// one exact accumulation (one floor) and one correctly rounded division (a second rounding, to
     /// nearest).
-    /// 6 square roots and 15 divisions in total.
+    /// 6 square roots and 15 divisions in total; the quotients of columns 1, 2 and 3 share one
+    /// prepared divisor per column (`Real::div5`, `div4`, `div3`: bit-identical to per-element
+    /// division, WP 11-OPT-2).
     ///
     /// SINGULARITY CRITERION: `None` as soon as a pivot is `<= 0` AFTER that flooring. Upstream
     /// tests the real pivot against 0; flooring makes the test slightly stricter, so a matrix that

@@ -56,6 +56,10 @@ pub impl Lu6Impl<
     /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
     /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
     /// not fit.
+    ///
+    /// The row swap of step 1 is a `match` on the pivot row (constant cost, WP 11-OPT-2); the later
+    /// steps keep the chain of comparisons, cheaper when the pivot is in one of the first rows (a
+    /// `match` cost the probe's input 15 more steps there).
     #[inline(always)]
     fn new(matrix: Matrix6<T>) -> Lu6<T> {
         let mut a11 = matrix.m11;

@@ -77,7 +77,10 @@ pub impl Jacobi3Impl<
         (t, c, t * c)
     }
 
-    /// One cyclic sweep: the rotations annihilating `m12`, then `m13`, then `m23`.
+    /// One cyclic sweep: the rotations annihilating `m12`, then `m13`, then `m23`. Inlined, like
+    /// the three rotations with their eigenvector update, `sorted` and `finish` (WP 11-OPT-2: the
+    /// calls passed the 15 components of the state each way; 517 Cairo steps fewer on `new`, the
+    /// same bits, `tests::test_new_sym_matches_reference`).
     #[inline(always)]
     fn sweep(self: Jacobi3<T>) -> Jacobi3<T> {
         Self::rotate23(Self::rotate13(Self::rotate12(self)))
