@@ -14,6 +14,9 @@ consumers need Cairo 2.20.0 (below).
 
 - **Version 0.2.0 for every package** (the 54 published ones and the unpublished test crates), and
   every inter-crate requirement `0.2.0`.
+- Dependencies unchanged: simba 0.2.0 / fixed 0.4.0. simba 0.3.0 / fixed 0.5.0 are not taken yet:
+  `nalgebra_glam` depends on `glam_core` 0.4.1, which requires `fixed ^0.4.0`, and Scarb resolves
+  one `fixed` per build; they come in a later release once `glam_core` moves to fixed 0.5.0.
 - **Toolchain**: Scarb 2.20.1 / Cairo 2.20.0 (`cairo-version = "2.20.0"`), snforge 0.64.0 (WP 10-TC,
   #93).
 - **`UnitQuaternion::from_rotation_matrix`** selects its trace branch with nalgebra-rs's own
@@ -55,8 +58,9 @@ unchanged, plus in-file equivalence sweeps against the previous bodies). Net ste
 
 - **Geometry** (WP 11-OPT-1, #102): inlined Hamilton product, quaternion sandwiches and isometry
   products; the shortest-arc flip of `try_slerp` folded into the sign of one weight; the negation of
-  the translation in `Isometry2/3::inverse` folded into the sandwich. `slerp` no longer panics when
-  a component of `other` is the minimum of the scalar (the flip no longer negates it).
+  the translation in `Isometry2/3::inverse` folded into the sandwich. A removed panic, not a result
+  change: `slerp` no longer panics when a component of `other` is the minimum of the scalar (the
+  flip no longer negates it).
 - **Small linear algebra** (WP 11-OPT-2, #103): inlined Jacobi steps of `SymmetricEigen3`,
   `Svd3::new`, the Cholesky 3 / 6 and LU 3 / 6 factor and solve paths; `Cholesky6::new` shares one
   prepared divisor per column (`Real::div3`, `div4`, bit-identical to per-element division); the
