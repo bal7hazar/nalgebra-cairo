@@ -48,7 +48,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 22760 | - | x1.00 |
+| `fused` | 20230 | - | x1.00 |
 
 ## nalgebra::geometry::rotation3::benches
 
@@ -72,5 +72,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 22760 | - | x1.00 |
+| `fused` | 20230 | - | x1.00 |
 

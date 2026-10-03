@@ -43,6 +43,7 @@
 use core::num::traits::One;
 use core::ops::{DivAssign, MulAssign};
 use nalgebra_core::base::unit::Unit;
+use nalgebra_static3::base::vector3::Vector3Trait;
 use nalgebra_types3::base::point3::Point3;
 use nalgebra_types3::base::vector3::Vector3;
 use nalgebra_types3::geometry::rotation3::Rotation3;
@@ -117,16 +118,43 @@ pub impl Isometry3Impl<
     /// The inverse isometry: the rotation is conjugated (three negations, exact) and the
     /// translation becomes `rotation⁻¹ · (-translation)` — upstream's order, which matters in
     /// fixed point since `floor(-x) ≠ -floor(x)`. One conjugate rotation (15 products, 3
-    /// roundings). Panics on overflow (`-MIN` of a translation component). Upstream: `inverse`.
+    /// roundings), with the negation of the translation folded into its exact parts (WP
+    /// 11-OPT-1: the same bits, without three `Fixed` negations, `test_inverse_matches_reference`),
+    /// so a translation component equal to the scalar's `MIN` no longer panics on it. Panics on
+    /// overflow of an intermediate doubling or of a result component, and on `-MIN` of the
+    /// rotation's imaginary part. Upstream: `inverse`.
+    #[inline(always)]
     fn inverse(self: Isometry3<T>) -> Isometry3<T> {
-        let v = Vector3 {
-            x: -self.translation.vector.x,
-            y: -self.translation.vector.y,
-            z: -self.translation.vector.z,
-        };
+        // `rotation.inverse_transform_vector(-translation)` with the negation folded into the
+        // exact parts of the sandwich: `(-v) × u = u × v` (the same exact products, so the same
+        // floored cross product) and `+ (-v)` is `- v` in the wide accumulation.
+        let v = self.translation.vector;
+        let u = self.rotation.imag();
+        let c = u.cross(v);
+        let t = Vector3 { x: c.x + c.x, y: c.y + c.y, z: c.z + c.z };
+        let txu = t.cross(u);
+        let w = self.rotation.quaternion.w;
         Isometry3 {
             rotation: self.rotation.conjugate(),
-            translation: Translation3 { vector: self.rotation.inverse_transform_vector(v) },
+            translation: Translation3 {
+                vector: Vector3 {
+                    x: R::wide_rescale(
+                        R::wide_sub(
+                            R::wide_add(R::wide_add_prod(R::wide_zero(), w, t.x), txu.x), v.x,
+                        ),
+                    ),
+                    y: R::wide_rescale(
+                        R::wide_sub(
+                            R::wide_add(R::wide_add_prod(R::wide_zero(), w, t.y), txu.y), v.y,
+                        ),
+                    ),
+                    z: R::wide_rescale(
+                        R::wide_sub(
+                            R::wide_add(R::wide_add_prod(R::wide_zero(), w, t.z), txu.z), v.z,
+                        ),
+                    ),
+                },
+            },
         }
     }
 
@@ -153,6 +181,7 @@ pub impl Isometry3Impl<
     /// into both kernels saves 1 200 gas over the conjugate-first formulation, for the same bits
     /// (`bench_isometry3_inv_mul__alt_conjugate_then_mul`,
     /// `test_inv_mul_fused_matches_conjugate_then_mul`). Upstream: `inv_mul`.
+    #[inline(always)]
     fn inv_mul(self: Isometry3<T>, other: Isometry3<T>) -> Isometry3<T> {
         let d = Vector3 {
             x: other.translation.vector.x - self.translation.vector.x,
@@ -169,6 +198,7 @@ pub impl Isometry3Impl<
 
     /// `self * p = rotation · p + translation`, through `rotate_translate`: one rounding per
     /// component. Panics on overflow. Upstream: `transform_point` (`iso * p`).
+    #[inline(always)]
     fn transform_point(self: Isometry3<T>, p: Point3<T>) -> Point3<T> {
         let c = Isometry3InternalTrait::rotate_translate(
             self.rotation, Vector3 { x: p.x, y: p.y, z: p.z }, self.translation.vector,
@@ -187,6 +217,7 @@ pub impl Isometry3Impl<
     /// conjugate applied directly — no inverse isometry and no inverse rotation is ever built.
     /// Upstream:
     /// `inverse_transform_point`.
+    #[inline(always)]
     fn inverse_transform_point(self: Isometry3<T>, p: Point3<T>) -> Point3<T> {
         let d = Point3 {
             x: p.x - self.translation.vector.x,
@@ -559,6 +590,7 @@ pub impl Isometry3Mul<
     +PartialEq<T>,
     +PartialOrd<T>,
 > of Mul<Isometry3<T>> {
+    #[inline(always)]
     fn mul(lhs: Isometry3<T>, rhs: Isometry3<T>) -> Isometry3<T> {
         Isometry3 {
             rotation: lhs.rotation * rhs.rotation,
@@ -771,6 +803,117 @@ pub impl Isometry3FromRotation3<
                 vector: Vector3 { x: R::zero(), y: R::zero(), z: R::zero() },
             },
         }
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types3::base::vector3::Vector3;
+    use nalgebra_types3::geometry::translation3::Translation3;
+    use crate::geometry::quaternion::Quaternion;
+    use crate::geometry::unit_quaternion::{UnitQuaternion, UnitQuaternionTrait};
+    use super::{Isometry3, Isometry3Trait};
+
+    /// `inverse` before WP 11-OPT-1: the translation is negated (three negations), then rotated
+    /// by the conjugate (the new body folds the negation into the exact parts of the sandwich).
+    fn inverse_reference(self: Isometry3<Fixed>) -> Isometry3<Fixed> {
+        let v = Vector3 {
+            x: -self.translation.vector.x,
+            y: -self.translation.vector.y,
+            z: -self.translation.vector.z,
+        };
+        Isometry3 {
+            rotation: self.rotation.conjugate(),
+            translation: Translation3 { vector: self.rotation.inverse_transform_vector(v) },
+        }
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn iso(t: (i64, i64, i64), q: (i64, i64, i64, i64)) -> Isometry3<Fixed> {
+        let (x, y, z) = t;
+        let (i, j, k, w) = q;
+        Isometry3 {
+            rotation: UnitQuaternion {
+                quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) },
+            },
+            translation: Translation3 { vector: Vector3 { x: fx(x), y: fx(y), z: fx(z) } },
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// `inverse` against the reference, bit for bit: edge cases (identity, zero translation, a
+    /// rotation by 180°, a near-180° rotation, translations near the doubling's overflow bound of
+    /// about `2^29`, the smallest raw values) and a deterministic sweep of normalised and
+    /// unnormalised rotations with translations of every magnitude.
+    #[test]
+    fn test_inverse_matches_reference() {
+        let one = 0x100000000;
+        let big = 0x1fffffff00000000; // just under 2^29
+        let rots = array![
+            (0, 0, 0, one), (one, 0, 0, 0), (0, one, 0, 1), (0, 0, one, -1),
+            (4234293283, 534340439, -400755330, 267170219),
+            (3689020097, -1022754606, 767065954, 1789820560), (0, 0, 0, -one),
+            (0x80000000, 0x80000000, 0x80000000, 0x80000000), (1, -1, 1, -1),
+        ];
+        let trans = array![
+            (0, 0, 0), (one, -one, one), (6442450944, -9663676416, 16106127360), (1, -1, 1),
+            (big, -big, big), (-big, 0, big), (0x7fffffff, -0x80000000, 3),
+        ];
+        let mut n = 0_u32;
+        for r in rots.span() {
+            for t in trans.span() {
+                let x = iso(*t, *r);
+                assert!(x.inverse() == inverse_reference(x));
+                n += 1;
+            }
+        }
+        let mut state: u128 = 0x15e7;
+        for k in 0..240_u32 {
+            let qb = if k % 3 == 0 {
+                0x180000000
+            } else {
+                0x100000000
+            };
+            let q = (
+                draw(ref state, qb), draw(ref state, qb), draw(ref state, qb), draw(ref state, qb),
+            );
+            let q = if k % 2 == 0 {
+                let r = UnitQuaternionTrait::new_normalize(iso((0, 0, 0), q).rotation.quaternion);
+                (r.quaternion.i.raw, r.quaternion.j.raw, r.quaternion.k.raw, r.quaternion.w.raw)
+            } else {
+                q
+            };
+            // Translation magnitudes from 2^-32 to 2^27 (with |q| <= 1.5, `2(u × v)` and
+            // `u × 2(u × v)` stay in range).
+            let tb: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x100000000000,
+                _ => 0x800000000000000,
+            };
+            let t = (draw(ref state, tb), draw(ref state, tb), draw(ref state, tb));
+            let x = iso(t, q);
+            assert!(x.inverse() == inverse_reference(x));
+            n += 1;
+        }
+        assert!(n >= 200);
     }
 }
 

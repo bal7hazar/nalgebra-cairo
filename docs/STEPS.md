@@ -21,7 +21,11 @@ assertion:
   those of the gas benches (themselves checked against upstream nalgebra) where the primitive has one,
   an exact integer model for the scalar kernels and `Matrix6::mul_mat`, and, for the decompositions,
   the kernel's own result on an oracle input (agreeing with the oracle within its tolerance, checked
-  when the probe was written). A change of any last bit fails the probe, so an optimisation cannot
+  when the probe was written). The exact integer models, on raw values (`value = raw / 2^32`, Python's `>>`
+  floors): `scalar_mul_add` is `c + (a * b >> 32)`, `scalar_wide_dot3` is
+  `(a1 * b1 + a2 * b2 + a3 * b3) >> 32`, and each component of `matrix6_mul_vec` is
+  `sum(a[i][j] * x[j] for j in range(6)) >> 32` (inputs in `crates/probes_steps/src/scalar.cairo` and
+  `matrix6.cairo`). A change of any last bit fails the probe, so an optimisation cannot
   silently change a result.
 - `baseline` builds the same inputs and runs the same assertion on the expected value against itself
   (`assert!(e == e)`): the net steps of the operation are `op - baseline`, as `bench_<group>__baseline`
@@ -96,11 +100,12 @@ input and the same assertion on the expected value. A result without `PartialEq`
 gets a field-wise impl in `crates/probes_steps/src/eq.cairo`. Then regenerate the snapshot with
 `--update steps/` and add a row to the table below.
 
-## Baseline at this head
+## Snapshot at this head
 
 Measured with Scarb 2.20.1 (Cairo 2.20.0) and snforge 0.64.0 (`.tool-versions`), `RAYON_NUM_THREADS=1`, on
-macOS arm64 (Apple silicon), at the head of the pull request that adds the probes. `baseline` and `raw`
-are the steps of the two tests; `net steps` is their difference, the cost of the operation.
+macOS arm64 (Apple silicon). `baseline` and `raw` are the steps of the two tests; `net steps` is their
+difference, the cost of the operation. The probes were added by WP 11-OPT-0; the rows changed since are
+listed under "Optimisation lots" below.
 
 | probe | primitive | module | baseline | raw | net steps |
 |---|---|---|---:|---:|---:|
@@ -113,15 +118,15 @@ are the steps of the two tests; `net steps` is their difference, the cost of the
 | `matrix3_transpose` | `Matrix3::transpose` | `matrix3` | 136 | 145 | **9** |
 | `matrix3_determinant` | `Matrix3::determinant` | `matrix3` | 96 | 178 | **82** |
 | `matrix3_try_inverse` | `Matrix3::try_inverse` | `matrix3` | 136 | 566 | **430** |
-| `unit_quaternion_mul` | `UnitQuaternion * UnitQuaternion` | `unit_quaternion` | 109 | 203 | **94** |
-| `unit_quaternion_transform_vector` | `UnitQuaternion::transform_vector` | `unit_quaternion` | 102 | 283 | **181** |
-| `unit_quaternion_from_axis_angle` | `UnitQuaternion::from_axis_angle` | `unit_quaternion` | 101 | 408 | **307** |
+| `unit_quaternion_mul` | `UnitQuaternion * UnitQuaternion` | `unit_quaternion` | 109 | 188 | **79** |
+| `unit_quaternion_transform_vector` | `UnitQuaternion::transform_vector` | `unit_quaternion` | 102 | 269 | **167** |
+| `unit_quaternion_from_axis_angle` | `UnitQuaternion::from_axis_angle` | `unit_quaternion` | 101 | 397 | **296** |
 | `unit_quaternion_inverse` | `UnitQuaternion::inverse` | `unit_quaternion` | 101 | 111 | **10** |
-| `unit_quaternion_slerp` | `UnitQuaternion::slerp` | `unit_quaternion` | 111 | 1031 | **920** |
-| `isometry3_mul` | `Isometry3 * Isometry3` | `isometry3` | 136 | 428 | **292** |
-| `isometry3_transform_point` | `Isometry3::transform_point` | `isometry3` | 108 | 301 | **193** |
-| `isometry3_inverse` | `Isometry3::inverse` | `isometry3` | 122 | 322 | **200** |
-| `isometry3_inv_mul` | `Isometry3::inv_mul` | `isometry3` | 136 | 457 | **321** |
+| `unit_quaternion_slerp` | `UnitQuaternion::slerp` | `unit_quaternion` | 111 | 1018 | **907** |
+| `isometry3_mul` | `Isometry3 * Isometry3` | `isometry3` | 136 | 389 | **253** |
+| `isometry3_transform_point` | `Isometry3::transform_point` | `isometry3` | 108 | 281 | **173** |
+| `isometry3_inverse` | `Isometry3::inverse` | `isometry3` | 122 | 299 | **177** |
+| `isometry3_inv_mul` | `Isometry3::inv_mul` | `isometry3` | 136 | 401 | **265** |
 | `cholesky3_factor` | `Matrix3::cholesky` (factor) | `cholesky` | 121 | 341 | **220** |
 | `cholesky3_solve` | `Cholesky3::solve` | `cholesky` | 106 | 352 | **246** |
 | `cholesky6_factor` | `Matrix6::cholesky` (factor) | `cholesky` | 275 | 1172 | **897** |
@@ -135,6 +140,29 @@ are the steps of the two tests; `net steps` is their difference, the cost of the
 | `matrix6_mul_vec` | `Matrix6::mul_mat(Vector6)` | `matrix6` | 187 | 379 | **192** |
 | `scalar_mul_add` | `Real::mul_add` (scalar kernel) | `scalar` | 84 | 99 | **15** |
 | `scalar_wide_dot3` | fused sum of 3 products (`wide_add_prod` x 3, `wide_rescale`) | `scalar` | 90 | 107 | **17** |
+
+## Optimisation lots
+
+Net steps before and after each lot, same toolchain, every result bit-identical (all tests, goldens and
+probes unchanged, plus in-file equivalence sweeps against the previous bodies).
+
+**WP 11-OPT-1** (geometry hot paths): `#[inline(always)]` on the Hamilton product, `conj_mul`, the
+quaternion sandwiches, `rotate_translate`, `Isometry2/3` `mul` / `inv_mul` / `transform_point`,
+`from_axis_angle` and `slerp`; the shortest-arc flip of `try_slerp` folded into the sign of one weight
+(`(-o)·tb = o·(-tb)` exactly: one negation instead of four); the negation of the translation in
+`Isometry2/3::inverse` folded into the exact products of the sandwich.
+
+| probe | before | after | saved |
+|---|---:|---:|---:|
+| `unit_quaternion_mul` | 94 | 79 | 15 |
+| `unit_quaternion_transform_vector` | 181 | 167 | 14 |
+| `unit_quaternion_from_axis_angle` | 307 | 296 | 11 |
+| `unit_quaternion_slerp` | 920 | 907 | 13 |
+| `isometry3_mul` | 292 | 253 | 39 |
+| `isometry3_transform_point` | 193 | 173 | 20 |
+| `isometry3_inverse` | 200 | 177 | 23 |
+| `isometry3_inv_mul` | 321 | 265 | 56 |
+| `vector3_normalize` | 100 | 100 | 0 (already `norm3` + one shared divisor, `div3`: all its steps are in `fixed`) |
 
 ## Limits
 

@@ -23,7 +23,7 @@
   },
   "nalgebra::geometry::quaternion::benches": {
     "quaternion_conj_mul": {
-      "fused": 22760
+      "fused": 20230
     }
   },
   "nalgebra::geometry::rotation3::benches": {
@@ -38,7 +38,7 @@
   },
   "nalgebra::geometry::unit_quaternion::benches": {
     "unit_quaternion_conj_mul": {
-      "fused": 22760
+      "fused": 20230
     }
   }
 }

@@ -45,6 +45,7 @@ pub impl Isometry3InternalImpl<
     /// Not an upstream method: upstream writes `rotation * v + translation`, which in fixed point
     /// is exactly this kernel. Panics on overflow of an intermediate doubling (`|v|` above about
     /// `2^30`).
+    #[inline(always)]
     fn rotate_translate(r: UnitQuaternion<T>, v: Vector3<T>, t: Vector3<T>) -> Vector3<T> {
         let u = r.imag();
         let c = u.cross(v);

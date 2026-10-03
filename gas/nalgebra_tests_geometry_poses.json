@@ -48,7 +48,7 @@
   "nalgebra_tests_geometry_poses::poses::benches": {
     "isometry2_div": {
       "baseline": 11210,
-      "inverse_then_mul": 25920
+      "inverse_then_mul": 23290
     },
     "isometry2_rotation_wrt_point": {
       "alt_rotate_then_add": 16550,
@@ -57,16 +57,16 @@
     },
     "isometry3_div": {
       "baseline": 13910,
-      "inverse_then_mul": 72600
+      "inverse_then_mul": 63910
     },
     "isometry3_look_at_lh": {
       "baseline": 13110,
-      "unit_quaternion_frame": 113150
+      "unit_quaternion_frame": 112150
     },
     "isometry3_rotation_wrt_point": {
-      "alt_rotate_then_add": 38100,
+      "alt_rotate_then_add": 35970,
       "baseline": 12510,
-      "fused": 36780
+      "fused": 34050
     },
     "quaternion_exp_real": {
       "baseline": 10210,
@@ -82,7 +82,7 @@
     },
     "similarity3_div": {
       "baseline": 14810,
-      "inverse_then_mul": 105450
+      "inverse_then_mul": 97260
     }
   },
   "nalgebra_tests_geometry_poses::similarity_matrix::benches": {

@@ -8,8 +8,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `direct` | 54750 | 22170 | x1.00 |
-| `trait` | 54750 | 22170 | x1.00 |
+| `direct` | 48990 | 19740 | x1.00 |
+| `trait` | 48990 | 19740 | x1.00 |
 
 ## nalgebra_tests_geometry_ext::inplace::benches
 
@@ -151,7 +151,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `closed_form` | 1060750 | 529600 | x1.00 |
-| `iterate_8` | 1935850 | 1404700 | x2.65 |
+| `iterate_8` | 1893770 | 1362620 | x2.57 |
 | `alt_matrix_iterate_8` | 2157010 | 1625860 | x3.07 |
 
 ### rotation3_index
@@ -170,8 +170,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `shepperd_then_hamilton` | 318030 | 39730 | x1.00 |
-| `div` | 319230 | 40930 | x1.03 |
+| `shepperd_then_hamilton` | 312570 | 37200 | x1.00 |
+| `div` | 319230 | 43860 | x1.18 |
 
 ### rotation3_new
 
@@ -203,8 +203,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `through_quaternions` | 878890 | 205180 | x1.00 |
-| `try_slerp` | 880390 | 206680 | x1.01 |
+| `through_quaternions` | 872350 | 201910 | x1.00 |
+| `try_slerp` | 873250 | 202810 | x1.00 |
 
 ## nalgebra_tests_geometry_ext::translation::benches
 

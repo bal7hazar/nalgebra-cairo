@@ -15,10 +15,10 @@ Cairo steps per probe (`snforge test --tracked-resource cairo-steps --detailed-r
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `isometry3_inv_mul` | `op` | 136 | 457 | 321 |
-| `isometry3_inverse` | `op` | 122 | 322 | 200 |
-| `isometry3_mul` | `op` | 136 | 428 | 292 |
-| `isometry3_transform_point` | `op` | 108 | 301 | 193 |
+| `isometry3_inv_mul` | `op` | 136 | 401 | 265 |
+| `isometry3_inverse` | `op` | 122 | 299 | 177 |
+| `isometry3_mul` | `op` | 136 | 389 | 253 |
+| `isometry3_transform_point` | `op` | 108 | 281 | 173 |
 
 ## nalgebra_probes_steps::lu
 
@@ -68,11 +68,11 @@ Cairo steps per probe (`snforge test --tracked-resource cairo-steps --detailed-r
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `unit_quaternion_from_axis_angle` | `op` | 101 | 408 | 307 |
+| `unit_quaternion_from_axis_angle` | `op` | 101 | 397 | 296 |
 | `unit_quaternion_inverse` | `op` | 101 | 111 | 10 |
-| `unit_quaternion_mul` | `op` | 109 | 203 | 94 |
-| `unit_quaternion_slerp` | `op` | 111 | 1031 | 920 |
-| `unit_quaternion_transform_vector` | `op` | 102 | 283 | 181 |
+| `unit_quaternion_mul` | `op` | 109 | 188 | 79 |
+| `unit_quaternion_slerp` | `op` | 111 | 1018 | 907 |
+| `unit_quaternion_transform_vector` | `op` | 102 | 269 | 167 |
 
 ## nalgebra_probes_steps::vector3
 

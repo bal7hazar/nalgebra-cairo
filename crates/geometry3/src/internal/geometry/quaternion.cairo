@@ -36,6 +36,7 @@ pub impl QuaternionInternalImpl<
     /// component panics (`Fixed: overflow`). Upstream has no direct equivalent: it replaces
     /// `q.conjugate() * other` (and `q.try_inverse().unwrap() * other` for a unit `q`), the
     /// rotation part of `Isometry3::inv_mul`.
+    #[inline(always)]
     fn conj_mul(self: Quaternion<T>, other: Quaternion<T>) -> Quaternion<T> {
         // w = aw·bw + ai·bi + aj·bj + ak·bk
         let w = R::wide_add_prod(R::wide_zero(), self.w, other.w);
