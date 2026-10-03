@@ -415,7 +415,9 @@ pub impl UnitQuaternionImpl<
     fn from_rotation_matrix(r: Rotation3<T>) -> UnitQuaternion<T> {
         let m = r.matrix;
         let tr = m.m11 + m.m22 + m.m33;
-        if R::is_sign_positive(tr) {
+        // Upstream's own `tr > 0`: at a trace of exactly 0 a diagonal branch is taken (simba
+        // 0.3.0's `is_sign_positive(0)` is true, so it would take this one, with the other sign).
+        if tr > R::zero() {
             // d = sqrt(1 + tr) in (1, 2]; upstream's `denom` is 2d and its `quarter · denom` is
             // d/2.
             let d = R::sqrt(R::one() + tr);
@@ -1490,6 +1492,8 @@ pub mod errors {
 #[cfg(test)]
 mod tests {
     use fixed::Fixed;
+    use nalgebra_types3::base::matrix3::Matrix3;
+    use nalgebra_types3::geometry::rotation3::Rotation3;
     use simba::scalar::{Real, Transcendental};
     use super::{
         Quaternion, QuaternionTrait, UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
@@ -1616,6 +1620,31 @@ mod tests {
             }
         }
         assert!(n >= 200);
+    }
+
+    /// `from_rotation_matrix` at a trace of exactly 0, the -120° turn about `(1, 1, 1)` (rows
+    /// `[[0, 1, 0], [0, 0, 1], [1, 0, 0]]`): nalgebra-rs 0.35.0 gives `(w, i, j, k) = (-0.5, 0.5,
+    /// 0.5, 0.5)` (its `tr > 0` takes the `k` branch), every step exact. Pins the trace test
+    /// against simba 0.3.0's `is_sign_positive(0) = true` (docs/research/rel-zero.md).
+    #[test]
+    fn test_from_rotation_matrix_zero_trace() {
+        let one = fx(0x100000000);
+        let zero = fx(0);
+        let half = 0x80000000;
+        let r = Rotation3 {
+            matrix: Matrix3 {
+                m11: zero,
+                m21: zero,
+                m31: one,
+                m12: one,
+                m22: zero,
+                m32: zero,
+                m13: zero,
+                m23: one,
+                m33: zero,
+            },
+        };
+        assert!(UnitQuaternionTrait::from_rotation_matrix(r) == uq(half, half, half, -half));
     }
 }
 
