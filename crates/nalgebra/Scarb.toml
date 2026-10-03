@@ -146,58 +146,58 @@ exp = [
 ]
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.1.1" }
-nalgebra_types2 = { path = "../types2", version = "0.1.1" }
-nalgebra_types3 = { path = "../types3", version = "0.1.1" }
-nalgebra_types4 = { path = "../types4", version = "0.1.1" }
-nalgebra_types5 = { path = "../types5", version = "0.1.1" }
-nalgebra_types6 = { path = "../types6", version = "0.1.1" }
-nalgebra_static_core = { path = "../static_core", version = "0.1.1", default-features = false }
-nalgebra_static2 = { path = "../static2", version = "0.1.1", default-features = false }
-nalgebra_static3 = { path = "../static3", version = "0.1.1", default-features = false }
-nalgebra_static4 = { path = "../static4", version = "0.1.1", default-features = false }
-nalgebra_static5 = { path = "../static5", version = "0.1.1", default-features = false }
-nalgebra_static6_tall = { path = "../static6_tall", version = "0.1.1", default-features = false }
-nalgebra_static6_wide = { path = "../static6_wide", version = "0.1.1", default-features = false }
-nalgebra_geometry2 = { path = "../geometry2", version = "0.1.1" }
-nalgebra_geometry3 = { path = "../geometry3", version = "0.1.1" }
-nalgebra_geometry4 = { path = "../geometry4", version = "0.1.1" }
-nalgebra_geometry5 = { path = "../geometry5", version = "0.1.1" }
-nalgebra_geometry6 = { path = "../geometry6", version = "0.1.1" }
-nalgebra_transform2 = { path = "../transform2", version = "0.1.1" }
-nalgebra_transform3 = { path = "../transform3", version = "0.1.1" }
-nalgebra_blocks = { path = "../blocks", version = "0.1.1" }
-nalgebra_views = { path = "../views", version = "0.1.1" }
-nalgebra_norm = { path = "../norm", version = "0.1.1" }
-nalgebra_statistics2 = { path = "../statistics2", version = "0.1.1" }
-nalgebra_statistics3 = { path = "../statistics3", version = "0.1.1" }
-nalgebra_statistics4 = { path = "../statistics4", version = "0.1.1" }
-nalgebra_statistics5 = { path = "../statistics5", version = "0.1.1" }
-nalgebra_statistics6 = { path = "../statistics6", version = "0.1.1" }
-nalgebra_blas = { path = "../blas", version = "0.1.1" }
-nalgebra_linalg_core = { path = "../linalg_core", version = "0.1.1", default-features = false }
-nalgebra_linalg2 = { path = "../linalg2", version = "0.1.1", default-features = false }
-nalgebra_linalg_svd_eigen2 = { path = "../linalg_svd_eigen2", version = "0.1.1", default-features = false }
-nalgebra_linalg_pivot2 = { path = "../linalg_pivot2", version = "0.1.1", default-features = false }
-nalgebra_linalg_spectral2 = { path = "../linalg_spectral2", version = "0.1.1", default-features = false }
-nalgebra_linalg3 = { path = "../linalg3", version = "0.1.1", default-features = false }
-nalgebra_linalg_svd_eigen3 = { path = "../linalg_svd_eigen3", version = "0.1.1", default-features = false }
-nalgebra_linalg_pivot3 = { path = "../linalg_pivot3", version = "0.1.1", default-features = false }
-nalgebra_linalg_spectral3 = { path = "../linalg_spectral3", version = "0.1.1", default-features = false }
-nalgebra_linalg4 = { path = "../linalg4", version = "0.1.1", default-features = false }
-nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.1.1", default-features = false }
-nalgebra_linalg_pivot4 = { path = "../linalg_pivot4", version = "0.1.1", default-features = false }
-nalgebra_linalg_spectral4 = { path = "../linalg_spectral4", version = "0.1.1", default-features = false }
-nalgebra_linalg5 = { path = "../linalg5", version = "0.1.1", default-features = false }
-nalgebra_linalg_svd_eigen5 = { path = "../linalg_svd_eigen5", version = "0.1.1", default-features = false }
-nalgebra_linalg_pivot5 = { path = "../linalg_pivot5", version = "0.1.1", default-features = false }
-nalgebra_linalg_spectral5 = { path = "../linalg_spectral5", version = "0.1.1", default-features = false }
-nalgebra_linalg6 = { path = "../linalg6", version = "0.1.1", default-features = false }
-nalgebra_linalg_svd_eigen6 = { path = "../linalg_svd_eigen6", version = "0.1.1", default-features = false }
-nalgebra_linalg_pivot6 = { path = "../linalg_pivot6", version = "0.1.1", default-features = false }
-nalgebra_linalg_spectral6 = { path = "../linalg_spectral6", version = "0.1.1", default-features = false }
-nalgebra_dynamic = { path = "../dynamic", version = "0.1.1", default-features = false }
-nalgebra_sparse = { path = "../sparse", version = "0.1.1" }
+nalgebra_core = { path = "../core", version = "0.2.0" }
+nalgebra_types2 = { path = "../types2", version = "0.2.0" }
+nalgebra_types3 = { path = "../types3", version = "0.2.0" }
+nalgebra_types4 = { path = "../types4", version = "0.2.0" }
+nalgebra_types5 = { path = "../types5", version = "0.2.0" }
+nalgebra_types6 = { path = "../types6", version = "0.2.0" }
+nalgebra_static_core = { path = "../static_core", version = "0.2.0", default-features = false }
+nalgebra_static2 = { path = "../static2", version = "0.2.0", default-features = false }
+nalgebra_static3 = { path = "../static3", version = "0.2.0", default-features = false }
+nalgebra_static4 = { path = "../static4", version = "0.2.0", default-features = false }
+nalgebra_static5 = { path = "../static5", version = "0.2.0", default-features = false }
+nalgebra_static6_tall = { path = "../static6_tall", version = "0.2.0", default-features = false }
+nalgebra_static6_wide = { path = "../static6_wide", version = "0.2.0", default-features = false }
+nalgebra_geometry2 = { path = "../geometry2", version = "0.2.0" }
+nalgebra_geometry3 = { path = "../geometry3", version = "0.2.0" }
+nalgebra_geometry4 = { path = "../geometry4", version = "0.2.0" }
+nalgebra_geometry5 = { path = "../geometry5", version = "0.2.0" }
+nalgebra_geometry6 = { path = "../geometry6", version = "0.2.0" }
+nalgebra_transform2 = { path = "../transform2", version = "0.2.0" }
+nalgebra_transform3 = { path = "../transform3", version = "0.2.0" }
+nalgebra_blocks = { path = "../blocks", version = "0.2.0" }
+nalgebra_views = { path = "../views", version = "0.2.0" }
+nalgebra_norm = { path = "../norm", version = "0.2.0" }
+nalgebra_statistics2 = { path = "../statistics2", version = "0.2.0" }
+nalgebra_statistics3 = { path = "../statistics3", version = "0.2.0" }
+nalgebra_statistics4 = { path = "../statistics4", version = "0.2.0" }
+nalgebra_statistics5 = { path = "../statistics5", version = "0.2.0" }
+nalgebra_statistics6 = { path = "../statistics6", version = "0.2.0" }
+nalgebra_blas = { path = "../blas", version = "0.2.0" }
+nalgebra_linalg_core = { path = "../linalg_core", version = "0.2.0", default-features = false }
+nalgebra_linalg2 = { path = "../linalg2", version = "0.2.0", default-features = false }
+nalgebra_linalg_svd_eigen2 = { path = "../linalg_svd_eigen2", version = "0.2.0", default-features = false }
+nalgebra_linalg_pivot2 = { path = "../linalg_pivot2", version = "0.2.0", default-features = false }
+nalgebra_linalg_spectral2 = { path = "../linalg_spectral2", version = "0.2.0", default-features = false }
+nalgebra_linalg3 = { path = "../linalg3", version = "0.2.0", default-features = false }
+nalgebra_linalg_svd_eigen3 = { path = "../linalg_svd_eigen3", version = "0.2.0", default-features = false }
+nalgebra_linalg_pivot3 = { path = "../linalg_pivot3", version = "0.2.0", default-features = false }
+nalgebra_linalg_spectral3 = { path = "../linalg_spectral3", version = "0.2.0", default-features = false }
+nalgebra_linalg4 = { path = "../linalg4", version = "0.2.0", default-features = false }
+nalgebra_linalg_svd_eigen4 = { path = "../linalg_svd_eigen4", version = "0.2.0", default-features = false }
+nalgebra_linalg_pivot4 = { path = "../linalg_pivot4", version = "0.2.0", default-features = false }
+nalgebra_linalg_spectral4 = { path = "../linalg_spectral4", version = "0.2.0", default-features = false }
+nalgebra_linalg5 = { path = "../linalg5", version = "0.2.0", default-features = false }
+nalgebra_linalg_svd_eigen5 = { path = "../linalg_svd_eigen5", version = "0.2.0", default-features = false }
+nalgebra_linalg_pivot5 = { path = "../linalg_pivot5", version = "0.2.0", default-features = false }
+nalgebra_linalg_spectral5 = { path = "../linalg_spectral5", version = "0.2.0", default-features = false }
+nalgebra_linalg6 = { path = "../linalg6", version = "0.2.0", default-features = false }
+nalgebra_linalg_svd_eigen6 = { path = "../linalg_svd_eigen6", version = "0.2.0", default-features = false }
+nalgebra_linalg_pivot6 = { path = "../linalg_pivot6", version = "0.2.0", default-features = false }
+nalgebra_linalg_spectral6 = { path = "../linalg_spectral6", version = "0.2.0", default-features = false }
+nalgebra_dynamic = { path = "../dynamic", version = "0.2.0", default-features = false }
+nalgebra_sparse = { path = "../sparse", version = "0.2.0" }
 simba.workspace = true
 
 [dev-dependencies]
