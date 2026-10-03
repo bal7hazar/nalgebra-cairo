@@ -21,12 +21,12 @@ How to read it:
 | geometry | 935 | 0 | 0 | 113 | 1048 | 100.0% |
 | linalg | 303 | 0 | 0 | 1 | 304 | 100.0% |
 | sparse | 34 | 0 | 0 | 13 | 47 | 100.0% |
-| io | 1 | 0 | 1 | 0 | 2 | 50.0% |
+| io | 1 | 0 | 0 | 1 | 2 | 100.0% |
 | third_party | 91 | 0 | 0 | 72 | 163 | 100.0% |
 | root | 35 | 0 | 0 | 0 | 35 | 100.0% |
 | proptest | 0 | 0 | 0 | 21 | 21 | — |
 | debug | 0 | 0 | 0 | 12 | 12 | — |
-| **total** | **1885** | **0** | **1** | **550** | **2436** | **99.9%** |
+| **total** | **1885** | **0** | **0** | **551** | **2436** | **100.0%** |
 
 nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
@@ -57,7 +57,7 @@ Every `missing` / `partial` item is assigned to one package (first matching rule
 | [P17](#p17-matrix-exponential-and-power) | Matrix exponential and power | 0 | hard numerics | P14, P16 |  |
 | [P18](#p18-convolution) | Convolution | 0 | mechanical | P13 |  |
 | [P19](#p19-glam-cairo-conversions) | glam-cairo conversions | 0 | mechanical | WP 6.2 (glam-cairo pin) |  |
-| [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 1 | standard numerics | P13 | `io/matrix_market.rs` (1) |
+| [P20](#p20-sparse-matrices-and-matrix-market-i-o) | Sparse matrices and Matrix Market I/O | 0 | standard numerics | P13 |  |
 | [P21](#p21-crate-root-functions-and-construction-macros) | Crate-root functions and construction macros | 0 | mechanical | P01, P13 |  |
 
 ### P01 Rectangular and remaining static shapes
@@ -167,9 +167,8 @@ D5 `Span`-backed `DMatrix` / `DVector` / `RowDVector` and the `MatrixXxN` / `Mat
 
 ### P20 Sparse matrices and Matrix Market I/O
 
-legacy `nalgebra::sparse` (`CsMatrix`, `CsVector`, `CsCholesky`, triangular solves) and `nalgebra::io` Matrix Market parsing. Tier: standard numerics. Depends on: P13. 1 items (`*` = partial):
+legacy `nalgebra::sparse` (`CsMatrix`, `CsVector`, `CsCholesky`, triangular solves) and `nalgebra::io` Matrix Market parsing. Tier: standard numerics. Depends on: P13. 0 items (`*` = partial):
 
-- **nalgebra::io**: `cs_matrix_from_matrix_market`
 
 ### P21 Crate-root functions and construction macros
 
@@ -212,6 +211,7 @@ nalgebra-rs is generic over dimensions; its users name the aliases of `src/base/
 | `unsafe` | 38 | Raw pointers, `unsafe` functions and uninitialized-memory storage internals: Cairo memory is write-once and has no pointer arithmetic. |
 | `borrow` | 48 | Borrowed references (`AsRef` / `AsMut` / `Borrow` / `Deref` to slices, `&mut` element access, mutable views): Cairo values are `Copy` and passed by value. |
 | `fmt` | 27 | `Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but prints nothing nalgebra-shaped): diagnostics, not API. |
+| `fs` | 1 | File-system access: a Cairo program has no file system or path, so the readers that take a `Path` (`cs_matrix_from_matrix_market`) have no counterpart; the `_str` form that takes the content is ported. |
 | `glue` | 44 | Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, `encase`, the `serde` visitor types). |
 | `random` | 65 | `rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix helpers: a proof has no entropy source. |
 | `interop` | 68 | Interop with other Rust crates (`mint`, `alga`, `num-complex`'s `Complex` scalar, and the `glam` types glam-cairo does not have: f64 `D*`, aligned `*A`, `i8`..`u64` integer vectors other than `IVec*` / `UVec*`). The glam conversions for types glam-cairo has are in scope. |
@@ -3458,11 +3458,11 @@ Cairo: nalgebra::sparse · ported 1, partial 0, missing 0, excluded 0.
 
 #### nalgebra::io (io)
 
-Cairo: nalgebra::io · ported 1, partial 0, missing 1, excluded 0.
+Cairo: nalgebra::io · ported 1, partial 0, missing 0, excluded 1.
 
 | Item | Status | Cairo | Detail / WP | Source |
 |---|---|---|---|---|
-| function `cs_matrix_from_matrix_market` | missing |  | P20 | `io/matrix_market.rs` |
+| function `cs_matrix_from_matrix_market` | excluded |  | fs | `io/matrix_market.rs` |
 | function `cs_matrix_from_matrix_market_str` | ported | nalgebra::io (function `cs_matrix_from_matrix_market_str`) |  | `io/matrix_market.rs` |
 
 ### Module `third_party`
