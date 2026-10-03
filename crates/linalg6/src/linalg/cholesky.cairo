@@ -1468,10 +1468,9 @@ mod tests {
 
     /// `new_with_substitute` against the reference, bit for bit: the edge cases of `new` (zero,
     /// 1-ulp and negative pivots among them) and a deterministic sweep with the magnitudes of the
-    /// `new`
-    /// sweep, on 1 draw in 2 indefinite (pivots `<= 0` replaced by `substitute`), with a positive
-    /// `substitute` of every magnitude, and a `substitute <= 0` on 1 draw in 8 (`None` when a pivot
-    /// needs it).
+    /// `new` sweep, on 1 draw in 2 indefinite (pivots `<= 0` replaced by `substitute`), with a
+    /// positive `substitute` of every magnitude, and a `substitute <= 0` on 1 draw in 8 (`None`
+    /// when a pivot needs it).
     #[test]
     fn test_new_with_substitute_matches_reference() {
         let one: i64 = 0x100000000;

@@ -1084,8 +1084,9 @@ pub impl UnitQuaternionAngleImpl<
     /// the shortest-arc flip that angle is in `[0, π]`, so `epsilon` rejects NEARLY ALIGNED
     /// rotations, whose interpolation direction is ill-conditioned (`epsilon = 1/512` rejects pairs
     /// less than about 1/256 rad apart). `epsilon` is in scalar units, not upstream's relative
-    /// float epsilon; with `epsilon = 0` the result is always `Some` (see `slerp`). Upstream:
-    /// `try_slerp`.
+    /// float epsilon; with `epsilon = 0` the result is always `Some` (see `slerp`). The
+    /// shortest-arc flip negates `other`'s weight, not its components, so a component of `other`
+    /// equal to the scalar's `MIN` no longer panics on the negation. Upstream: `try_slerp`.
     #[inline(always)]
     fn try_slerp(
         self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T, epsilon: T,
