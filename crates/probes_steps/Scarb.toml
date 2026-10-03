@@ -1,0 +1,35 @@
+[package]
+name = "nalgebra_probes_steps"
+description = "Cairo-steps probes of the hot primitives, one per primitive (test-only, not published; docs/STEPS.md)."
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+publish = false
+
+# Only the published sub-crates the probes measure (no facade): the probed code is exactly the code
+# of these crates, and the build is far lighter than the facade's.
+[dependencies]
+nalgebra_core = { path = "../core" }
+nalgebra_types3 = { path = "../types3" }
+nalgebra_types6 = { path = "../types6" }
+nalgebra_static3 = { path = "../static3", default-features = false }
+nalgebra_static6_wide = { path = "../static6_wide", default-features = false }
+nalgebra_geometry3 = { path = "../geometry3" }
+nalgebra_linalg3 = { path = "../linalg3", default-features = false }
+nalgebra_linalg6 = { path = "../linalg6", default-features = false }
+nalgebra_linalg_svd_eigen3 = { path = "../linalg_svd_eigen3", default-features = false, features = ["eigen", "svd"] }
+simba.workspace = true
+fixed.workspace = true
+
+[dev-dependencies]
+nalgebra_testing = { path = "../testing" }
+snforge_std.workspace = true
+assert_macros.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true

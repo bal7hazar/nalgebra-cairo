@@ -116,6 +116,7 @@ members = [
     "crates/tests_dynamic",
     "crates/tests_sparse",
     "crates/tests_root",
+    "crates/probes_steps",
 ]
 
 [workspace.package]

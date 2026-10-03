@@ -33,8 +33,8 @@ jobs:
   # `some-with-excludes`: a file is in a group if it matches a pattern and no `!` pattern, so prose
   # `.md` files under a group's directories trigger nothing. The `.md` files a job checks are listed
   # apart (`<group>_md`) and added back: `docs/API_PARITY.md` (`scripts/api_parity.py --check`, group
-  # `workspace`) is the only one (gas/*.md are written by `gas_report.py --update` but the check reads
-  # the .json only).
+  # `workspace`) is the only one (gas/*.md and steps/*.md are written by `gas_report.py --update` /
+  # `steps_report.py --update` but the checks read the .json only).
   # What each job reads beyond the brief's table: `path-proof` imports `scripts/consumer_cost.py`
   # (tools/split/public_paths.py), hence it is in that group. `oracle` builds with cargo, but the
   # toolchain set is in it too (an extra trigger rather than a missing one).
@@ -49,6 +49,7 @@ jobs:
       library: ${{ steps.filter.outputs.library == 'true' }}
       benchmarks: ${{ steps.filter.outputs.benchmarks == 'true' }}
       oracle: ${{ steps.filter.outputs.oracle == 'true' }}
+      steps: ${{ steps.filter.outputs.steps == 'true' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -122,6 +123,15 @@ jobs:
               - '**/Scarb.lock'
               - '.github/workflows/**'
               - 'tools/oracle/**'
+              - '!**/*.md'
+            steps:
+              - '.tool-versions'
+              - '**/Scarb.toml'
+              - '**/Scarb.lock'
+              - '.github/workflows/**'
+              - 'crates/**'
+              - 'steps/**'
+              - 'scripts/steps_report.py'
               - '!**/*.md'
 
   # Once for the whole workspace (the shards below only test their package).
@@ -451,6 +461,39 @@ jobs:
       - name: Every test of every package runs in exactly one shard (catches modules no filter selects)
         run: cat bench/*/coverage.out | python3 scripts/shard_coverage.py
 
+  # WP 11-OPT-0 (docs/STEPS.md): the Cairo-steps probes of the hot primitives, one per primitive, each
+  # a test with an exact assertion and a baseline; the net steps are compared with `steps/*.json`.
+  # Cairo steps are path- and platform-free, single-threaded like the other snapshots.
+  steps-snapshot:
+    name: Steps snapshot
+    needs: changes
+    if: github.event_name == 'push' || needs.changes.outputs.steps == 'true'
+    runs-on: ubuntu-latest
+    env:
+      RAYON_NUM_THREADS: "1"
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: Wandalen/wretry.action@e68c23e6309f2871ca8ae4763e7629b9c258e1ea # v3.8.0
+        with:
+          action: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2
+          attempt_limit: 3
+          attempt_delay: 20000
+      - id: snfoundry4
+        continue-on-error: true
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - if: steps.snfoundry4.outcome == 'failure'
+        run: sleep 20
+      - if: steps.snfoundry4.outcome == 'failure'
+        uses: foundry-rs/setup-snfoundry@16e23ddd0e2845f38727c92f4b913a7b728cda9e # v6.0.0
+      - name: Self-test of the steps script
+        run: python3 scripts/steps_report.py --self-test
+      - name: Build and run the probes, check their net steps against the snapshot
+        run: |
+          snforge test -p nalgebra_probes_steps --tracked-resource cairo-steps --detailed-resources \
+            | tee snforge.out
+          python3 scripts/steps_report.py --check steps/ < snforge.out
+
   benchmarks:
     name: Design benchmarks
     needs: changes
@@ -526,13 +569,14 @@ jobs:
   # The one check that always exists (`gh pr checks` and the merge command see it whatever was
   # skipped). It aggregates every job above, with its group of `changes`: workspace (group
   # workspace), consumer-cost-shard and consumer-cost (cost), facade-features (facade), path-proof
-  # (paths), library and gas (library), benchmarks (benchmarks), oracle (oracle). It passes when each
+  # (paths), library and gas (library), steps-snapshot (steps), benchmarks (benchmarks), oracle
+  # (oracle). It passes when each
   # job succeeded or was skipped by the paths rule: `skipped` is accepted only on a pull request and
   # only when the group's output is exactly `false`. A failed or cancelled job, a skip while the
   # group is true (a needed job failed) and a `changes` that did not succeed all fail it.
   ci-result:
     name: CI result
-    needs: [changes, workspace, consumer-cost-shard, consumer-cost, facade-features, path-proof, library, gas, benchmarks, oracle]
+    needs: [changes, workspace, consumer-cost-shard, consumer-cost, facade-features, path-proof, library, gas, steps-snapshot, benchmarks, oracle]
     if: always()
     runs-on: ubuntu-latest
     env:
@@ -545,6 +589,7 @@ jobs:
       PATH_PROOF: ${{ needs.path-proof.result }}/${{ needs.changes.outputs.paths }}
       LIBRARY: ${{ needs.library.result }}/${{ needs.changes.outputs.library }}
       GAS: ${{ needs.gas.result }}/${{ needs.changes.outputs.library }}
+      STEPS_SNAPSHOT: ${{ needs.steps-snapshot.result }}/${{ needs.changes.outputs.steps }}
       BENCHMARKS: ${{ needs.benchmarks.result }}/${{ needs.changes.outputs.benchmarks }}
       ORACLE: ${{ needs.oracle.result }}/${{ needs.changes.outputs.oracle }}
     steps:
@@ -556,7 +601,7 @@ jobs:
             status=1
           fi
           # job name, then "<result>/<group output>"
-          for job in WORKSPACE CONSUMER_COST_SHARD CONSUMER_COST FACADE_FEATURES PATH_PROOF LIBRARY GAS BENCHMARKS ORACLE; do
+          for job in WORKSPACE CONSUMER_COST_SHARD CONSUMER_COST FACADE_FEATURES PATH_PROOF LIBRARY GAS STEPS_SNAPSHOT BENCHMARKS ORACLE; do
             value="${!job}"
             result="${value%%/*}"
             group="${value#*/}"
