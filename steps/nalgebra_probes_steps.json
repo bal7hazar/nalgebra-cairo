@@ -1,0 +1,146 @@
+{
+  "nalgebra_probes_steps::cholesky": {
+    "cholesky3_factor": {
+      "baseline": 121,
+      "op": 341
+    },
+    "cholesky3_solve": {
+      "baseline": 106,
+      "op": 352
+    },
+    "cholesky6_factor": {
+      "baseline": 275,
+      "op": 1172
+    },
+    "cholesky6_solve": {
+      "baseline": 157,
+      "op": 726
+    }
+  },
+  "nalgebra_probes_steps::isometry3": {
+    "isometry3_inv_mul": {
+      "baseline": 136,
+      "op": 457
+    },
+    "isometry3_inverse": {
+      "baseline": 122,
+      "op": 322
+    },
+    "isometry3_mul": {
+      "baseline": 136,
+      "op": 428
+    },
+    "isometry3_transform_point": {
+      "baseline": 108,
+      "op": 301
+    }
+  },
+  "nalgebra_probes_steps::lu": {
+    "lu3_factor": {
+      "baseline": 146,
+      "op": 432
+    },
+    "lu3_solve": {
+      "baseline": 116,
+      "op": 314
+    },
+    "lu6_factor": {
+      "baseline": 471,
+      "op": 2390
+    },
+    "lu6_solve": {
+      "baseline": 197,
+      "op": 739
+    }
+  },
+  "nalgebra_probes_steps::matrix3": {
+    "matrix3_determinant": {
+      "baseline": 96,
+      "op": 178
+    },
+    "matrix3_mul": {
+      "baseline": 154,
+      "op": 340
+    },
+    "matrix3_mul_vec": {
+      "baseline": 112,
+      "op": 165
+    },
+    "matrix3_transpose": {
+      "baseline": 136,
+      "op": 145
+    },
+    "matrix3_try_inverse": {
+      "baseline": 136,
+      "op": 566
+    }
+  },
+  "nalgebra_probes_steps::matrix6": {
+    "matrix6_mul_vec": {
+      "baseline": 187,
+      "op": 379
+    }
+  },
+  "nalgebra_probes_steps::scalar": {
+    "scalar_mul_add": {
+      "baseline": 84,
+      "op": 99
+    },
+    "scalar_wide_dot3": {
+      "baseline": 90,
+      "op": 107
+    }
+  },
+  "nalgebra_probes_steps::svd3": {
+    "svd3": {
+      "baseline": 233,
+      "op": 5483
+    }
+  },
+  "nalgebra_probes_steps::symmetric_eigen3": {
+    "symmetric_eigen3": {
+      "baseline": 151,
+      "op": 4200
+    }
+  },
+  "nalgebra_probes_steps::unit_quaternion": {
+    "unit_quaternion_from_axis_angle": {
+      "baseline": 101,
+      "op": 408
+    },
+    "unit_quaternion_inverse": {
+      "baseline": 101,
+      "op": 111
+    },
+    "unit_quaternion_mul": {
+      "baseline": 109,
+      "op": 203
+    },
+    "unit_quaternion_slerp": {
+      "baseline": 111,
+      "op": 1031
+    },
+    "unit_quaternion_transform_vector": {
+      "baseline": 102,
+      "op": 283
+    }
+  },
+  "nalgebra_probes_steps::vector3": {
+    "vector3_cross": {
+      "baseline": 100,
+      "op": 147
+    },
+    "vector3_dot": {
+      "baseline": 90,
+      "op": 107
+    },
+    "vector3_norm": {
+      "baseline": 84,
+      "op": 102
+    },
+    "vector3_normalize": {
+      "baseline": 94,
+      "op": 194
+    }
+  }
+}
