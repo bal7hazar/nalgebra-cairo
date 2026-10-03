@@ -1057,6 +1057,169 @@ mod tests {
         )
     }
 
+    /// `Cholesky6Trait::new_with_substitute` before WP 11-OPT-2: one division per sub-diagonal
+    /// entry (the new body shares one prepared divisor per column, `Real::div4` / `div3`).
+    fn new_with_substitute_reference(
+        a: Matrix6<Fixed>, substitute: Fixed,
+    ) -> Option<Cholesky6<Fixed>> {
+        let p1 = a.m11;
+        let p1 = if p1 <= R::zero() {
+            substitute
+        } else {
+            p1
+        };
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let (l21, l31, l41, l51, l61) = R::div5(a.m21, a.m31, a.m41, a.m51, a.m61, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        let p2 = if p2 <= R::zero() {
+            substitute
+        } else {
+            p2
+        };
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m32);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m42);
+        let w = R::wide_sub_prod(w, l41, l21);
+        let n42 = R::wide_rescale(w);
+        let l42 = R::div(n42, l22);
+        let w = R::wide_add(R::wide_zero(), a.m52);
+        let w = R::wide_sub_prod(w, l51, l21);
+        let n52 = R::wide_rescale(w);
+        let l52 = R::div(n52, l22);
+        let w = R::wide_add(R::wide_zero(), a.m62);
+        let w = R::wide_sub_prod(w, l61, l21);
+        let n62 = R::wide_rescale(w);
+        let l62 = R::div(n62, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        let p3 = if p3 <= R::zero() {
+            substitute
+        } else {
+            p3
+        };
+        if p3 <= R::zero() {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        let w = R::wide_add(R::wide_zero(), a.m43);
+        let w = R::wide_sub_prod(w, l41, l31);
+        let w = R::wide_sub_prod(w, l42, l32);
+        let n43 = R::wide_rescale(w);
+        let l43 = R::div(n43, l33);
+        let w = R::wide_add(R::wide_zero(), a.m53);
+        let w = R::wide_sub_prod(w, l51, l31);
+        let w = R::wide_sub_prod(w, l52, l32);
+        let n53 = R::wide_rescale(w);
+        let l53 = R::div(n53, l33);
+        let w = R::wide_add(R::wide_zero(), a.m63);
+        let w = R::wide_sub_prod(w, l61, l31);
+        let w = R::wide_sub_prod(w, l62, l32);
+        let n63 = R::wide_rescale(w);
+        let l63 = R::div(n63, l33);
+        let w = R::wide_add(R::wide_zero(), a.m44);
+        let w = R::wide_sub_prod(w, l41, l41);
+        let w = R::wide_sub_prod(w, l42, l42);
+        let w = R::wide_sub_prod(w, l43, l43);
+        let p4 = R::wide_rescale(w);
+        let p4 = if p4 <= R::zero() {
+            substitute
+        } else {
+            p4
+        };
+        if p4 <= R::zero() {
+            return None;
+        }
+        let l44 = R::sqrt(p4);
+        let w = R::wide_add(R::wide_zero(), a.m54);
+        let w = R::wide_sub_prod(w, l51, l41);
+        let w = R::wide_sub_prod(w, l52, l42);
+        let w = R::wide_sub_prod(w, l53, l43);
+        let n54 = R::wide_rescale(w);
+        let l54 = R::div(n54, l44);
+        let w = R::wide_add(R::wide_zero(), a.m64);
+        let w = R::wide_sub_prod(w, l61, l41);
+        let w = R::wide_sub_prod(w, l62, l42);
+        let w = R::wide_sub_prod(w, l63, l43);
+        let n64 = R::wide_rescale(w);
+        let l64 = R::div(n64, l44);
+        let w = R::wide_add(R::wide_zero(), a.m55);
+        let w = R::wide_sub_prod(w, l51, l51);
+        let w = R::wide_sub_prod(w, l52, l52);
+        let w = R::wide_sub_prod(w, l53, l53);
+        let w = R::wide_sub_prod(w, l54, l54);
+        let p5 = R::wide_rescale(w);
+        let p5 = if p5 <= R::zero() {
+            substitute
+        } else {
+            p5
+        };
+        if p5 <= R::zero() {
+            return None;
+        }
+        let l55 = R::sqrt(p5);
+        let w = R::wide_add(R::wide_zero(), a.m65);
+        let w = R::wide_sub_prod(w, l61, l51);
+        let w = R::wide_sub_prod(w, l62, l52);
+        let w = R::wide_sub_prod(w, l63, l53);
+        let w = R::wide_sub_prod(w, l64, l54);
+        let n65 = R::wide_rescale(w);
+        let l65 = R::div(n65, l55);
+        let w = R::wide_add(R::wide_zero(), a.m66);
+        let w = R::wide_sub_prod(w, l61, l61);
+        let w = R::wide_sub_prod(w, l62, l62);
+        let w = R::wide_sub_prod(w, l63, l63);
+        let w = R::wide_sub_prod(w, l64, l64);
+        let w = R::wide_sub_prod(w, l65, l65);
+        let p6 = R::wide_rescale(w);
+        let p6 = if p6 <= R::zero() {
+            substitute
+        } else {
+            p6
+        };
+        if p6 <= R::zero() {
+            return None;
+        }
+        let l66 = R::sqrt(p6);
+        Some(
+            Cholesky6 {
+                l11,
+                l21,
+                l31,
+                l41,
+                l51,
+                l61,
+                l22,
+                l32,
+                l42,
+                l52,
+                l62,
+                l33,
+                l43,
+                l53,
+                l63,
+                l44,
+                l54,
+                l64,
+                l55,
+                l65,
+                l66,
+            },
+        )
+    }
+
     /// `Cholesky6Trait::solve` before WP 11-OPT-2 (the same body, called, not inlined).
     fn solve_reference(self: Cholesky6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
         let y1 = R::div(b.x, self.l11);
@@ -1301,6 +1464,115 @@ mod tests {
         }
         assert!(n >= 200);
         assert!(factored >= 150);
+    }
+
+    /// `new_with_substitute` against the reference, bit for bit: the edge cases of `new` (zero,
+    /// 1-ulp and negative pivots among them) and a deterministic sweep with the magnitudes of the
+    /// `new`
+    /// sweep, on 1 draw in 2 indefinite (pivots `<= 0` replaced by `substitute`), with a positive
+    /// `substitute` of every magnitude, and a `substitute <= 0` on 1 draw in 8 (`None` when a pivot
+    /// needs it).
+    #[test]
+    fn test_new_with_substitute_matches_reference() {
+        let one: i64 = 0x100000000;
+        let z15 = array![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].span();
+        let mut cases: Array<(Span<i64>, Span<i64>, i64)> = array![
+            (array![0, 0, 0, 0, 0, 0].span(), z15, one), (array![0, 0, 0, 0, 0, 0].span(), z15, 0),
+            (array![one, one, one, one, one, one].span(), z15, one),
+            (array![1, 1, 1, 1, 1, 1].span(), z15, 1),
+            (array![-one, one, -one, one, 0, one].span(), z15, 2 * one),
+            (array![-one, one, one, one, one, one].span(), z15, -one),
+            (
+                array![one, one, one, one, one, one].span(),
+                array![one, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].span(),
+                one / 4,
+            ),
+            (
+                array![3654480394, 4075594332, 4932250777, 3475255779, 4388679014, 4212214819]
+                    .span(),
+                array![
+                    90933453, -304406952, -1110029388, -302438381, 810457968, 743241296, -235454993,
+                    432815, -713496402, 101179924, -273500147, 165140043, -664760589, 635633272,
+                    -240687438,
+                ]
+                    .span(),
+                one,
+            ),
+        ];
+        let mut state: u128 = 0x5b56;
+        for k in 0..240_u32 {
+            let ob: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x40000000000,
+            };
+            let o = draws(ref state, 15, ob);
+            // The diagonal dominates its row in magnitude, of a random sign on 1 draw in 2: a
+            // negative diagonal entry gives a pivot `<= 0`, replaced by `substitute` (drawn on the
+            // diagonal's scale, so that no quotient overflows).
+            let mut d = array![];
+            for _ in 0..6_u32 {
+                let m = draw_pos(ref state, 5 * ob + 1, 4 * ob);
+                // The top bit: the low bits of this LCG have short periods.
+                if k % 2 == 1 && next(ref state) >= 0x8000000000000000 {
+                    d.append(-m);
+                } else {
+                    d.append(m);
+                }
+            }
+            let d = d.span();
+            let sub = if k % 8 == 7 {
+                -draw_pos(ref state, 0, 4 * ob)
+            } else {
+                draw_pos(ref state, 5 * ob + 1, 4 * ob)
+            };
+            cases.append((d, o, sub));
+        }
+        let mut n = 0_u32;
+        let mut factored = 0_u32;
+        let mut substituted = 0_u32;
+        for c in cases.span() {
+            let (d, o, sub) = *c;
+            let a = sym(d, o);
+            let got = Cholesky6Trait::new_with_substitute(a, fx(sub));
+            assert!(same_option(got, new_with_substitute_reference(a, fx(sub))));
+            if got.is_some() {
+                factored += 1;
+                if Cholesky6Trait::new(a).is_none() {
+                    substituted += 1;
+                }
+            }
+            n += 1;
+        }
+        assert!(n >= 200);
+        assert!(factored >= 150);
+        assert!(substituted >= 50);
+    }
+
+    /// A matrix whose column-2 quotient overflows: `l11 = 1`, then a 1-ulp second pivot
+    /// (`l22 = 2^-16`) under an entry of `2^30` (`2^46` does not fit), the quotient of the
+    /// prepared divisor of `Real::div4` in the new body, of a plain division in the old.
+    fn column2_overflow() -> Matrix6<Fixed> {
+        let one: i64 = 0x100000000;
+        sym(
+            array![one, 1, one, one, one, one].span(),
+            array![0, 0, 0x4000000000000000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].span(),
+        )
+    }
+
+    /// The overflow of a prepared-divisor quotient panics in `new` ...
+    #[test]
+    #[should_panic(expected: 'Fixed: overflow')]
+    fn test_new_quotient_overflow_panics() {
+        let _ = Cholesky6Trait::new(column2_overflow());
+    }
+
+    /// ... with the same message as the per-element division of the previous body.
+    #[test]
+    #[should_panic(expected: 'Fixed: overflow')]
+    fn test_new_reference_quotient_overflow_panics() {
+        let _ = new_reference(column2_overflow());
     }
 
     /// `solve` against the reference, bit for bit: edge cases (identity factor, zero and 1-ulp
