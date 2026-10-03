@@ -56,6 +56,7 @@ pub impl Lu6Impl<
     /// raw units of its exact value. Partial pivoting keeps `|l_ik| <= 1`, which is what bounds the
     /// growth of the trailing submatrix. Panics with the scalar's overflow error if an update does
     /// not fit.
+    #[inline(always)]
     fn new(matrix: Matrix6<T>) -> Lu6<T> {
         let mut a11 = matrix.m11;
         let mut a12 = matrix.m12;
@@ -121,101 +122,110 @@ pub impl Lu6Impl<
             piv = c;
             p1 = 6;
         }
-        if p1 == 2 {
-            let t = a11;
-            a11 = a21;
-            a21 = t;
-            let t = a12;
-            a12 = a22;
-            a22 = t;
-            let t = a13;
-            a13 = a23;
-            a23 = t;
-            let t = a14;
-            a14 = a24;
-            a24 = t;
-            let t = a15;
-            a15 = a25;
-            a25 = t;
-            let t = a16;
-            a16 = a26;
-            a26 = t;
-        } else if p1 == 3 {
-            let t = a11;
-            a11 = a31;
-            a31 = t;
-            let t = a12;
-            a12 = a32;
-            a32 = t;
-            let t = a13;
-            a13 = a33;
-            a33 = t;
-            let t = a14;
-            a14 = a34;
-            a34 = t;
-            let t = a15;
-            a15 = a35;
-            a35 = t;
-            let t = a16;
-            a16 = a36;
-            a36 = t;
-        } else if p1 == 4 {
-            let t = a11;
-            a11 = a41;
-            a41 = t;
-            let t = a12;
-            a12 = a42;
-            a42 = t;
-            let t = a13;
-            a13 = a43;
-            a43 = t;
-            let t = a14;
-            a14 = a44;
-            a44 = t;
-            let t = a15;
-            a15 = a45;
-            a45 = t;
-            let t = a16;
-            a16 = a46;
-            a46 = t;
-        } else if p1 == 5 {
-            let t = a11;
-            a11 = a51;
-            a51 = t;
-            let t = a12;
-            a12 = a52;
-            a52 = t;
-            let t = a13;
-            a13 = a53;
-            a53 = t;
-            let t = a14;
-            a14 = a54;
-            a54 = t;
-            let t = a15;
-            a15 = a55;
-            a55 = t;
-            let t = a16;
-            a16 = a56;
-            a56 = t;
-        } else if p1 == 6 {
-            let t = a11;
-            a11 = a61;
-            a61 = t;
-            let t = a12;
-            a12 = a62;
-            a62 = t;
-            let t = a13;
-            a13 = a63;
-            a63 = t;
-            let t = a14;
-            a14 = a64;
-            a64 = t;
-            let t = a15;
-            a15 = a65;
-            a65 = t;
-            let t = a16;
-            a16 = a66;
-            a66 = t;
+        match p1 {
+            0 => {},
+            1 => {},
+            2 => {
+                let t = a11;
+                a11 = a21;
+                a21 = t;
+                let t = a12;
+                a12 = a22;
+                a22 = t;
+                let t = a13;
+                a13 = a23;
+                a23 = t;
+                let t = a14;
+                a14 = a24;
+                a24 = t;
+                let t = a15;
+                a15 = a25;
+                a25 = t;
+                let t = a16;
+                a16 = a26;
+                a26 = t;
+            },
+            3 => {
+                let t = a11;
+                a11 = a31;
+                a31 = t;
+                let t = a12;
+                a12 = a32;
+                a32 = t;
+                let t = a13;
+                a13 = a33;
+                a33 = t;
+                let t = a14;
+                a14 = a34;
+                a34 = t;
+                let t = a15;
+                a15 = a35;
+                a35 = t;
+                let t = a16;
+                a16 = a36;
+                a36 = t;
+            },
+            4 => {
+                let t = a11;
+                a11 = a41;
+                a41 = t;
+                let t = a12;
+                a12 = a42;
+                a42 = t;
+                let t = a13;
+                a13 = a43;
+                a43 = t;
+                let t = a14;
+                a14 = a44;
+                a44 = t;
+                let t = a15;
+                a15 = a45;
+                a45 = t;
+                let t = a16;
+                a16 = a46;
+                a46 = t;
+            },
+            5 => {
+                let t = a11;
+                a11 = a51;
+                a51 = t;
+                let t = a12;
+                a12 = a52;
+                a52 = t;
+                let t = a13;
+                a13 = a53;
+                a53 = t;
+                let t = a14;
+                a14 = a54;
+                a54 = t;
+                let t = a15;
+                a15 = a55;
+                a55 = t;
+                let t = a16;
+                a16 = a56;
+                a56 = t;
+            },
+            6 => {
+                let t = a11;
+                a11 = a61;
+                a61 = t;
+                let t = a12;
+                a12 = a62;
+                a62 = t;
+                let t = a13;
+                a13 = a63;
+                a63 = t;
+                let t = a14;
+                a14 = a64;
+                a64 = t;
+                let t = a15;
+                a15 = a65;
+                a65 = t;
+                let t = a16;
+                a16 = a66;
+                a66 = t;
+            },
+            _ => {},
         }
         if piv != R::zero() {
             let (l_a21, l_a31, l_a41, l_a51, l_a61) = R::div5(a21, a31, a41, a51, a61, a11);
@@ -818,6 +828,7 @@ pub impl Lu6Impl<
     /// over 6 columns and would be cheaper with one, and still does not use one (see there).
     ///
     /// Panics with the scalar's overflow error if a component of `x` does not fit.
+    #[inline(always)]
     fn solve(self: Lu6<T>, b: Vector6<T>) -> Option<Vector6<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -1793,5 +1804,1099 @@ pub impl Matrix6LuImpl<
     /// `Matrix6::try_inverse`. Re-factors the matrix on every call.
     fn try_inverse(self: Matrix6<T>) -> Option<Matrix6<T>> {
         Lu6Trait::try_inverse(Lu6Trait::new(self))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types6::base::matrix6::Matrix6;
+    use nalgebra_types6::base::vector6::Vector6;
+    use simba::scalar::FixedReal as R;
+    use crate::internal::linalg::lu::lu6::Lu6InternalTrait;
+    use crate::linalg::lu::Perm6;
+    use super::{Lu6, Lu6Trait};
+
+    /// `Lu6Trait::new` before WP 11-OPT-2: the row swap of step 1 as a chain of `if p1 == k`
+    /// (the new body matches on `p1`), called, not inlined.
+    fn new_reference(matrix: Matrix6<Fixed>) -> Lu6<Fixed> {
+        let mut a11 = matrix.m11;
+        let mut a12 = matrix.m12;
+        let mut a13 = matrix.m13;
+        let mut a14 = matrix.m14;
+        let mut a15 = matrix.m15;
+        let mut a16 = matrix.m16;
+        let mut a21 = matrix.m21;
+        let mut a22 = matrix.m22;
+        let mut a23 = matrix.m23;
+        let mut a24 = matrix.m24;
+        let mut a25 = matrix.m25;
+        let mut a26 = matrix.m26;
+        let mut a31 = matrix.m31;
+        let mut a32 = matrix.m32;
+        let mut a33 = matrix.m33;
+        let mut a34 = matrix.m34;
+        let mut a35 = matrix.m35;
+        let mut a36 = matrix.m36;
+        let mut a41 = matrix.m41;
+        let mut a42 = matrix.m42;
+        let mut a43 = matrix.m43;
+        let mut a44 = matrix.m44;
+        let mut a45 = matrix.m45;
+        let mut a46 = matrix.m46;
+        let mut a51 = matrix.m51;
+        let mut a52 = matrix.m52;
+        let mut a53 = matrix.m53;
+        let mut a54 = matrix.m54;
+        let mut a55 = matrix.m55;
+        let mut a56 = matrix.m56;
+        let mut a61 = matrix.m61;
+        let mut a62 = matrix.m62;
+        let mut a63 = matrix.m63;
+        let mut a64 = matrix.m64;
+        let mut a65 = matrix.m65;
+        let mut a66 = matrix.m66;
+        // step 1: largest pivot among rows 1..6 of column 1
+        let mut p1 = 1_u8;
+        let mut piv = R::abs(a11);
+        let c = R::abs(a21);
+        if c > piv {
+            piv = c;
+            p1 = 2;
+        }
+        let c = R::abs(a31);
+        if c > piv {
+            piv = c;
+            p1 = 3;
+        }
+        let c = R::abs(a41);
+        if c > piv {
+            piv = c;
+            p1 = 4;
+        }
+        let c = R::abs(a51);
+        if c > piv {
+            piv = c;
+            p1 = 5;
+        }
+        let c = R::abs(a61);
+        if c > piv {
+            piv = c;
+            p1 = 6;
+        }
+        if p1 == 2 {
+            let t = a11;
+            a11 = a21;
+            a21 = t;
+            let t = a12;
+            a12 = a22;
+            a22 = t;
+            let t = a13;
+            a13 = a23;
+            a23 = t;
+            let t = a14;
+            a14 = a24;
+            a24 = t;
+            let t = a15;
+            a15 = a25;
+            a25 = t;
+            let t = a16;
+            a16 = a26;
+            a26 = t;
+        } else if p1 == 3 {
+            let t = a11;
+            a11 = a31;
+            a31 = t;
+            let t = a12;
+            a12 = a32;
+            a32 = t;
+            let t = a13;
+            a13 = a33;
+            a33 = t;
+            let t = a14;
+            a14 = a34;
+            a34 = t;
+            let t = a15;
+            a15 = a35;
+            a35 = t;
+            let t = a16;
+            a16 = a36;
+            a36 = t;
+        } else if p1 == 4 {
+            let t = a11;
+            a11 = a41;
+            a41 = t;
+            let t = a12;
+            a12 = a42;
+            a42 = t;
+            let t = a13;
+            a13 = a43;
+            a43 = t;
+            let t = a14;
+            a14 = a44;
+            a44 = t;
+            let t = a15;
+            a15 = a45;
+            a45 = t;
+            let t = a16;
+            a16 = a46;
+            a46 = t;
+        } else if p1 == 5 {
+            let t = a11;
+            a11 = a51;
+            a51 = t;
+            let t = a12;
+            a12 = a52;
+            a52 = t;
+            let t = a13;
+            a13 = a53;
+            a53 = t;
+            let t = a14;
+            a14 = a54;
+            a54 = t;
+            let t = a15;
+            a15 = a55;
+            a55 = t;
+            let t = a16;
+            a16 = a56;
+            a56 = t;
+        } else if p1 == 6 {
+            let t = a11;
+            a11 = a61;
+            a61 = t;
+            let t = a12;
+            a12 = a62;
+            a62 = t;
+            let t = a13;
+            a13 = a63;
+            a63 = t;
+            let t = a14;
+            a14 = a64;
+            a64 = t;
+            let t = a15;
+            a15 = a65;
+            a65 = t;
+            let t = a16;
+            a16 = a66;
+            a66 = t;
+        }
+        if piv != R::zero() {
+            let (l_a21, l_a31, l_a41, l_a51, l_a61) = R::div5(a21, a31, a41, a51, a61, a11);
+            let l = l_a21;
+            let nl = -l;
+            a22 = R::mul_add(nl, a12, a22);
+            a23 = R::mul_add(nl, a13, a23);
+            a24 = R::mul_add(nl, a14, a24);
+            a25 = R::mul_add(nl, a15, a25);
+            a26 = R::mul_add(nl, a16, a26);
+            a21 = l;
+            let l = l_a31;
+            let nl = -l;
+            a32 = R::mul_add(nl, a12, a32);
+            a33 = R::mul_add(nl, a13, a33);
+            a34 = R::mul_add(nl, a14, a34);
+            a35 = R::mul_add(nl, a15, a35);
+            a36 = R::mul_add(nl, a16, a36);
+            a31 = l;
+            let l = l_a41;
+            let nl = -l;
+            a42 = R::mul_add(nl, a12, a42);
+            a43 = R::mul_add(nl, a13, a43);
+            a44 = R::mul_add(nl, a14, a44);
+            a45 = R::mul_add(nl, a15, a45);
+            a46 = R::mul_add(nl, a16, a46);
+            a41 = l;
+            let l = l_a51;
+            let nl = -l;
+            a52 = R::mul_add(nl, a12, a52);
+            a53 = R::mul_add(nl, a13, a53);
+            a54 = R::mul_add(nl, a14, a54);
+            a55 = R::mul_add(nl, a15, a55);
+            a56 = R::mul_add(nl, a16, a56);
+            a51 = l;
+            let l = l_a61;
+            let nl = -l;
+            a62 = R::mul_add(nl, a12, a62);
+            a63 = R::mul_add(nl, a13, a63);
+            a64 = R::mul_add(nl, a14, a64);
+            a65 = R::mul_add(nl, a15, a65);
+            a66 = R::mul_add(nl, a16, a66);
+            a61 = l;
+        }
+        // step 2: largest pivot among rows 2..6 of column 2
+        let mut p2 = 2_u8;
+        let mut piv = R::abs(a22);
+        let c = R::abs(a32);
+        if c > piv {
+            piv = c;
+            p2 = 3;
+        }
+        let c = R::abs(a42);
+        if c > piv {
+            piv = c;
+            p2 = 4;
+        }
+        let c = R::abs(a52);
+        if c > piv {
+            piv = c;
+            p2 = 5;
+        }
+        let c = R::abs(a62);
+        if c > piv {
+            piv = c;
+            p2 = 6;
+        }
+        if p2 == 3 {
+            let t = a21;
+            a21 = a31;
+            a31 = t;
+            let t = a22;
+            a22 = a32;
+            a32 = t;
+            let t = a23;
+            a23 = a33;
+            a33 = t;
+            let t = a24;
+            a24 = a34;
+            a34 = t;
+            let t = a25;
+            a25 = a35;
+            a35 = t;
+            let t = a26;
+            a26 = a36;
+            a36 = t;
+        } else if p2 == 4 {
+            let t = a21;
+            a21 = a41;
+            a41 = t;
+            let t = a22;
+            a22 = a42;
+            a42 = t;
+            let t = a23;
+            a23 = a43;
+            a43 = t;
+            let t = a24;
+            a24 = a44;
+            a44 = t;
+            let t = a25;
+            a25 = a45;
+            a45 = t;
+            let t = a26;
+            a26 = a46;
+            a46 = t;
+        } else if p2 == 5 {
+            let t = a21;
+            a21 = a51;
+            a51 = t;
+            let t = a22;
+            a22 = a52;
+            a52 = t;
+            let t = a23;
+            a23 = a53;
+            a53 = t;
+            let t = a24;
+            a24 = a54;
+            a54 = t;
+            let t = a25;
+            a25 = a55;
+            a55 = t;
+            let t = a26;
+            a26 = a56;
+            a56 = t;
+        } else if p2 == 6 {
+            let t = a21;
+            a21 = a61;
+            a61 = t;
+            let t = a22;
+            a22 = a62;
+            a62 = t;
+            let t = a23;
+            a23 = a63;
+            a63 = t;
+            let t = a24;
+            a24 = a64;
+            a64 = t;
+            let t = a25;
+            a25 = a65;
+            a65 = t;
+            let t = a26;
+            a26 = a66;
+            a66 = t;
+        }
+        if piv != R::zero() {
+            let (l_a32, l_a42, l_a52, l_a62) = R::div4(a32, a42, a52, a62, a22);
+            let l = l_a32;
+            let nl = -l;
+            a33 = R::mul_add(nl, a23, a33);
+            a34 = R::mul_add(nl, a24, a34);
+            a35 = R::mul_add(nl, a25, a35);
+            a36 = R::mul_add(nl, a26, a36);
+            a32 = l;
+            let l = l_a42;
+            let nl = -l;
+            a43 = R::mul_add(nl, a23, a43);
+            a44 = R::mul_add(nl, a24, a44);
+            a45 = R::mul_add(nl, a25, a45);
+            a46 = R::mul_add(nl, a26, a46);
+            a42 = l;
+            let l = l_a52;
+            let nl = -l;
+            a53 = R::mul_add(nl, a23, a53);
+            a54 = R::mul_add(nl, a24, a54);
+            a55 = R::mul_add(nl, a25, a55);
+            a56 = R::mul_add(nl, a26, a56);
+            a52 = l;
+            let l = l_a62;
+            let nl = -l;
+            a63 = R::mul_add(nl, a23, a63);
+            a64 = R::mul_add(nl, a24, a64);
+            a65 = R::mul_add(nl, a25, a65);
+            a66 = R::mul_add(nl, a26, a66);
+            a62 = l;
+        }
+        // step 3: largest pivot among rows 3..6 of column 3
+        let mut p3 = 3_u8;
+        let mut piv = R::abs(a33);
+        let c = R::abs(a43);
+        if c > piv {
+            piv = c;
+            p3 = 4;
+        }
+        let c = R::abs(a53);
+        if c > piv {
+            piv = c;
+            p3 = 5;
+        }
+        let c = R::abs(a63);
+        if c > piv {
+            piv = c;
+            p3 = 6;
+        }
+        if p3 == 4 {
+            let t = a31;
+            a31 = a41;
+            a41 = t;
+            let t = a32;
+            a32 = a42;
+            a42 = t;
+            let t = a33;
+            a33 = a43;
+            a43 = t;
+            let t = a34;
+            a34 = a44;
+            a44 = t;
+            let t = a35;
+            a35 = a45;
+            a45 = t;
+            let t = a36;
+            a36 = a46;
+            a46 = t;
+        } else if p3 == 5 {
+            let t = a31;
+            a31 = a51;
+            a51 = t;
+            let t = a32;
+            a32 = a52;
+            a52 = t;
+            let t = a33;
+            a33 = a53;
+            a53 = t;
+            let t = a34;
+            a34 = a54;
+            a54 = t;
+            let t = a35;
+            a35 = a55;
+            a55 = t;
+            let t = a36;
+            a36 = a56;
+            a56 = t;
+        } else if p3 == 6 {
+            let t = a31;
+            a31 = a61;
+            a61 = t;
+            let t = a32;
+            a32 = a62;
+            a62 = t;
+            let t = a33;
+            a33 = a63;
+            a63 = t;
+            let t = a34;
+            a34 = a64;
+            a64 = t;
+            let t = a35;
+            a35 = a65;
+            a65 = t;
+            let t = a36;
+            a36 = a66;
+            a66 = t;
+        }
+        if piv != R::zero() {
+            let (l_a43, l_a53, l_a63) = R::div3(a43, a53, a63, a33);
+            let l = l_a43;
+            let nl = -l;
+            a44 = R::mul_add(nl, a34, a44);
+            a45 = R::mul_add(nl, a35, a45);
+            a46 = R::mul_add(nl, a36, a46);
+            a43 = l;
+            let l = l_a53;
+            let nl = -l;
+            a54 = R::mul_add(nl, a34, a54);
+            a55 = R::mul_add(nl, a35, a55);
+            a56 = R::mul_add(nl, a36, a56);
+            a53 = l;
+            let l = l_a63;
+            let nl = -l;
+            a64 = R::mul_add(nl, a34, a64);
+            a65 = R::mul_add(nl, a35, a65);
+            a66 = R::mul_add(nl, a36, a66);
+            a63 = l;
+        }
+        // step 4: largest pivot among rows 4..6 of column 4
+        let mut p4 = 4_u8;
+        let mut piv = R::abs(a44);
+        let c = R::abs(a54);
+        if c > piv {
+            piv = c;
+            p4 = 5;
+        }
+        let c = R::abs(a64);
+        if c > piv {
+            piv = c;
+            p4 = 6;
+        }
+        if p4 == 5 {
+            let t = a41;
+            a41 = a51;
+            a51 = t;
+            let t = a42;
+            a42 = a52;
+            a52 = t;
+            let t = a43;
+            a43 = a53;
+            a53 = t;
+            let t = a44;
+            a44 = a54;
+            a54 = t;
+            let t = a45;
+            a45 = a55;
+            a55 = t;
+            let t = a46;
+            a46 = a56;
+            a56 = t;
+        } else if p4 == 6 {
+            let t = a41;
+            a41 = a61;
+            a61 = t;
+            let t = a42;
+            a42 = a62;
+            a62 = t;
+            let t = a43;
+            a43 = a63;
+            a63 = t;
+            let t = a44;
+            a44 = a64;
+            a64 = t;
+            let t = a45;
+            a45 = a65;
+            a65 = t;
+            let t = a46;
+            a46 = a66;
+            a66 = t;
+        }
+        if piv != R::zero() {
+            let l = R::div(a54, a44);
+            let nl = -l;
+            a55 = R::mul_add(nl, a45, a55);
+            a56 = R::mul_add(nl, a46, a56);
+            a54 = l;
+            let l = R::div(a64, a44);
+            let nl = -l;
+            a65 = R::mul_add(nl, a45, a65);
+            a66 = R::mul_add(nl, a46, a66);
+            a64 = l;
+        }
+        // step 5: largest pivot among rows 5..6 of column 5
+        let mut p5 = 5_u8;
+        let mut piv = R::abs(a55);
+        let c = R::abs(a65);
+        if c > piv {
+            piv = c;
+            p5 = 6;
+        }
+        if p5 == 6 {
+            let t = a51;
+            a51 = a61;
+            a61 = t;
+            let t = a52;
+            a52 = a62;
+            a62 = t;
+            let t = a53;
+            a53 = a63;
+            a63 = t;
+            let t = a54;
+            a54 = a64;
+            a64 = t;
+            let t = a55;
+            a55 = a65;
+            a65 = t;
+            let t = a56;
+            a56 = a66;
+            a66 = t;
+        }
+        if piv != R::zero() {
+            let l = R::div(a65, a55);
+            let nl = -l;
+            a66 = R::mul_add(nl, a56, a66);
+            a65 = l;
+        }
+        Lu6 {
+            lu: Matrix6 {
+                m11: a11,
+                m21: a21,
+                m31: a31,
+                m12: a12,
+                m22: a22,
+                m32: a32,
+                m13: a13,
+                m23: a23,
+                m33: a33,
+                m41: a41,
+                m51: a51,
+                m61: a61,
+                m42: a42,
+                m52: a52,
+                m62: a62,
+                m43: a43,
+                m53: a53,
+                m63: a63,
+                m14: a14,
+                m24: a24,
+                m34: a34,
+                m15: a15,
+                m25: a25,
+                m35: a35,
+                m16: a16,
+                m26: a26,
+                m36: a36,
+                m44: a44,
+                m54: a54,
+                m64: a64,
+                m45: a45,
+                m55: a55,
+                m65: a65,
+                m46: a46,
+                m56: a56,
+                m66: a66,
+            },
+            p: Perm6 { p1, p2, p3, p4, p5 },
+        }
+    }
+
+    /// `Lu6Trait::solve` before WP 11-OPT-2 (the same body, called, not inlined).
+    fn solve_reference(self: Lu6<Fixed>, b: Vector6<Fixed>) -> Option<Vector6<Fixed>> {
+        if !Lu6Trait::is_invertible(self) {
+            return None;
+        }
+        let pb = Lu6InternalTrait::permute(self, b);
+        let y1 = pb.x;
+        let y2 = R::mul_add(-self.lu.m21, y1, pb.y);
+        let y3 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.z), self.lu.m31, y1),
+                self.lu.m32,
+                y2,
+            ),
+        );
+        let y4 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.w), self.lu.m41, y1),
+                    self.lu.m42,
+                    y2,
+                ),
+                self.lu.m43,
+                y3,
+            ),
+        );
+        let y5 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.a), self.lu.m51, y1),
+                        self.lu.m52,
+                        y2,
+                    ),
+                    self.lu.m53,
+                    y3,
+                ),
+                self.lu.m54,
+                y4,
+            ),
+        );
+        let y6 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.b), self.lu.m61, y1),
+                            self.lu.m62,
+                            y2,
+                        ),
+                        self.lu.m63,
+                        y3,
+                    ),
+                    self.lu.m64,
+                    y4,
+                ),
+                self.lu.m65,
+                y5,
+            ),
+        );
+        let x6 = R::div(y6, self.lu.m66);
+        let x5 = R::div(R::mul_add(-self.lu.m56, x6, y5), self.lu.m55);
+        let x4 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y4), self.lu.m45, x5),
+                    self.lu.m46,
+                    x6,
+                ),
+            ),
+            self.lu.m44,
+        );
+        let x3 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(R::wide_add(R::wide_zero(), y3), self.lu.m34, x4),
+                        self.lu.m35,
+                        x5,
+                    ),
+                    self.lu.m36,
+                    x6,
+                ),
+            ),
+            self.lu.m33,
+        );
+        let x2 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(R::wide_add(R::wide_zero(), y2), self.lu.m23, x3),
+                            self.lu.m24,
+                            x4,
+                        ),
+                        self.lu.m25,
+                        x5,
+                    ),
+                    self.lu.m26,
+                    x6,
+                ),
+            ),
+            self.lu.m22,
+        );
+        let x1 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(
+                        R::wide_sub_prod(
+                            R::wide_sub_prod(
+                                R::wide_sub_prod(R::wide_add(R::wide_zero(), y1), self.lu.m12, x2),
+                                self.lu.m13,
+                                x3,
+                            ),
+                            self.lu.m14,
+                            x4,
+                        ),
+                        self.lu.m15,
+                        x5,
+                    ),
+                    self.lu.m16,
+                    x6,
+                ),
+            ),
+            self.lu.m11,
+        );
+        Some(Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 })
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// A raw value uniform in `[lo, lo + span]`.
+    fn draw_pos(ref state: u128, lo: u128, span: u128) -> i64 {
+        (lo + next(ref state) % (span + 1)).try_into().unwrap()
+    }
+
+    /// A pivot of a hand-assembled factor: of magnitude `[1/2, 4]`, of the sign of the parity of
+    /// `k`, and exactly zero on one draw in 16 (`solve` then returns `None`).
+    fn pivot(ref state: u128, k: u32) -> i64 {
+        let m = draw_pos(ref state, 0x80000000, 0x380000000);
+        if next(ref state) % 16 == 0 {
+            0
+        } else if k % 2 == 0 {
+            m
+        } else {
+            -m
+        }
+    }
+
+    /// A row index uniform in `[lo, 3 or 6]`.
+    fn row(ref state: u128, lo: u8, hi: u8) -> u8 {
+        let span: u128 = (hi - lo + 1).into();
+        lo + (next(ref state) % span).try_into().unwrap()
+    }
+
+    fn same(a: Lu6<Fixed>, b: Lu6<Fixed>) -> bool {
+        a.lu == b.lu
+            && a.p.p1 == b.p.p1
+            && a.p.p2 == b.p.p2
+            && a.p.p3 == b.p.p3
+            && a.p.p4 == b.p.p4
+            && a.p.p5 == b.p.p5
+    }
+
+    /// `m` with the first-column entry of row `r` (1-based) set to 7, above every other entry of
+    /// that column (all below 1 in the probe's matrix): its step-1 pivot is row `r`, to reach every
+    /// arm of the row swap.
+    fn pivot_row(m: Matrix6<Fixed>, r: u32) -> Matrix6<Fixed> {
+        let big = Fixed { raw: 0x700000000 };
+        match r {
+            1 => Matrix6 { m11: big, ..m },
+            2 => Matrix6 { m21: big, ..m },
+            3 => Matrix6 { m31: big, ..m },
+            4 => Matrix6 { m41: big, ..m },
+            5 => Matrix6 { m51: big, ..m },
+            _ => Matrix6 { m61: big, ..m },
+        }
+    }
+
+    fn diag(d: i64) -> Matrix6<Fixed> {
+        let z = fx(0);
+        let d = fx(d);
+        Matrix6 {
+            m11: d,
+            m12: z,
+            m13: z,
+            m14: z,
+            m15: z,
+            m16: z,
+            m21: z,
+            m22: d,
+            m23: z,
+            m24: z,
+            m25: z,
+            m26: z,
+            m31: z,
+            m32: z,
+            m33: d,
+            m34: z,
+            m35: z,
+            m36: z,
+            m41: z,
+            m42: z,
+            m43: z,
+            m44: d,
+            m45: z,
+            m46: z,
+            m51: z,
+            m52: z,
+            m53: z,
+            m54: z,
+            m55: d,
+            m56: z,
+            m61: z,
+            m62: z,
+            m63: z,
+            m64: z,
+            m65: z,
+            m66: d,
+        }
+    }
+
+    /// `new` against the reference, bit for bit: edge cases (zero, identity, a 1-ulp diagonal, the
+    /// probe's matrix, a zero first column, the step-1 pivot forced to each of the 6 rows) and a
+    /// deterministic sweep of matrices with entries from 2^-24 to 2^20 (every step-1 pivot row is
+    /// reached: the test checks it).
+    #[test]
+    fn test_new_matches_reference() {
+        let one: i64 = 0x100000000;
+        let a = Matrix6 {
+            m11: fx(-2527254097),
+            m12: fx(4325213708),
+            m13: fx(-1213189640),
+            m14: fx(4008510819),
+            m15: fx(2405075077),
+            m16: fx(466428599),
+            m21: fx(-700750028),
+            m22: fx(-3536112306),
+            m23: fx(1731465811),
+            m24: fx(244560054),
+            m25: fx(2632174365),
+            m26: fx(1874080084),
+            m31: fx(-4134312449),
+            m32: fx(-1036601848),
+            m33: fx(-444052936),
+            m34: fx(-1797900266),
+            m35: fx(-2730917964),
+            m36: fx(404854629),
+            m41: fx(-617580144),
+            m42: fx(580405440),
+            m43: fx(-3475076872),
+            m44: fx(-924247759),
+            m45: fx(-985644408),
+            m46: fx(938584824),
+            m51: fx(-1076219818),
+            m52: fx(-1905997652),
+            m53: fx(-1595683778),
+            m54: fx(2067806730),
+            m55: fx(-3245944919),
+            m56: fx(3717734456),
+            m61: fx(-308280913),
+            m62: fx(-120179493),
+            m63: fx(2005545225),
+            m64: fx(-1090342151),
+            m65: fx(932840990),
+            m66: fx(2332476429),
+        };
+        let z = fx(0);
+        let mut cases: Array<Matrix6<Fixed>> = array![
+            diag(0), diag(one), diag(1), a,
+            Matrix6 { m11: z, m21: z, m31: z, m41: z, m51: z, m61: z, ..a },
+        ];
+        for r in 1..7_u32 {
+            cases.append(pivot_row(a, r));
+        }
+        let mut state: u128 = 0x1066;
+        for k in 0..240_u32 {
+            let ab: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x10000000000000,
+            };
+            cases
+                .append(
+                    Matrix6 {
+                        m11: fx(draw(ref state, ab)),
+                        m12: fx(draw(ref state, ab)),
+                        m13: fx(draw(ref state, ab)),
+                        m14: fx(draw(ref state, ab)),
+                        m15: fx(draw(ref state, ab)),
+                        m16: fx(draw(ref state, ab)),
+                        m21: fx(draw(ref state, ab)),
+                        m22: fx(draw(ref state, ab)),
+                        m23: fx(draw(ref state, ab)),
+                        m24: fx(draw(ref state, ab)),
+                        m25: fx(draw(ref state, ab)),
+                        m26: fx(draw(ref state, ab)),
+                        m31: fx(draw(ref state, ab)),
+                        m32: fx(draw(ref state, ab)),
+                        m33: fx(draw(ref state, ab)),
+                        m34: fx(draw(ref state, ab)),
+                        m35: fx(draw(ref state, ab)),
+                        m36: fx(draw(ref state, ab)),
+                        m41: fx(draw(ref state, ab)),
+                        m42: fx(draw(ref state, ab)),
+                        m43: fx(draw(ref state, ab)),
+                        m44: fx(draw(ref state, ab)),
+                        m45: fx(draw(ref state, ab)),
+                        m46: fx(draw(ref state, ab)),
+                        m51: fx(draw(ref state, ab)),
+                        m52: fx(draw(ref state, ab)),
+                        m53: fx(draw(ref state, ab)),
+                        m54: fx(draw(ref state, ab)),
+                        m55: fx(draw(ref state, ab)),
+                        m56: fx(draw(ref state, ab)),
+                        m61: fx(draw(ref state, ab)),
+                        m62: fx(draw(ref state, ab)),
+                        m63: fx(draw(ref state, ab)),
+                        m64: fx(draw(ref state, ab)),
+                        m65: fx(draw(ref state, ab)),
+                        m66: fx(draw(ref state, ab)),
+                    },
+                );
+        }
+        let mut n = 0_u32;
+        let mut seen = 0_u32;
+        for m in cases.span() {
+            let got = Lu6Trait::new(*m);
+            assert!(same(got, new_reference(*m)));
+            let bit: u32 = match got.p.p1 {
+                0 => 0,
+                1 => 1,
+                2 => 2,
+                3 => 4,
+                4 => 8,
+                5 => 16,
+                _ => 32,
+            };
+            seen = seen | bit;
+            n += 1;
+        }
+        assert!(n >= 200);
+        assert!(seen == 63);
+    }
+
+    /// `solve` against the reference, bit for bit: edge cases (the factors of the identity and of
+    /// the probe's matrix; zero, 1-ulp and large right-hand sides) and a deterministic sweep of
+    /// hand-assembled factors (every permutation, pivots of either sign, zero on one draw in 16,
+    /// entries from 2^-24 to 1) with right-hand sides from 2^-32 to 2^8.
+    #[test]
+    fn test_solve_matches_reference() {
+        let one: i64 = 0x100000000;
+        let mut cases: Array<(Lu6<Fixed>, Vector6<Fixed>)> = array![];
+        let a = Matrix6 {
+            m11: fx(-2527254097),
+            m12: fx(4325213708),
+            m13: fx(-1213189640),
+            m14: fx(4008510819),
+            m15: fx(2405075077),
+            m16: fx(466428599),
+            m21: fx(-700750028),
+            m22: fx(-3536112306),
+            m23: fx(1731465811),
+            m24: fx(244560054),
+            m25: fx(2632174365),
+            m26: fx(1874080084),
+            m31: fx(-4134312449),
+            m32: fx(-1036601848),
+            m33: fx(-444052936),
+            m34: fx(-1797900266),
+            m35: fx(-2730917964),
+            m36: fx(404854629),
+            m41: fx(-617580144),
+            m42: fx(580405440),
+            m43: fx(-3475076872),
+            m44: fx(-924247759),
+            m45: fx(-985644408),
+            m46: fx(938584824),
+            m51: fx(-1076219818),
+            m52: fx(-1905997652),
+            m53: fx(-1595683778),
+            m54: fx(2067806730),
+            m55: fx(-3245944919),
+            m56: fx(3717734456),
+            m61: fx(-308280913),
+            m62: fx(-120179493),
+            m63: fx(2005545225),
+            m64: fx(-1090342151),
+            m65: fx(932840990),
+            m66: fx(2332476429),
+        };
+        let rhs = array![
+            Vector6 { x: fx(0), y: fx(0), z: fx(0), w: fx(0), a: fx(0), b: fx(0) },
+            Vector6 { x: fx(1), y: fx(-1), z: fx(1), w: fx(-1), a: fx(1), b: fx(-1) },
+            Vector6 {
+                x: fx(3579353502),
+                y: fx(7767965432),
+                z: fx(6840630971),
+                w: fx(-6086016248),
+                a: fx(-4735434050),
+                b: fx(-2809324573),
+            },
+            Vector6 {
+                x: fx(0x10000000000),
+                y: fx(-0x10000000000),
+                z: fx(one),
+                w: fx(0),
+                a: fx(-one),
+                b: fx(0x10000000000),
+            },
+        ];
+        for b in rhs.span() {
+            cases.append((new_reference(diag(one)), *b));
+            cases.append((new_reference(a), *b));
+        }
+        let mut state: u128 = 0x5066;
+        for k in 0..240_u32 {
+            let u: u128 = match k % 3 {
+                0 => 0x100,
+                1 => 0x40000000,
+                _ => 0x100000000,
+            };
+            let lu = Matrix6 {
+                m11: fx(pivot(ref state, k)),
+                m12: fx(draw(ref state, u)),
+                m13: fx(draw(ref state, u)),
+                m14: fx(draw(ref state, u)),
+                m15: fx(draw(ref state, u)),
+                m16: fx(draw(ref state, u)),
+                m21: fx(draw(ref state, u)),
+                m22: fx(pivot(ref state, k)),
+                m23: fx(draw(ref state, u)),
+                m24: fx(draw(ref state, u)),
+                m25: fx(draw(ref state, u)),
+                m26: fx(draw(ref state, u)),
+                m31: fx(draw(ref state, u)),
+                m32: fx(draw(ref state, u)),
+                m33: fx(pivot(ref state, k)),
+                m34: fx(draw(ref state, u)),
+                m35: fx(draw(ref state, u)),
+                m36: fx(draw(ref state, u)),
+                m41: fx(draw(ref state, u)),
+                m42: fx(draw(ref state, u)),
+                m43: fx(draw(ref state, u)),
+                m44: fx(pivot(ref state, k)),
+                m45: fx(draw(ref state, u)),
+                m46: fx(draw(ref state, u)),
+                m51: fx(draw(ref state, u)),
+                m52: fx(draw(ref state, u)),
+                m53: fx(draw(ref state, u)),
+                m54: fx(draw(ref state, u)),
+                m55: fx(pivot(ref state, k)),
+                m56: fx(draw(ref state, u)),
+                m61: fx(draw(ref state, u)),
+                m62: fx(draw(ref state, u)),
+                m63: fx(draw(ref state, u)),
+                m64: fx(draw(ref state, u)),
+                m65: fx(draw(ref state, u)),
+                m66: fx(pivot(ref state, k)),
+            };
+            let p = Perm6 {
+                p1: row(ref state, 1, 6),
+                p2: row(ref state, 2, 6),
+                p3: row(ref state, 3, 6),
+                p4: row(ref state, 4, 6),
+                p5: row(ref state, 5, 6),
+            };
+            let bb: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x10000000000,
+            };
+            let v = Vector6 {
+                x: fx(draw(ref state, bb)),
+                y: fx(draw(ref state, bb)),
+                z: fx(draw(ref state, bb)),
+                w: fx(draw(ref state, bb)),
+                a: fx(draw(ref state, bb)),
+                b: fx(draw(ref state, bb)),
+            };
+            cases.append((Lu6 { lu, p }, v));
+        }
+        let mut n = 0_u32;
+        for c in cases.span() {
+            let (f, v) = *c;
+            assert!(f.solve(v) == solve_reference(f, v));
+            n += 1;
+        }
+        assert!(n >= 200);
     }
 }
