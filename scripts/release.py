@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
-"""Publish every published package of the workspace on the registry, in dependency order, resumably.
+"""Prepare and check a release of the workspace packages. It never publishes.
 
-DRY RUN BY DEFAULT: it prints the checks, the publication order and the commands, and publishes
-nothing. `--publish` publishes (the release go of docs/ORCHESTRATOR.md "Releases" is a precondition,
-not something this script can check).
+Publishing is done by hand by the orchestrator, one `scarb publish -p <package>` per package, on the
+project manager's go naming package, version, commit and archive sha256 (several packages may share
+one request and one go). This script writes that request and reads the registry back afterwards.
 
-  python3 scripts/release.py                 # dry run: checks + order + commands
-  python3 scripts/release.py --publish       # publish (resumes from the state file if any)
-  python3 scripts/release.py --self-test     # checks of the pure logic, no network, no scarb
+  python3 scripts/release.py request --commit SHA            # build the archives, write the request
+  python3 scripts/release.py request --commit SHA --dry-run --packages a,b --out /tmp/r.md
+  python3 scripts/release.py verify --request docs/releases/V.md [--packages a] [--wait]
+  python3 scripts/release.py --self-test                     # pure logic: no network, no scarb, no git
 
 Package set and order (no name is hard-coded): `scarb metadata` lists the workspace packages; the
 published ones are those whose manifest does not say `publish = false`. Their path dependencies
@@ -16,45 +17,40 @@ published package depends on come first, in topological order (ties by name), th
 packages nothing depends on (the facade, then the bridges), the one with the most workspace
 dependencies first. A published package with a path dependency on an unpublished one is refused.
 
-Refuses to start (with `--publish`; the dry run reports the same checks) unless:
-  * the working tree is clean and HEAD is `origin/main` (the release commit);
-  * every check run of the release commit on GitHub (`gh api .../commits/SHA/check-runs`) has
-    completed with success / neutral / skipped, and one of them is `Consumer cost` (the enforcing
-    package-granularity gate, docs/SPLIT.md §12.2) with success;
+Request mode, from a clean checkout detached at the release commit (`--commit`). It refuses
+(`--dry-run` reports the same checks and goes on) unless:
+  * it covers every published package (`--packages`, a subset, is for dry runs only);
+  * the working tree is clean, HEAD is detached and is `--commit`;
+  * every check run of that commit on GitHub (`gh api .../commits/SHA/check-runs`) has completed
+    with success / neutral / skipped, and one of them is `Consumer cost` (the enforcing
+    package-granularity gate, docs/SPLIT.md §12.2) with success (skipped refuses);
   * every published package has the workspace version (`[workspace.package] version`);
-  * that version of each package is NOT on the registry index yet, except the packages the state
-    file records as published by an earlier run of this release (resume).
-  * `SCARB_REGISTRY_AUTH_TOKEN` is set (never printed).
+  * that version of each package is not on the registry index yet.
+It then builds each package's archive, in publication order, with `scarb package --no-verify -p NAME`
+(through the shims: on the VPS it takes the heavy-build lock): the archive bytes are the same with or
+without the verification, and the verification (building the unpacked archive against the registry)
+cannot pass before the package's workspace dependencies are on the registry at the new version; each
+`scarb publish -p NAME` verifies its package, in order, once they are. The archive records the commit
+(`VCS.json`), so `scarb publish` from the same clean checkout rebuilds the same bytes. It writes
+`docs/releases/VERSION.md` (or `--out`): a table (package, version, commit, sha256, archive size
+compressed and unpacked) in publication order, then the ordered publication commands.
 
-Publication: one package at a time, `scarb publish -p NAME`; then the registry index is polled until
-it lists NAME at the version, and its checksum is compared with the local archive
-(`target/package/NAME-VERSION.tar.zst`) before the next package starts.
-
-Resume: the state file `target/release/state-VERSION.json` records the release commit and every
-package once verified (and the one in flight; `submitted` names it once `scarb publish` returned
-success). After a failure at package k, run the same command again: the packages before k are checked
-on the index and skipped, k is published again (or, if the index already lists it, or if `submitted`
-says `scarb publish` succeeded for it and the index lags, verified and recorded: the index is polled
-every VERIFY_DELAY s for up to `--verify-timeout` s, 45 checks by default, and k is never published
-twice; a run that gives up says so and the next run waits again), then k+1... A state file of another
-commit is refused,
-with one exception: a release may continue at a later commit (a fix of a package not published yet)
-when OLD is an ancestor of HEAD, every package the state records as published is still published by
-the workspace, and `git diff --name-only --no-renames OLD HEAD` touches no file of those packages
-(their directories, and their `readme` / `license-file` when they live elsewhere, inherited ones
-included, `readme = true` inherited from the workspace meaning the default README files of the
-workspace root; the `.gitignore` / `.scarbignore` of every directory between the workspace root and
-the package) nor the workspace `Scarb.toml`, `Scarb.lock`, `.gitignore`, `.scarbignore`: what the
-registry holds is then exactly what HEAD would publish. The check and its file list are printed;
-the state file then records HEAD and the commit it continued from.
+Verify mode reads the request's table back and compares, for each package (or `--packages`), the
+registry index checksum with the requested sha256. `--wait` polls the index every VERIFY_DELAY s
+until it lists every package checked or `--verify-timeout` s have passed (a wall-clock cap: the last
+check may start just before it and take up to 30 s, one index fetch, per package checked). Exit 0
+only when every package checked is on the index with the requested checksum.
 """
 
 import argparse
 import hashlib
 import json
 import os
+import re
+import shutil
 import subprocess
 import sys
+import tarfile
 import time
 import urllib.error
 import urllib.request
@@ -67,8 +63,7 @@ except ImportError:  # Python < 3.11
 REQUIRED_CHECK = "Consumer cost"
 OK_CONCLUSIONS = {"success", "neutral", "skipped"}
 VERIFY_DELAY = 20  # seconds between two polls of the registry index
-IGNORE_FILES = (".gitignore", ".scarbignore")
-DEFAULT_READMES = ("README.md", "README.txt", "README")
+REQUEST_COLUMNS = ("#", "Package", "Version", "Commit", "sha256", "Compressed (bytes)", "Unpacked (bytes)")
 
 
 # ------------------------------------------------------------------------------------------------
@@ -107,6 +102,17 @@ def publication_order(packages):
     return order
 
 
+def select_packages(order, wanted):
+    """The packages of ORDER named by `--packages` (comma-separated, None: all), in ORDER."""
+    if not wanted:
+        return list(order)
+    names = [w.strip() for w in wanted.split(",") if w.strip()]
+    unknown = [n for n in names if n not in order]
+    if unknown:
+        raise ValueError(f"not a published package of the workspace: {', '.join(unknown)}")
+    return [n for n in order if n in names]
+
+
 def index_prefix(name):
     """The cargo-style index directory of a package name (`nalgebra` -> `na/lg`)."""
     n = name.lower()
@@ -118,7 +124,9 @@ def index_prefix(name):
 
 
 def check_runs_verdict(runs, required=REQUIRED_CHECK):
-    """(ok, problems) for the check runs of a commit (`gh api` JSON `check_runs`)."""
+    """(ok, problems) for the check runs of a commit (`gh api` JSON `check_runs`). Every run must
+    have completed with success / neutral / skipped, and the REQUIRED one with success: a skipped
+    enforcing gate (CI path gating) vouches for nothing."""
     problems = []
     if not runs:
         problems.append("no check run on the release commit")
@@ -127,6 +135,8 @@ def check_runs_verdict(runs, required=REQUIRED_CHECK):
         names.add(r["name"])
         if r["status"] != "completed":
             problems.append(f"`{r['name']}` is {r['status']}")
+        elif r["name"] == required and r["conclusion"] != "success":
+            problems.append(f"`{r['name']}` concluded {r['conclusion']} (it must succeed)")
         elif r["conclusion"] not in OK_CONCLUSIONS:
             problems.append(f"`{r['name']}` concluded {r['conclusion']}")
     if required not in names:
@@ -134,110 +144,109 @@ def check_runs_verdict(runs, required=REQUIRED_CHECK):
     return not problems, problems
 
 
-def plan_resume(order, state, on_index):
-    """What to do for each package: `skip` (the state records it and the index lists it),
-    `verify` (the index lists it, only allowed for the package the state says was in flight; or the
-    state says `scarb publish` succeeded for the in-flight package and the index lags: wait, never
-    publish twice), `publish`; plus the refusals. `on_index`: {name: bool}."""
-    actions, refusals = {}, []
-    published = set(state.get("published", [])) if state else set()
-    in_flight = state.get("in_flight") if state else None
-    submitted = state.get("submitted") if state else None
-    for n in order:
-        if n in published:
-            if on_index[n]:
-                actions[n] = "skip"
-            else:
-                actions[n] = "verify"  # recorded but not visible yet: wait for the index
-        elif n == in_flight and n == submitted:
-            actions[n] = "verify"  # published, the index lags: wait for it
-        elif on_index[n]:
-            if n == in_flight:
-                actions[n] = "verify"
-            else:
-                actions[n] = "refuse"
-                refusals.append(f"`{n}` is already on the registry at this version "
-                                "(bump the workspace version)")
-        else:
-            actions[n] = "publish"
-    return actions, refusals
+def request_problems(packages, dry_run):
+    """Why the options cannot make a real request: a release request lists every published
+    package, so `--packages` is for dry runs only."""
+    if packages and not dry_run:
+        return ["`--packages` is for a dry run only: a release request lists every published package"]
+    return []
 
 
-WORKSPACE_FILES = ("Scarb.toml", "Scarb.lock", ".gitignore", ".scarbignore")
-
-
-def continuation_packages(order, state, on_index):
-    """The packages a continuation must leave untouched: every package the state records as
-    published (whatever the index says on this run), and the one in flight if the index lists it or
-    if `scarb publish` succeeded for it (`submitted`).
-    A recorded package that is no longer published by the workspace is a problem."""
-    names = list(state.get("published", []))
-    in_flight = state.get("in_flight")
-    if in_flight and (on_index.get(in_flight) or state.get("submitted") == in_flight) \
-            and in_flight not in names:
-        names.append(in_flight)
-    problems = [f"{n} is recorded as published but is no longer a published package of the workspace"
-                for n in names if n not in order]
-    return [n for n in names if n in order], problems
-
-
-def continuation_problems(changed, published_paths):
-    """Whether a release begun at an older commit may continue at HEAD. `changed`: the files
-    `git diff --name-only OLD HEAD` lists (relative to the repository root); `published_paths`:
-    {package: [its directory, and its readme / license file when outside it]} for every package
-    already on the registry at this version. Returns the problems (empty: it may continue)."""
+def checkout_problems(head, commit, detached, dirty):
+    """Why the checkout is not a clean checkout detached at COMMIT (empty: it is)."""
     problems = []
-    for f in changed:
-        if f in WORKSPACE_FILES:
-            problems.append(f"{f} changed (it reaches every published package)")
-            continue
-        for n, paths in sorted(published_paths.items()):
-            if any(q in (".", "") or f == q or f.startswith(q.rstrip("/") + "/") for q in paths):
-                problems.append(f"{f} changed, and it belongs to {n}, already published")
-                break
+    if dirty:
+        problems.append("the working tree is not clean")
+    if not detached:
+        problems.append("HEAD is not detached (check out the release commit with `git checkout --detach SHA`)")
+    if head != commit:
+        problems.append(f"HEAD {head[:10]} is not the release commit {commit[:10]}")
     return problems
 
 
-def ignore_files_between(root, pkg_dir):
-    """The ignore files of the directories strictly between the workspace root and PKG_DIR (the
-    root's are in WORKSPACE_FILES, the package's own are in its directory), relative to ROOT."""
-    parts = os.path.relpath(pkg_dir, root).split(os.sep)[:-1]
-    return [os.path.join(*parts[:i], f) for i in range(1, len(parts) + 1) for f in IGNORE_FILES]
+def render_request(version, commit, rows, header, dry_run_problems=None):
+    """The request document. `rows`: [{name, sha256, compressed, unpacked}] in publication order;
+    `header`: lines placed under the title (tooling, CI, registry). `dry_run_problems`: None for a
+    real request, else the checks a real request would have refused on (the document says so)."""
+    out = [f"# Release request: nalgebra-cairo {version}", ""]
+    if dry_run_problems is not None:
+        out += ["**DRY RUN: not a release request.** Checks a real request refuses on:", ""]
+        out += [f"- {p}" for p in dry_run_problems] or ["- none"]
+        out.append("")
+    else:
+        out += ["Status: requested, not published.", ""]
+    out += header + [""]
+    out.append("| " + " | ".join(REQUEST_COLUMNS) + " |")
+    out.append("|" + "|".join("---:" if c in ("#",) or "bytes" in c else "---" for c in REQUEST_COLUMNS) + "|")
+    for k, r in enumerate(rows, 1):
+        unpacked = "n/a" if r["unpacked"] is None else str(r["unpacked"])
+        out.append(f"| {k} | `{r['name']}` | {version} | `{commit}` | `{r['sha256']}` | "
+                   f"{r['compressed']} | {unpacked} |")
+    out += ["", "## Publication", "",
+            "By hand, from the same clean checkout detached at the commit, one package at a time in the",
+            "order of the table, on the project manager's go naming every row. `scarb publish` verifies",
+            "each package by building it against the registry, so a package is published only once the",
+            "index lists the packages before it: the `verify --wait` line after each publish waits for",
+            "that and compares the registry checksum with the table.", "", "```sh"]
+    for r in rows:
+        out.append(f"scarb publish -p {r['name']}")
+        out.append(f"python3 scripts/release.py verify --request docs/releases/{version}.md "
+                   f"--packages {r['name']} --wait")
+    out += ["```", ""]
+    return "\n".join(out)
 
 
-def package_paths(root, pkg_dir, package, ws_package):
-    """Everything outside the workspace-level files that decides what PKG_DIR's package ships:
-    its directory, the ignore files of the directories above it, and its `readme` / `license-file`
-    when they live outside it. `package`: its `[package]` table, `ws_package`: `[workspace.package]`.
-    An inherited value (`readme.workspace = true`) is read from the workspace; `readme = true`
-    (own or inherited) stands for the default README files, of the package directory (already
-    covered) and, when inherited, of the workspace root."""
-    paths = [os.path.relpath(pkg_dir, root)] + ignore_files_between(root, pkg_dir)
-    for key in ("readme", "license-file"):
-        value, base = package.get(key), pkg_dir
-        inherited = isinstance(value, dict) and value.get("workspace") is True
-        if inherited:
-            value, base = ws_package.get(key), root
-        names = [value] if isinstance(value, str) else []
-        if value is True and inherited:
-            names = list(DEFAULT_READMES)
-        for name in names:
-            full = os.path.normpath(os.path.join(base, name))
-            if not full.startswith(pkg_dir + os.sep):
-                paths.append(os.path.relpath(full, root))
-    return paths
+ROW = re.compile(r"^\|\s*\d+\s*\|\s*`([^`]+)`\s*\|\s*([^|\s]+)\s*\|\s*`([0-9a-f]{40})`\s*\|"
+                 r"\s*`([0-9a-f]{64})`\s*\|")
 
 
-def wait_for_index(fetch, retries, delay, sleep=time.sleep):
-    """Poll `fetch()` (the index record or None): at most `retries` + 1 checks, `delay` s apart.
-    Returns the record, or None if the index never listed it."""
-    for k in range(retries + 1):
-        rec = fetch()
-        if rec is not None:
-            return rec
-        if k < retries:
-            sleep(delay)
-    return None
+def parse_request(text):
+    """(version, [{name, version, commit, sha256}]) from a request document; a dry run is refused."""
+    if "**DRY RUN" in text:
+        raise ValueError("this is a dry-run document, not a release request")
+    rows = []
+    for line in text.splitlines():
+        m = ROW.match(line)
+        if m:
+            rows.append({"name": m[1], "version": m[2], "commit": m[3], "sha256": m[4]})
+    if not rows:
+        raise ValueError("no package row found")
+    versions = {r["version"] for r in rows}
+    commits = {r["commit"] for r in rows}
+    if len(versions) != 1 or len(commits) != 1:
+        raise ValueError(f"one version and one commit expected, found {sorted(versions)} / {sorted(commits)}")
+    names = [r["name"] for r in rows]
+    if len(set(names)) != len(names):
+        raise ValueError("a package is listed twice")
+    return versions.pop(), rows
+
+
+def compare_checksums(rows, records):
+    """[(name, state, detail)] with state `ok`, `missing` (not on the index) or `mismatch`.
+    `records`: {name: index record or None}; the index writes checksums as `sha256:<hex>`."""
+    result = []
+    for r in rows:
+        rec = records.get(r["name"])
+        if rec is None:
+            result.append((r["name"], "missing", "not on the index at this version"))
+        elif rec.get("cksum") != "sha256:" + r["sha256"]:
+            result.append((r["name"], "mismatch", f"index {rec.get('cksum')} != request sha256:{r['sha256']}"))
+        else:
+            result.append((r["name"], "ok", rec.get("cksum")))
+    return result
+
+
+def wait_until(check, timeout, delay, sleep=time.sleep, clock=time.monotonic):
+    """Call `check()` (True when done) until it is done or TIMEOUT s of wall-clock time have passed,
+    DELAY s apart; no check starts after the deadline. Returns whether it is done."""
+    deadline = clock() + timeout
+    while True:
+        if check():
+            return True
+        left = deadline - clock()
+        if left <= 0:
+            return False
+        sleep(min(delay, left))
 
 
 def self_test():
@@ -254,6 +263,14 @@ def self_test():
         raise AssertionError("unpublished dependency not detected")
     except ValueError:
         pass
+    order = publication_order(g)
+    assert select_packages(order, None) == order
+    assert select_packages(order, "b, core") == ["core", "b"]  # publication order, not the given one
+    try:
+        select_packages(order, "core,nope")
+        raise AssertionError("unknown package not detected")
+    except ValueError:
+        pass
     assert index_prefix("nalgebra") == "na/lg" and index_prefix("abc") == "3/a"
     assert index_prefix("ab") == "2" and index_prefix("a") == "1"
     ok, _ = check_runs_verdict([{"name": "Consumer cost", "status": "completed", "conclusion": "success"},
@@ -265,72 +282,57 @@ def self_test():
     assert not ok
     ok, p = check_runs_verdict([{"name": "Consumer cost", "status": "completed", "conclusion": "failure"}])
     assert not ok
-    order = ["core", "a", "b"]
-    acts, ref = plan_resume(order, None, {"core": False, "a": False, "b": False})
-    assert acts == {"core": "publish", "a": "publish", "b": "publish"} and not ref
-    acts, ref = plan_resume(order, None, {"core": True, "a": False, "b": False})
-    assert acts["core"] == "refuse" and ref
-    state = {"published": ["core"], "in_flight": "a"}
-    acts, ref = plan_resume(order, state, {"core": True, "a": True, "b": False})
-    assert acts == {"core": "skip", "a": "verify", "b": "publish"} and not ref
-    published = {"core": ["crates/core"], "a": ["crates/a", "README.md"]}
-    assert continuation_problems(["crates/b/Scarb.toml", "docs/PLAN.md"], published) == []
-    assert continuation_problems(["crates/core/src/lib.cairo"], published)
-    assert continuation_problems(["crates/core_extra/Scarb.toml"], published) == []
-    assert continuation_problems(["README.md"], published)
-    assert continuation_problems(["Scarb.lock"], published) and continuation_problems(["Scarb.toml"], published)
-    assert continuation_problems([".gitignore"], published)
-    assert continuation_problems(["anything.cairo"], {"root": ["."]})
-    names, probs = continuation_packages(["core", "a", "b"], {"published": ["core", "a"], "in_flight": "b"},
-                                         {"core": True, "a": False, "b": False})
-    assert names == ["core", "a"] and not probs  # `a` stays checked although the index misses it
-    names, probs = continuation_packages(["core", "b"], {"published": ["core"], "in_flight": "b"},
-                                         {"core": True, "b": True})
-    assert names == ["core", "b"] and not probs  # in flight and on the index: checked
-    names, probs = continuation_packages(["core"], {"published": ["core", "gone"], "in_flight": None},
-                                         {"core": True})
-    assert names == ["core"] and probs  # a recorded package no longer published: refused
-    # follow-up 3: `scarb publish` succeeded for the package in flight, the index lags
-    lag = {"published": ["core"], "in_flight": "a", "submitted": "a"}
-    acts, ref = plan_resume(order, lag, {"core": True, "a": False, "b": False})
-    assert acts == {"core": "skip", "a": "verify", "b": "publish"} and not ref  # not republished
-    acts, ref = plan_resume(order, {"published": ["core"], "in_flight": "a"}, {"core": True, "a": False, "b": False})
-    assert acts["a"] == "publish"  # a state without the marker (0.1.1's, or a crash before the publish)
-    acts, ref = plan_resume(order, {"published": [], "in_flight": "a", "submitted": "a"},
-                            {"core": False, "a": False, "b": False})
-    assert acts["core"] == "publish" and acts["a"] == "verify"  # the marker is about `a` only
-    names, probs = continuation_packages(["core", "a"], lag, {"core": True, "a": False})
-    assert names == ["core", "a"] and not probs  # submitted: it counts as published
-    calls, naps = [], []
-    def fetch(listed_at):
-        def f():
-            calls.append(1)
-            return {"v": "1"} if len(calls) >= listed_at else None
-        return f
-    assert wait_for_index(fetch(3), 5, 20, naps.append) == {"v": "1"} and len(calls) == 3 and naps == [20, 20]
-    calls.clear(); naps.clear()
-    assert wait_for_index(fetch(99), 4, 20, naps.append) is None and len(calls) == 5 and naps == [20] * 4
-    # follow-up 2: ignore files above a package, `readme = true` inherited from the workspace
-    root, pkg = os.path.join(os.sep, "r"), os.path.join(os.sep, "r", "crates", "a")
-    assert ignore_files_between(root, pkg) == [os.path.join("crates", ".gitignore"),
-                                               os.path.join("crates", ".scarbignore")]
-    assert ignore_files_between(root, os.path.join(os.sep, "r", "a")) == []
-    assert ignore_files_between(root, os.path.join(pkg, "x", "y")) == [
-        os.path.join("crates", ".gitignore"), os.path.join("crates", ".scarbignore"),
-        os.path.join("crates", "a", ".gitignore"), os.path.join("crates", "a", ".scarbignore"),
-        os.path.join("crates", "a", "x", ".gitignore"), os.path.join("crates", "a", "x", ".scarbignore")]
-    paths = package_paths(root, pkg, {}, {})
-    assert paths[0] == os.path.join("crates", "a") and os.path.join("crates", ".gitignore") in paths
-    assert continuation_problems([os.path.join("crates", ".scarbignore")], {"a": paths})
-    assert continuation_problems([os.path.join("crates", "b", "src", "lib.cairo")], {"a": paths}) == []
-    inherited = package_paths(root, pkg, {"readme": {"workspace": True}}, {"readme": "docs/R.md"})
-    assert os.path.join("docs", "R.md") in inherited
-    inherited = package_paths(root, pkg, {"readme": {"workspace": True}}, {"readme": True})
-    assert "README.md" in inherited and "README" in inherited
-    assert continuation_problems(["README.md"], {"a": inherited})
-    assert "README.md" not in package_paths(root, pkg, {"readme": True}, {})  # own default: in the dir
-    own = package_paths(root, pkg, {"readme": "../../README.md", "license-file": "../../LICENSE"}, {})
-    assert "README.md" in own and "LICENSE" in own
+    for skipped in ("skipped", "neutral"):  # the enforcing gate must have run and succeeded
+        ok, p = check_runs_verdict([{"name": "Consumer cost", "status": "completed", "conclusion": skipped}])
+        assert not ok and "must succeed" in p[0], p
+    assert request_problems(None, True) == [] and request_problems("a", True) == []
+    assert request_problems(None, False) == [] and "dry run" in request_problems("a,b", False)[0]
+    sha, other = "a" * 40, "b" * 40
+    assert checkout_problems(sha, sha, True, False) == []
+    assert len(checkout_problems(other, sha, False, True)) == 3
+    assert "detached" in checkout_problems(sha, sha, False, False)[0]
+    # request -> parse round trip, in order, and the commands
+    rows = [{"name": "core", "sha256": "1" * 64, "compressed": 120, "unpacked": 400},
+            {"name": "a", "sha256": "2" * 64, "compressed": 80, "unpacked": None}]
+    doc = render_request("9.9.9", sha, rows, ["Commit: `" + sha + "`"])
+    version, back = parse_request(doc)
+    assert version == "9.9.9" and [r["name"] for r in back] == ["core", "a"]
+    assert back[1] == {"name": "a", "version": "9.9.9", "commit": sha, "sha256": "2" * 64}
+    assert doc.index("scarb publish -p core") < doc.index("scarb publish -p a") and "| n/a |" in doc
+    assert "DRY RUN" not in doc
+    dry = render_request("9.9.9", sha, rows, [], dry_run_problems=["HEAD is not detached"])
+    assert "DRY RUN" in dry and "HEAD is not detached" in dry
+    core_row = next(line for line in doc.splitlines() if line.startswith("| 1 |"))
+    for bad in (dry, "# nothing\n", doc + "\n" + core_row.replace("| 1 |", "| 3 |") + "\n",
+                doc.replace("| 2 | `a` | 9.9.9 |", "| 2 | `a` | 9.9.8 |")):
+        try:
+            parse_request(bad)
+            raise AssertionError("a bad request was parsed")
+        except ValueError:
+            pass
+    # verify: index checksums against the request
+    res = compare_checksums(back, {"core": {"v": "9.9.9", "cksum": "sha256:" + "1" * 64}, "a": None})
+    assert res[0][1] == "ok" and res[1][1] == "missing"
+    res = compare_checksums(back[:1], {"core": {"v": "9.9.9", "cksum": "sha256:" + "f" * 64}})
+    assert res[0][1] == "mismatch"
+    # wait_until: a wall-clock cap, no check after the deadline
+    now, naps, calls = [0.0], [], []
+
+    def nap(s):
+        naps.append(s)
+        now[0] += s
+
+    def done_at(k):
+        def check():
+            calls.append(now[0])
+            return len(calls) >= k
+        return check
+    assert wait_until(done_at(3), 900, 20, nap, lambda: now[0]) and len(calls) == 3 and naps == [20, 20]
+    now[0], calls[:], naps[:] = 0.0, [], []
+    assert not wait_until(done_at(99), 50, 20, nap, lambda: now[0])
+    assert naps == [20, 20, 10] and calls == [0, 20, 40, 50]  # the last nap is cut to the deadline
+    now[0], calls[:], naps[:] = 0.0, [], []
+    assert not wait_until(done_at(99), 0, 20, nap, lambda: now[0]) and len(calls) == 1 and not naps
     print("self-test: ok")
     return 0
 
@@ -351,20 +353,15 @@ def workspace(scarb):
     meta = json.loads(sh([scarb, "metadata", "--format-version", "1", "--no-deps"]).stdout)
     root = meta["workspace"]["root"]
     with open(os.path.join(root, "Scarb.toml"), "rb") as f:
-        ws_package = tomllib.load(f).get("workspace", {}).get("package", {})
-    ws_version = ws_package.get("version")
+        ws_version = tomllib.load(f).get("workspace", {}).get("package", {}).get("version")
     by_manifest = {}
     pkgs = {}
     for p in meta["packages"]:
         with open(p["manifest_path"], "rb") as f:
-            manifest = tomllib.load(f)
-        package = manifest.get("package", {})
-        publish = package.get("publish", True) is not False
+            package = tomllib.load(f).get("package", {})
         by_manifest[os.path.normpath(p["manifest_path"])] = p["name"]
-        pkg_dir = os.path.dirname(os.path.normpath(p["manifest_path"]))
-        paths = package_paths(root, pkg_dir, package, ws_package)
-        pkgs[p["name"]] = {"version": p["version"], "publish": publish, "deps": p["dependencies"],
-                           "paths": paths}
+        pkgs[p["name"]] = {"version": p["version"], "publish": package.get("publish", True) is not False,
+                           "deps": p["dependencies"]}
     graph = {}
     for n, p in pkgs.items():
         if not p["publish"]:
@@ -402,17 +399,41 @@ def index_entry(template, name, version):
 
 
 def gh_check_runs(repo, sha):
-    out = sh(["gh", "api", "--paginate", f"repos/{repo}/commits/{sha}/check-runs",
-              "-q", ".check_runs[] | {name, status, conclusion}"]).stdout
-    return [json.loads(line) for line in out.splitlines() if line.strip()]
+    """The check runs of SHA, or (None, the error) when GitHub cannot give them (e.g. not pushed)."""
+    p = sh(["gh", "api", "--paginate", f"repos/{repo}/commits/{sha}/check-runs",
+            "-q", ".check_runs[] | {name, status, conclusion}"], check=False)
+    if p.returncode != 0:
+        return None, (p.stderr.strip().splitlines() or ["gh api failed"])[-1]
+    return [json.loads(line) for line in p.stdout.splitlines() if line.strip()], None
 
 
-def local_checksum(root, name, version):
-    path = os.path.join(root, "target", "package", f"{name}-{version}.tar.zst")
-    if not os.path.exists(path):
+def unpacked_size(path):
+    """The total size of the files in a `.tar.zst` archive, or None when no zstd decoder is found."""
+    try:
+        from compression import zstd  # Python >= 3.14
+        with zstd.open(path) as z, tarfile.open(fileobj=z, mode="r|") as t:
+            return sum(m.size for m in t if m.isfile())
+    except ImportError:
+        pass
+    if shutil.which("zstd") is None:
         return None
+    with subprocess.Popen(["zstd", "-dcq", path], stdout=subprocess.PIPE) as p:
+        with tarfile.open(fileobj=p.stdout, mode="r|") as t:
+            total = sum(m.size for m in t if m.isfile())
+    return total if p.returncode == 0 else None
+
+
+def build_archive(scarb, root, name, version):
+    """`scarb package --no-verify -p NAME` (see the docstring), then the archive's sha256 and sizes."""
+    p = subprocess.run([scarb, "package", "--no-verify", "-p", name], cwd=root,
+                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    if p.returncode != 0:
+        sys.exit(f"error: scarb package -p {name} failed ({p.returncode}):\n{p.stdout[-2000:]}")
+    path = os.path.join(root, "target", "package", f"{name}-{version}.tar.zst")
     with open(path, "rb") as f:
-        return "sha256:" + hashlib.sha256(f.read()).hexdigest()
+        digest = hashlib.sha256(f.read()).hexdigest()
+    return {"name": name, "sha256": digest, "compressed": os.path.getsize(path),
+            "unpacked": unpacked_size(path)}
 
 
 # ------------------------------------------------------------------------------------------------
@@ -420,140 +441,140 @@ def local_checksum(root, name, version):
 # ------------------------------------------------------------------------------------------------
 
 
-def main():
-    ap = argparse.ArgumentParser(description="Resumable, verified release of the workspace packages.")
-    ap.add_argument("--publish", action="store_true", help="really publish (default: dry run)")
-    ap.add_argument("--self-test", action="store_true")
-    ap.add_argument("--registry", default="https://scarbs.xyz")
-    ap.add_argument("--repo", help="GitHub OWNER/REPO (default: from `gh repo view`)")
-    ap.add_argument("--scarb", default="scarb")
-    ap.add_argument("--verify-timeout", type=int, default=900, help="seconds to wait for the index")
-    args = ap.parse_args()
-    if args.self_test:
-        return self_test()
-    if tomllib is None:
-        sys.exit("error: Python 3.11+ is needed (tomllib)")
-
+def request(args):
+    refused = request_problems(args.packages, args.dry_run)
+    if refused:
+        sys.exit(f"error: {refused[0]}")
     root, version, pkgs, graph = workspace(args.scarb)
-    problems = []
     try:
         order = publication_order(graph)
+        chosen = select_packages(order, args.packages)
     except ValueError as e:
         sys.exit(f"error: {e}")
-    print(f"workspace version: {version}; {len(order)} published packages")
+    print(f"workspace version: {version}; {len(order)} published packages, {len(chosen)} in this request")
+    problems = []
 
-    # 1. Versions
-    wrong = [f"{n} {pkgs[n]['version']}" for n in order if pkgs[n]["version"] != version]
+    wrong = [f"{n} {pkgs[n]['version']}" for n in chosen if pkgs[n]["version"] != version]
     if wrong:
         problems.append(f"packages not at the workspace version {version}: {', '.join(wrong)}")
 
-    # 2. Release commit: clean tree, HEAD = origin/main, CI green with `Consumer cost`
-    sh(["git", "fetch", "-q", "origin", "main"], check=False, cwd=root)
+    commit = sh(["git", "rev-parse", "--verify", "--quiet", args.commit + "^{commit}"], cwd=root).stdout.strip()
     head = sh(["git", "rev-parse", "HEAD"], cwd=root).stdout.strip()
-    main_sha = sh(["git", "rev-parse", "origin/main"], cwd=root).stdout.strip()
-    if sh(["git", "status", "--porcelain"], cwd=root).stdout.strip():
-        problems.append("the working tree is not clean")
-    if head != main_sha:
-        problems.append(f"HEAD {head[:10]} is not origin/main {main_sha[:10]} (the release commit)")
+    detached = sh(["git", "symbolic-ref", "-q", "HEAD"], check=False, cwd=root).returncode != 0
+    dirty = bool(sh(["git", "status", "--porcelain"], cwd=root).stdout.strip())
+    problems += checkout_problems(head, commit, detached, dirty)
+
     repo = args.repo or sh(["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
                            cwd=root).stdout.strip()
-    ok, ci = check_runs_verdict(gh_check_runs(repo, head))
+    runs, error = gh_check_runs(repo, commit)
+    ok, ci = check_runs_verdict(runs or [])
+    if error:
+        ci = [f"cannot read the check runs of {commit[:10]}: {error}"]
+        runs = []
     if len(ci) > 6:
         ci = ci[:5] + [f"... and {len(ci) - 5} more"]
-    print(f"CI of {head[:10]} ({repo}): {'green, `' + REQUIRED_CHECK + '` included' if ok else 'NOT green'}")
+    print(f"CI of {commit[:10]} ({repo}): {'green, `' + REQUIRED_CHECK + '` included' if ok else 'NOT green'}")
     problems += [f"CI: {p}" for p in ci]
 
-    # 3. Registry: versions not published yet, or recorded by the state file (resume)
-    state_path = os.path.join(root, "target", "release", f"state-{version}.json")
-    state = None
-    if os.path.exists(state_path):
-        with open(state_path) as f:
-            state = json.load(f)
-        print(f"resuming: {len(state.get('published', []))} package(s) already published "
-              f"({state_path})")
     template = registry_index(args.registry)
-    on_index = {n: index_entry(template, n, version) is not None for n in order}
-    if state is not None and state.get("commit") != head:
-        old = state.get("commit", "")
-        if sh(["git", "merge-base", "--is-ancestor", old, head], check=False, cwd=root).returncode != 0:
-            problems.append(f"{state_path} belongs to commit {old[:10]}, which is not an ancestor of HEAD")
-        else:
-            out = sh(["git", "-c", "core.quotepath=off", "diff", "--name-only", "--no-renames", "-z", old, head],
-                     cwd=root).stdout
-            changed = [f for f in out.split("\0") if f]
-            done, found = continuation_packages(order, state, on_index)
-            found += continuation_problems(changed, {n: pkgs[n]["paths"] for n in done})
-            print(f"continuing the release begun at {old[:10]}: `git diff --name-only --no-renames {old[:10]} {head[:10]}` "
-                  f"lists {len(changed)} file(s); checked against the {len(done)} package(s) already published "
-                  f"and {', '.join(WORKSPACE_FILES)}: {'refused' if found else 'none of them is touched'}")
-            for f in changed:
-                print(f"    {f}")
-            problems += [f"cannot continue at HEAD: {p}" for p in found]
-            if not found:
-                state["continued_from"] = state.get("continued_from", []) + [old]
-                state["commit"] = head
-    actions, refusals = plan_resume(order, state, on_index)
-    problems += refusals
+    listed = [n for n in chosen if index_entry(template, n, version) is not None]
+    if listed:
+        problems.append(f"already on the registry at {version} (bump the workspace version): "
+                        + ", ".join(listed[:5]) + (f" and {len(listed) - 5} more" if len(listed) > 5 else ""))
 
-    # 4. Token
-    if not os.environ.get("SCARB_REGISTRY_AUTH_TOKEN"):
-        problems.append("SCARB_REGISTRY_AUTH_TOKEN is not set")
-
-    print("\npublication order:")
-    for k, n in enumerate(order, 1):
-        deps = ", ".join(graph[n]) or "-"
-        print(f"  {k:2}. {n} {version}  [{actions[n]}]  (after: {deps})")
-        if actions[n] == "publish":
-            print(f"      $ {args.scarb} publish -p {n}; then wait for {n} {version} on the index and "
-                  f"compare its checksum with target/package/{n}-{version}.tar.zst")
     if problems:
-        print("\nrefusing to start:" if args.publish else "\nchecks that would refuse the release:")
+        print("\nchecks that refuse a release request:" if not args.dry_run else "\nchecks a real request refuses on:")
         for p in problems:
             print(f"  - {p}")
-    if not args.publish:
-        print("\ndry run: nothing published (pass --publish after the release go)")
-        return 1 if problems else 0
-    if problems:
-        return 1
+        if not args.dry_run:
+            return 1
 
-    os.makedirs(os.path.dirname(state_path), exist_ok=True)
-    state = state or {"version": version, "commit": head, "published": [], "in_flight": None}
-
-    def save():
-        with open(state_path + ".tmp", "w") as f:
-            json.dump(state, f, indent=2)
-        os.replace(state_path + ".tmp", state_path)
-
-    for n in order:
-        if actions[n] == "skip":
-            print(f"{n}: already published and on the index, skipped")
-            continue
-        if actions[n] == "publish":
-            state["in_flight"] = n
-            save()
-            print(f"{n}: scarb publish -p {n}", flush=True)
-            p = subprocess.run([args.scarb, "publish", "-p", n], cwd=root)
-            if p.returncode != 0:
-                sys.exit(f"error: publishing {n} failed; fix and run the same command again to resume")
-            state["submitted"] = n  # published: a lagging index must never make a resume publish again
-            save()
-        retries = max(args.verify_timeout // VERIFY_DELAY, 1)
-        print(f"{n}: waiting for the index to list {version} (up to {retries + 1} checks, "
-              f"{VERIFY_DELAY} s apart)", flush=True)
-        rec = wait_for_index(lambda: index_entry(template, n, version), retries, VERIFY_DELAY)
-        if rec is None:
-            sys.exit(f"error: {n} {version} not on the index after {retries + 1} checks "
-                     f"({retries * VERIFY_DELAY} s); run again to resume (it will be verified, not republished)")
-        local = local_checksum(root, n, version)
-        if local is not None and rec.get("cksum") != local:
-            sys.exit(f"error: {n} {version}: index checksum {rec.get('cksum')} != local archive {local}")
-        state["published"].append(n)
-        state["in_flight"] = None
-        state.pop("submitted", None)
-        save()
-        print(f"{n}: verified on the index ({rec.get('cksum')})", flush=True)
-    print(f"\nreleased {len(order)} packages at {version}; tag v{version} per docs/ORCHESTRATOR.md")
+    rows = []
+    for k, n in enumerate(chosen, 1):
+        print(f"  {k:2}/{len(chosen)} scarb package --no-verify -p {n}", flush=True)
+        rows.append(build_archive(args.scarb, root, n, version))
+    tool = sh([args.scarb, "--version"], cwd=root).stdout.splitlines()[0].strip()
+    subject = sh(["git", "log", "-1", "--format=%s", commit], cwd=root).stdout.strip()
+    header = [
+        f"Commit: `{commit}` ({subject}).",
+        f"Archives: `scarb package --no-verify -p <package>` with {tool}, "
+        f"{time.strftime('%Y-%m-%d', time.gmtime())}, from a checkout detached at the commit; sha256 of "
+        f"`target/package/<package>-{version}.tar.zst`. The registry checksum must equal it.",
+        f"CI of the commit ({repo}): {'green, `' + REQUIRED_CHECK + '` included' if ok else 'NOT green'}, "
+        f"{len(runs)} check runs.",
+        f"Registry: {args.registry}; {'none of these packages is' if not listed else 'some packages are'} "
+        f"on its index at {version}.",
+        f"Packages: {len(rows)} of the {len(order)} published packages of the workspace, in publication order.",
+    ]
+    doc = render_request(version, commit, rows, header, problems if args.dry_run else None)
+    out = args.out or os.path.join(root, "docs", "releases", f"{version}.md")
+    with open(out, "w") as f:
+        f.write(doc)
+    print(f"\nwrote {out} ({len(rows)} packages){' - DRY RUN' if args.dry_run else ''}")
     return 0
+
+
+def verify(args):
+    try:
+        with open(args.request) as f:
+            version, rows = parse_request(f.read())
+        names = [r["name"] for r in rows]
+        chosen = select_packages(names, args.packages)
+    except (OSError, ValueError) as e:
+        sys.exit(f"error: {args.request}: {e}")
+    rows = [r for r in rows if r["name"] in chosen]
+    template = registry_index(args.registry)
+    records = {}
+
+    def check():
+        for r in rows:
+            if records.get(r["name"]) is None:
+                records[r["name"]] = index_entry(template, r["name"], version)
+        return all(records[r["name"]] is not None for r in rows)
+
+    if args.wait:
+        print(f"waiting up to {args.verify_timeout} s for {len(rows)} package(s) at {version} on the index "
+              f"(a check every {VERIFY_DELAY} s)", flush=True)
+        wait_until(check, args.verify_timeout, VERIFY_DELAY)
+    else:
+        check()
+    result = compare_checksums(rows, records)
+    for name, state, detail in result:
+        print(f"  {state:8} {name} {version}: {detail}")
+    bad = [r for r in result if r[1] != "ok"]
+    print(f"\n{len(result) - len(bad)} of {len(result)} package(s) on the index with the requested checksum")
+    return 1 if bad else 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description="Release request and registry check (never publishes).")
+    ap.add_argument("--self-test", action="store_true", help="checks of the pure logic, no network, no scarb")
+    sub = ap.add_subparsers(dest="mode")
+    rq = sub.add_parser("request", help="build the archives and write docs/releases/VERSION.md")
+    rq.add_argument("--commit", required=True, help="the release commit (HEAD must be detached at it)")
+    rq.add_argument("--packages", help="with --dry-run only: comma-separated subset (default: every published package)")
+    rq.add_argument("--dry-run", action="store_true", help="report the refusing checks and go on")
+    rq.add_argument("--out", help="output file (default: docs/releases/VERSION.md)")
+    rq.add_argument("--repo", help="GitHub OWNER/REPO (default: from `gh repo view`)")
+    rq.add_argument("--scarb", default="scarb")
+    rq.add_argument("--registry", default="https://scarbs.xyz")
+    vf = sub.add_parser("verify", help="compare the registry index checksums with a request")
+    vf.add_argument("--request", required=True, help="a docs/releases/VERSION.md request")
+    vf.add_argument("--packages", help="comma-separated subset of the request (default: all of it)")
+    vf.add_argument("--wait", action="store_true", help="poll the index until it lists them")
+    vf.add_argument("--verify-timeout", type=int, default=900,
+                    help="with --wait: wall-clock seconds to wait for the index (default 900)")
+    vf.add_argument("--registry", default="https://scarbs.xyz")
+    args = ap.parse_args()
+    if args.self_test:
+        return self_test()
+    if args.mode is None:
+        ap.error("a mode is needed: request, verify or --self-test")
+    if args.mode == "request":
+        if tomllib is None:
+            sys.exit("error: Python 3.11+ is needed (tomllib)")
+        return request(args)
+    return verify(args)
 
 
 if __name__ == "__main__":
