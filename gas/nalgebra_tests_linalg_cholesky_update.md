@@ -20,19 +20,19 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `j0` | 124040 | 83920 | x1.00 |
+| `j0` | 118280 | 83920 | x1.00 |
 
 ### cholesky3_rank_one_update
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `rotations` | 105460 | 64140 | x1.00 |
+| `rotations` | 99700 | 64140 | x1.00 |
 
 ### cholesky3_remove_column
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `j0` | 67870 | 27750 | x1.00 |
+| `j0` | 62380 | 27750 | x1.00 |
 
 ### cholesky4_rank_one_update
 
@@ -50,5 +50,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `rotations` | 377650 | 233850 | x1.00 |
+| `rotations` | 352900 | 233850 | x1.00 |
 

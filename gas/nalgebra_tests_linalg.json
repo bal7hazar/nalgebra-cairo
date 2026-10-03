@@ -37,12 +37,12 @@
     },
     "cholesky3_new": {
       "baseline": 12210,
-      "factorize": 41740
+      "factorize": 35710
     },
     "cholesky3_solve": {
       "alt_recip": 42920,
       "baseline": 10910,
-      "substitution": 47470
+      "substitution": 38350
     },
     "cholesky4_determinant": {
       "baseline": 9910,
@@ -81,12 +81,12 @@
     },
     "cholesky6_new": {
       "baseline": 27610,
-      "factorize": 148720
+      "factorize": 121810
     },
     "cholesky6_solve": {
       "alt_recip": 86360,
       "baseline": 16010,
-      "substitution": 95590
+      "substitution": 78490
     }
   },
   "nalgebra_tests_linalg::lu::lu2::tests": {
@@ -164,15 +164,15 @@
     },
     "lu3_solve": {
       "baseline": 12210,
-      "substitution": 39450
+      "substitution": 32430
     },
     "lu3_solve_singular": {
       "baseline": 10920,
-      "none": 38460
+      "none": 13920
     },
     "lu3_try_inverse": {
       "alt_recip": 60570,
-      "alt_solve_columns": 101030,
+      "alt_solve_columns": 88930,
       "baseline": 14410,
       "columns": 72230
     },
@@ -248,7 +248,7 @@
     "lu6_new": {
       "alt_no_pivot": 224740,
       "baseline": 36610,
-      "pivot": 289530
+      "pivot": 248120
     },
     "lu6_p": {
       "baseline": 18610,
@@ -262,22 +262,22 @@
     },
     "lu6_solve": {
       "baseline": 20310,
-      "substitution": 92550
+      "substitution": 79560
     },
     "lu6_solve_singular": {
       "baseline": 17520,
-      "none": 90060
+      "none": 24120
     },
     "lu6_try_inverse": {
       "alt_recip": 249750,
-      "alt_solve_columns": 486150,
+      "alt_solve_columns": 439150,
       "baseline": 41510,
       "columns": 313190
     },
     "matrix6_lu": {
       "baseline": 15110,
-      "determinant": 282310,
-      "try_inverse": 565510
+      "determinant": 268150,
+      "try_inverse": 547450
     }
   },
   "nalgebra_tests_linalg::qr::qr2::tests": {
@@ -404,31 +404,31 @@
     },
     "svd3_new": {
       "baseline": 9720,
-      "eigen_of_gram": 736190
+      "eigen_of_gram": 650930
     },
     "svd3_pseudo_inverse": {
-      "baseline": 738120,
-      "reciprocals": 792550
+      "baseline": 673350,
+      "reciprocals": 727780
     },
     "svd3_rank": {
-      "baseline": 738120,
-      "comparisons": 741930
+      "baseline": 673350,
+      "comparisons": 677160
     },
     "svd3_recompose": {
-      "baseline": 738120,
-      "scaled_product": 779290
+      "baseline": 673350,
+      "scaled_product": 714520
     },
     "svd3_singular_values": {
       "baseline": 9720,
-      "from_left_vectors": 736190
+      "from_left_vectors": 650930
     },
     "svd3_solve": {
-      "baseline": 738920,
-      "divisions": 771630
+      "baseline": 674150,
+      "divisions": 706860
     },
     "svd3_to_polar": {
-      "baseline": 738120,
-      "quadform": 791800
+      "baseline": 673350,
+      "quadform": 727030
     }
   },
   "nalgebra_tests_linalg::udu::benches": {

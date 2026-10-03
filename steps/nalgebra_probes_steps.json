@@ -2,19 +2,19 @@
   "nalgebra_probes_steps::cholesky": {
     "cholesky3_factor": {
       "baseline": 121,
-      "op": 341
+      "op": 326
     },
     "cholesky3_solve": {
       "baseline": 106,
-      "op": 352
+      "op": 332
     },
     "cholesky6_factor": {
       "baseline": 275,
-      "op": 1172
+      "op": 1097
     },
     "cholesky6_solve": {
       "baseline": 157,
-      "op": 726
+      "op": 686
     }
   },
   "nalgebra_probes_steps::isometry3": {
@@ -42,15 +42,15 @@
     },
     "lu3_solve": {
       "baseline": 116,
-      "op": 314
+      "op": 289
     },
     "lu6_factor": {
       "baseline": 471,
-      "op": 2390
+      "op": 2328
     },
     "lu6_solve": {
       "baseline": 197,
-      "op": 739
+      "op": 680
     }
   },
   "nalgebra_probes_steps::matrix3": {
@@ -94,13 +94,13 @@
   "nalgebra_probes_steps::svd3": {
     "svd3": {
       "baseline": 233,
-      "op": 5483
+      "op": 4946
     }
   },
   "nalgebra_probes_steps::symmetric_eigen3": {
     "symmetric_eigen3": {
       "baseline": 151,
-      "op": 4200
+      "op": 3683
     }
   },
   "nalgebra_probes_steps::unit_quaternion": {

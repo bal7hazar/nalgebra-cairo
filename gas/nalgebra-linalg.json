@@ -186,7 +186,7 @@
       "transpose_mul_transpose": 25330
     },
     "svd3_new": {
-      "alt_normalised_columns": 801570,
+      "alt_normalised_columns": 734000,
       "alt_one_sided_jacobi": 771530
     },
     "svd3_singular_values": {
@@ -214,29 +214,29 @@
   "nalgebra::linalg::symmetric_eigen3::tests": {
     "symmetric_eigen3_eigenvalues": {
       "baseline": 9110,
-      "via_new": 599400,
+      "via_new": 537530,
       "without_eigenvectors": 350830
     },
     "symmetric_eigen3_new": {
       "baseline": 9110,
-      "diagonal_input": 600160,
-      "jacobi_3_sweeps": 466030,
-      "jacobi_4_sweeps": 599400,
-      "jacobi_5_sweeps": 732370,
-      "jacobi_6_sweeps": 865540,
-      "no_renormalisation": 568240
+      "diagonal_input": 538290,
+      "jacobi_3_sweeps": 419060,
+      "jacobi_4_sweeps": 537530,
+      "jacobi_5_sweeps": 657020,
+      "jacobi_6_sweeps": 776000,
+      "no_renormalisation": 392420
     },
     "symmetric_eigen3_new_matrix": {
       "baseline": 9710,
-      "public": 600000
+      "public": 538130
     },
     "symmetric_eigen3_recompose": {
-      "baseline": 600560,
-      "quadform": 630990
+      "baseline": 538690,
+      "quadform": 569120
     },
     "symmetric_eigen3_sweep": {
       "baseline": 10910,
-      "three_rotations": 143880,
+      "three_rotations": 122500,
       "three_rotations_without_eigenvectors": 87160
     }
   }

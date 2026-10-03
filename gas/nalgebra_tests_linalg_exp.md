@@ -60,10 +60,10 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pade3` | 1069260 | 1044070 | x1.00 |
-| `pade5` | 1278910 | 1253720 | x1.20 |
-| `pade7` | 1419970 | 1394780 | x1.34 |
-| `pade7_squared2` | 1707110 | 1681920 | x1.61 |
+| `pade3` | 1036750 | 1011560 | x1.00 |
+| `pade5` | 1246400 | 1221210 | x1.21 |
+| `pade7` | 1387460 | 1362270 | x1.35 |
+| `pade7_squared2` | 1674600 | 1649410 | x1.63 |
 
 ## nalgebra_tests_linalg_exp::pow1
 
