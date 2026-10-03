@@ -27,6 +27,9 @@
 #       .tool-versions or scripts/gas_report.py changed. When gas/** or scripts/gas_report.py changed (alone or
 #       with a package), the whole workspace is tested and checked against the whole snapshot, as scripts/check.sh
 #       does: the snapshot is the thing that changed, so a partial comparison would not vouch for it.
+#   A manifest or lock file outside the root workspace (benchmarks/**, tools/**: Scarb.toml, Scarb.lock) touches no
+#       package of it: unless gas/** or scripts/gas_report.py changed too, there is nothing to compile, no lock is
+#       waited for and no workspace test runs.
 #   (The `nalgebra` package is tested with the Scarb features CI gives it: --no-default-features --features eigen,svd,qr.)
 #
 # The heavy-build lock. On the shared VPS the scarb/snforge shims serialise every compile through one lock
@@ -47,11 +50,22 @@
 # runs them). Without the lock (no lock directory or no `flock`, as on the Mac), or when a caller already holds
 # it (HEAVY_BUILD_LOCK_HELD, or an ancestor process holding the lock file, the test of the shims), the Cairo
 # block runs directly, with no wait: a caller does not wait for itself. The time the lock was waited for and
-# the time the block itself took are printed separately.
+# the time the block itself took are printed separately. If this script is killed without being able to clean up
+# (SIGKILL), the inner script notices within 0.3 s and stops its own process group (the waiter's), so the lock is
+# released within seconds. (A caller pid reused by another process is only noticed when that process ends: the inner
+# script is bounded by the length of its own block.) If the inner script alone is signalled, the caller sees the
+# waiter gone without a result and fails the push.
+#
+# Bash: needs bash >= 4.4 (`wait $!` on a process substitution in the hook, empty arrays under `set -u`); an older
+# bash fails at once with a clear message (the macOS system bash is 3.2: use a newer one first in PATH).
 #
 # Git: every git command here is a read of the repository being pushed (rev-parse, merge-base, diff); none
 # writes, so none needs a sanitised environment.
 # Exits non-zero on the first failure, with a one-line message naming the step.
+if ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4))); then
+    echo "prepush: bash >= 4.4 is required (this is bash ${BASH_VERSION}); put a newer bash first in PATH." >&2
+    exit 1
+fi
 set -euo pipefail
 # The script's own absolute path, resolved once before any `cd` (it is re-run by path under the lock).
 self=$(realpath "$0" 2> /dev/null || { cd "$(dirname "$0")" && echo "$(pwd -P)/$(basename "$0")"; })
@@ -141,8 +155,34 @@ if [[ "${PREPUSH_INNER:-}" == 1 ]]; then
     exec > "$PREPUSH_OUT" 2>&1
     export HEAVY_BUILD_LOCK_HELD=1 # the lock really is held here: the shims run nested, without re-locking
     echo "prepush: heavy lock obtained after ${waited}s of waiting (the wait ran alongside the fixed checks)"
-    cairo_block
-    exit 0
+    # The block runs in the background of this script so that the caller can be watched alongside it. Both are in
+    # the process group of the waiter subshell (PREPUSH_PGID) that the caller started. When the caller is gone and
+    # could not stop the group (SIGKILL), or this script alone is signalled, this script signals that group
+    # itself, only when it really is the one it runs in (never the caller's own group); the lock is then released.
+    stop_group() {
+        local pg
+        trap - TERM INT HUP
+        pg=$(ps -o pgid= -p $$ 2> /dev/null | tr -d ' ') || pg=""
+        if [[ -n "$pg" && "$pg" == "${PREPUSH_PGID:-}" ]]; then kill -TERM -- "-$pg" 2> /dev/null || true; fi
+        exit 143
+    }
+    {
+        trap 'rc=$?; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
+        cairo_block
+    } &
+    block=$!
+    trap 'trap - EXIT; echo "prepush: interrupted, Cairo block stopped, lock released" >&2; stop_group' TERM INT HUP
+    while kill -0 "$block" 2> /dev/null; do
+        if ! kill -0 "$PREPUSH_PARENT" 2> /dev/null; then
+            trap - EXIT
+            stop_group
+        fi
+        sleep 0.3
+    done
+    rc=0
+    wait "$block" || rc=$?
+    trap - EXIT # the block printed its own failure line
+    exit "$rc"
 fi
 
 base="${1:-origin/main}"
@@ -207,7 +247,15 @@ for f in os.environ["PREPUSH_CHANGED"].split("\n"):
         d = os.path.dirname(d)
 print(" ".join(sorted(touched)))
 ')
-    echo "prepush: touched packages: ${PREPUSH_PKGS:-none (gas/ or gas_report.py only: the whole workspace is checked)}"
+    if [[ -z "$PREPUSH_PKGS" && "$PREPUSH_GAS_FULL" == 0 ]]; then
+        # no workspace package touched (e.g. a manifest of benchmarks/ or tools/, not a member): nothing to compile
+        PREPUSH_DO_BUILD=0
+        PREPUSH_DO_GAS=0
+        export PREPUSH_DO_BUILD PREPUSH_DO_GAS
+        echo "prepush: touched packages: none (no workspace package is concerned)"
+    else
+        echo "prepush: touched packages: ${PREPUSH_PKGS:-none (gas/ or gas_report.py only: the whole workspace is checked)}"
+    fi
 fi
 export PREPUSH_PKGS
 
@@ -224,10 +272,18 @@ trap 'step=interrupted; exit 129' HUP
 # stop the whole tree of a job THIS script started, and nothing else: `kill -TERM -- -<pgid>`.
 waiter=""
 pids=()
+# Is process <pid> still a child of this script (a reaped id, or a recycled one, is not)? `ps` rather than /proc,
+# which macOS does not have. Use it as an `if` condition only (it can be false).
+is_my_child() {
+    local pp
+    pp=$(ps -o ppid= -p "$1" 2> /dev/null | tr -d ' ') || return 1
+    [[ "$pp" == "$$" ]]
+}
 stop_jobs() {
     local g
     for g in $waiter ${pids[@]+"${pids[@]}"}; do
-        [[ -z "$g" ]] || kill -TERM -- "-$g" 2> /dev/null || true # a cleared id (job ended and waited) is skipped
+        # a cleared id (job ended and waited) is skipped, and so is one that is no longer our child
+        if [[ -n "$g" ]] && is_my_child "$g"; then kill -TERM -- "-$g" 2> /dev/null || true; fi
     done
     return 0
 }
@@ -244,7 +300,7 @@ if [[ "$PREPUSH_DO_BUILD" == 1 || "$PREPUSH_DO_GAS" == 1 ]]; then
         set -m
         (
             rc=0
-            PREPUSH_INNER=1 PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/cairo.log" PREPUSH_PARENT=$$ \
+            PREPUSH_INNER=1 PREPUSH_PGID=$BASHPID PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/cairo.log" PREPUSH_PARENT=$$ \
                 PREPUSH_T0=$(date +%s) flock -E 75 -w 90 "$lock" "$self" "$base" 2> "$logs/flock.err" || rc=$?
             echo "$rc" > "$logs/flock.rc.tmp" && mv -f "$logs/flock.rc.tmp" "$logs/flock.rc"
         ) > /dev/null 2>&1 < /dev/null &
@@ -275,7 +331,7 @@ else
 fi
 
 if [[ "$PREPUSH_DO_BUILD" == 0 && "$PREPUSH_DO_GAS" == 0 ]]; then
-    echo "prepush: Cairo compile skipped (no Cairo source, manifest or gas input changed against $base)"
+    echo "prepush: Cairo compile skipped (no workspace Cairo source, manifest or gas input changed against $base)"
 elif [[ $use_lock == 1 ]]; then
     step="Cairo compile (the failing step is named above)"
     # the block started as soon as the lock was obtained; print its output as it grows, until the waiter ends
@@ -285,9 +341,15 @@ elif [[ $use_lock == 1 ]]; then
         size=$(wc -c 2> /dev/null < "$logs/cairo.log" || echo 0)
         if ((size > off)); then tail -c +$((off + 1)) "$logs/cairo.log" | head -c $((size - off)) || true; off=$size; fi
     }
-    while [[ ! -e "$logs/flock.rc" ]]; do flush; sleep 0.5; done
+    # ... or until the waiter is gone: when the inner script alone is signalled it stops its whole group, the waiter
+    # included, which then never writes flock.rc; that is a failure, not a reason to wait for ever.
+    while [[ ! -e "$logs/flock.rc" ]] && kill -0 "$waiter" 2> /dev/null; do flush; sleep 0.5; done
     flush
-    waiter="" # ended by itself
+    waiter="" # ended
+    if [[ ! -e "$logs/flock.rc" ]]; then
+        echo "prepush: Cairo block interrupted (the lock waiter was stopped without a result)" >&2
+        exit 1
+    fi
     if [[ -e "$mark" ]]; then
         [[ "$(< "$logs/flock.rc")" -eq 0 ]] || exit 1 # a step failed inside the lock; it printed its own message
     else
