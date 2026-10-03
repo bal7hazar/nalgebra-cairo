@@ -50,7 +50,9 @@
 # runs them). Without the lock (no lock directory or no `flock`, as on the Mac), or when a caller already holds
 # it (HEAVY_BUILD_LOCK_HELD, or an ancestor process holding the lock file, the test of the shims), the Cairo
 # block runs directly, with no wait: a caller does not wait for itself. The time the lock was waited for and
-# the time the block itself took are printed separately.
+# the time the block itself took are printed separately. If this script is killed without being able to clean up
+# (SIGKILL), the inner script notices within 0.3 s and stops its own process group (the waiter's), so the lock is
+# released within seconds.
 #
 # Bash: needs bash >= 4.4 (`wait $!` on a process substitution in the hook, empty arrays under `set -u`); an older
 # bash fails at once with a clear message (the macOS system bash is 3.2: use a newer one first in PATH).
@@ -151,8 +153,34 @@ if [[ "${PREPUSH_INNER:-}" == 1 ]]; then
     exec > "$PREPUSH_OUT" 2>&1
     export HEAVY_BUILD_LOCK_HELD=1 # the lock really is held here: the shims run nested, without re-locking
     echo "prepush: heavy lock obtained after ${waited}s of waiting (the wait ran alongside the fixed checks)"
-    cairo_block
-    exit 0
+    # The block runs in the background of this script so that the caller can be watched alongside it. Both are in
+    # the process group of the waiter subshell (PREPUSH_PGID) that the caller started. When the caller is gone and
+    # could not stop the group (SIGKILL), or this script alone is signalled, this script signals that group
+    # itself, only when it really is the one it runs in (never the caller's own group); the lock is then released.
+    stop_group() {
+        local pg
+        trap - TERM INT HUP
+        pg=$(ps -o pgid= -p $$ 2> /dev/null | tr -d ' ') || pg=""
+        if [[ -n "$pg" && "$pg" == "${PREPUSH_PGID:-}" ]]; then kill -TERM -- "-$pg" 2> /dev/null || true; fi
+        exit 143
+    }
+    {
+        trap 'rc=$?; if [[ $rc -ne 0 ]]; then echo "prepush: FAILED at step: ${step} ($((SECONDS - start))s)" >&2; fi' EXIT
+        cairo_block
+    } &
+    block=$!
+    trap 'trap - EXIT; echo "prepush: interrupted, Cairo block stopped, lock released" >&2; stop_group' TERM INT HUP
+    while kill -0 "$block" 2> /dev/null; do
+        if ! kill -0 "$PREPUSH_PARENT" 2> /dev/null; then
+            trap - EXIT
+            stop_group
+        fi
+        sleep 0.3
+    done
+    rc=0
+    wait "$block" || rc=$?
+    trap - EXIT # the block printed its own failure line
+    exit "$rc"
 fi
 
 base="${1:-origin/main}"
@@ -242,14 +270,12 @@ trap 'step=interrupted; exit 129' HUP
 # stop the whole tree of a job THIS script started, and nothing else: `kill -TERM -- -<pgid>`.
 waiter=""
 pids=()
-# Is process <pid> still a child of this script (a reaped id, or a recycled one, is not)? Field 4 of /proc/<pid>/stat
-# is the parent pid; the command name (field 2) may hold spaces, so it is cut off at its last ")" first.
+# Is process <pid> still a child of this script (a reaped id, or a recycled one, is not)? `ps` rather than /proc,
+# which macOS does not have. Use it as an `if` condition only (it can be false).
 is_my_child() {
-    local stat rest
-    { stat=$(< "/proc/$1/stat"); } 2> /dev/null || return 1
-    rest=${stat##*) } # "<state> <ppid> ..."
-    rest=${rest#* }
-    [[ "${rest%% *}" == "$$" ]]
+    local pp
+    pp=$(ps -o ppid= -p "$1" 2> /dev/null | tr -d ' ') || return 1
+    [[ "$pp" == "$$" ]]
 }
 stop_jobs() {
     local g
@@ -272,7 +298,7 @@ if [[ "$PREPUSH_DO_BUILD" == 1 || "$PREPUSH_DO_GAS" == 1 ]]; then
         set -m
         (
             rc=0
-            PREPUSH_INNER=1 PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/cairo.log" PREPUSH_PARENT=$$ \
+            PREPUSH_INNER=1 PREPUSH_PGID=$BASHPID PREPUSH_MARK="$mark" PREPUSH_GATE="$gate" PREPUSH_OUT="$logs/cairo.log" PREPUSH_PARENT=$$ \
                 PREPUSH_T0=$(date +%s) flock -E 75 -w 90 "$lock" "$self" "$base" 2> "$logs/flock.err" || rc=$?
             echo "$rc" > "$logs/flock.rc.tmp" && mv -f "$logs/flock.rc.tmp" "$logs/flock.rc"
         ) > /dev/null 2>&1 < /dev/null &
