@@ -44,10 +44,10 @@
   "nalgebra_tests_linalg_exp::exp6": {
     "exp6": {
       "baseline": 25190,
-      "pade3": 1069260,
-      "pade5": 1278910,
-      "pade7": 1419970,
-      "pade7_squared2": 1707110
+      "pade3": 1036750,
+      "pade5": 1246400,
+      "pade7": 1387460,
+      "pade7_squared2": 1674600
     }
   },
   "nalgebra_tests_linalg_exp::pow1": {

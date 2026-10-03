@@ -44,22 +44,22 @@
   "nalgebra_tests_linalg_svd_wide6::svd3x6": {
     "svd3x6_new": {
       "baseline": 12890,
-      "eigen_of_gram": 1172570,
-      "without_u": 1173470,
-      "without_v": 1173470
+      "eigen_of_gram": 1110700,
+      "without_u": 1111600,
+      "without_v": 1111600
     },
     "svd3x6_pseudo_inverse": {
-      "baseline": 1174500,
-      "scaled_product": 1264870
+      "baseline": 1112630,
+      "scaled_product": 1203000
     },
     "svd3x6_singular_values": {
       "baseline": 12890,
-      "eigen_of_gram": 856220,
-      "svd_without_factors": 1173470
+      "eigen_of_gram": 794350,
+      "svd_without_factors": 1111600
     },
     "svd3x6_to_polar": {
-      "baseline": 1174500,
-      "products": 1251170
+      "baseline": 1112630,
+      "products": 1189300
     }
   }
 }

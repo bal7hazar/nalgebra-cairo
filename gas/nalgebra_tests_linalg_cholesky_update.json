@@ -9,16 +9,16 @@
       "rotations": 55600
     },
     "cholesky3_insert_column": {
-      "baseline": 40120,
-      "j0": 124040
+      "baseline": 34360,
+      "j0": 118280
     },
     "cholesky3_rank_one_update": {
-      "baseline": 41320,
-      "rotations": 105460
+      "baseline": 35560,
+      "rotations": 99700
     },
     "cholesky3_remove_column": {
-      "baseline": 40120,
-      "j0": 67870
+      "baseline": 34630,
+      "j0": 62380
     },
     "cholesky4_rank_one_update": {
       "baseline": 70460,
@@ -29,8 +29,8 @@
       "j0": 122960
     },
     "cholesky6_rank_one_update": {
-      "baseline": 143800,
-      "rotations": 377650
+      "baseline": 119050,
+      "rotations": 352900
     }
   }
 }

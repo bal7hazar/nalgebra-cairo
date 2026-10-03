@@ -66,26 +66,26 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 1165470 | 1152580 | x1.00 |
-| `without_u` | 1166370 | 1153480 | x1.00 |
-| `without_v` | 1166370 | 1153480 | x1.00 |
+| `eigen_of_gram` | 1103600 | 1090710 | x1.00 |
+| `without_u` | 1104500 | 1091610 | x1.00 |
+| `without_v` | 1104500 | 1091610 | x1.00 |
 
 ### svd6x3_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 1243550 | 76150 | x1.00 |
+| `scaled_product` | 1181680 | 76150 | x1.00 |
 
 ### svd6x3_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 854320 | 841430 | x1.00 |
-| `svd_without_factors` | 1166370 | 1153480 | x1.37 |
+| `eigen_of_gram` | 792450 | 779560 | x1.00 |
+| `svd_without_factors` | 1104500 | 1091610 | x1.40 |
 
 ### svd6x3_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `products` | 1292790 | 125390 | x1.00 |
+| `products` | 1230920 | 125390 | x1.00 |
 

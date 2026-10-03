@@ -6,10 +6,10 @@ Cairo steps per probe (`snforge test --tracked-resource cairo-steps --detailed-r
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `cholesky3_factor` | `op` | 121 | 341 | 220 |
-| `cholesky3_solve` | `op` | 106 | 352 | 246 |
-| `cholesky6_factor` | `op` | 275 | 1172 | 897 |
-| `cholesky6_solve` | `op` | 157 | 726 | 569 |
+| `cholesky3_factor` | `op` | 121 | 326 | 205 |
+| `cholesky3_solve` | `op` | 106 | 332 | 226 |
+| `cholesky6_factor` | `op` | 275 | 1097 | 822 |
+| `cholesky6_solve` | `op` | 157 | 686 | 529 |
 
 ## nalgebra_probes_steps::isometry3
 
@@ -25,9 +25,9 @@ Cairo steps per probe (`snforge test --tracked-resource cairo-steps --detailed-r
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
 | `lu3_factor` | `op` | 146 | 432 | 286 |
-| `lu3_solve` | `op` | 116 | 314 | 198 |
-| `lu6_factor` | `op` | 471 | 2390 | 1919 |
-| `lu6_solve` | `op` | 197 | 739 | 542 |
+| `lu3_solve` | `op` | 116 | 289 | 173 |
+| `lu6_factor` | `op` | 471 | 2328 | 1857 |
+| `lu6_solve` | `op` | 197 | 680 | 483 |
 
 ## nalgebra_probes_steps::matrix3
 
@@ -56,13 +56,13 @@ Cairo steps per probe (`snforge test --tracked-resource cairo-steps --detailed-r
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `svd3` | `op` | 233 | 5483 | 5250 |
+| `svd3` | `op` | 233 | 4946 | 4713 |
 
 ## nalgebra_probes_steps::symmetric_eigen3
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `symmetric_eigen3` | `op` | 151 | 4200 | 4049 |
+| `symmetric_eigen3` | `op` | 151 | 3683 | 3532 |
 
 ## nalgebra_probes_steps::unit_quaternion
 

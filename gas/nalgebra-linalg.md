@@ -298,8 +298,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_one_sided_jacobi` | 771530 | - | x1.00 |
-| `alt_normalised_columns` | 801570 | - | x1.04 |
+| `alt_normalised_columns` | 734000 | - | x1.00 |
+| `alt_one_sided_jacobi` | 771530 | - | x1.05 |
 
 ### svd3_singular_values
 
@@ -340,35 +340,35 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `without_eigenvectors` | 350830 | 341720 | x1.00 |
-| `via_new` | 599400 | 590290 | x1.73 |
+| `via_new` | 537530 | 528420 | x1.55 |
 
 ### symmetric_eigen3_new
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `jacobi_3_sweeps` | 466030 | 456920 | x1.00 |
-| `no_renormalisation` | 568240 | 559130 | x1.22 |
-| `jacobi_4_sweeps` | 599400 | 590290 | x1.29 |
-| `diagonal_input` | 600160 | 591050 | x1.29 |
-| `jacobi_5_sweeps` | 732370 | 723260 | x1.58 |
-| `jacobi_6_sweeps` | 865540 | 856430 | x1.87 |
+| `no_renormalisation` | 392420 | 383310 | x1.00 |
+| `jacobi_3_sweeps` | 419060 | 409950 | x1.07 |
+| `jacobi_4_sweeps` | 537530 | 528420 | x1.38 |
+| `diagonal_input` | 538290 | 529180 | x1.38 |
+| `jacobi_5_sweeps` | 657020 | 647910 | x1.69 |
+| `jacobi_6_sweeps` | 776000 | 766890 | x2.00 |
 
 ### symmetric_eigen3_new_matrix
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `public` | 600000 | 590290 | x1.00 |
+| `public` | 538130 | 528420 | x1.00 |
 
 ### symmetric_eigen3_recompose
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 630990 | 30430 | x1.00 |
+| `quadform` | 569120 | 30430 | x1.00 |
 
 ### symmetric_eigen3_sweep
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `three_rotations_without_eigenvectors` | 87160 | 76250 | x1.00 |
-| `three_rotations` | 143880 | 132970 | x1.74 |
+| `three_rotations` | 122500 | 111590 | x1.46 |
 

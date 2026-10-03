@@ -50,22 +50,22 @@
   "nalgebra_tests_linalg_svd::svd3": {
     "svd3_new": {
       "baseline": 11090,
-      "eigen_of_gram": 737560,
-      "without_u": 738460,
-      "without_v": 738460
+      "eigen_of_gram": 652010,
+      "without_u": 617650,
+      "without_v": 653510
     },
     "svd3_pseudo_inverse": {
-      "baseline": 739490,
-      "scaled_product": 794120
+      "baseline": 656040,
+      "scaled_product": 710670
     },
     "svd3_singular_values": {
       "baseline": 11090,
-      "eigen_of_gram": 682510,
-      "svd_without_factors": 738460
+      "eigen_of_gram": 610710,
+      "svd_without_factors": 617750
     },
     "svd3_to_polar": {
-      "baseline": 739490,
-      "products": 792970
+      "baseline": 656040,
+      "products": 709520
     }
   },
   "nalgebra_tests_linalg_svd::svd4": {

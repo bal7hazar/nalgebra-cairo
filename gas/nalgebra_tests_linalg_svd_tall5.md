@@ -66,28 +66,28 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 1091760 | 1079470 | x1.00 |
-| `without_u` | 1092660 | 1080370 | x1.00 |
-| `without_v` | 1092660 | 1080370 | x1.00 |
+| `eigen_of_gram` | 1029890 | 1017600 | x1.00 |
+| `without_u` | 1030790 | 1018500 | x1.00 |
+| `without_v` | 1030790 | 1018500 | x1.00 |
 
 ### svd5x3_pseudo_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 1162700 | 69010 | x1.00 |
+| `scaled_product` | 1100830 | 69010 | x1.00 |
 
 ### svd5x3_singular_values
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `eigen_of_gram` | 824310 | 812020 | x1.00 |
-| `svd_without_factors` | 1092660 | 1080370 | x1.33 |
+| `eigen_of_gram` | 762440 | 750150 | x1.00 |
+| `svd_without_factors` | 1030790 | 1018500 | x1.36 |
 
 ### svd5x3_to_polar
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `products` | 1193420 | 99730 | x1.00 |
+| `products` | 1131550 | 99730 | x1.00 |
 
 ## nalgebra_tests_linalg_svd_tall5::svd5x4
 

@@ -137,6 +137,7 @@ pub impl Cholesky3Impl<
     ///
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
+    #[inline(always)]
     fn solve(self: Cholesky3<T>, b: Vector3<T>) -> Vector3<T> {
         let y1 = R::div(b.x, self.l11);
         let w = R::wide_add(R::wide_zero(), b.y);
@@ -345,6 +346,7 @@ pub(crate) impl Cholesky3InternalImpl<
     +PartialOrd<T>,
 > of Cholesky3InternalTrait<T> {
     /// The factorisation of the symmetric matrix of upper triangle `a`; see `Cholesky3Trait::new`.
+    #[inline(always)]
     fn new_sym(a: SymMatrix3<T>) -> Option<Cholesky3<T>> {
         let p1 = a.m11;
         if p1 <= R::zero() {
@@ -444,5 +446,263 @@ pub impl Matrix3CholeskyImpl<
     #[inline(always)]
     fn cholesky(self: Matrix3<T>) -> Option<Cholesky3<T>> {
         Cholesky3Trait::new(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types3::base::matrix3::Matrix3;
+    use nalgebra_types3::base::vector3::Vector3;
+    use nalgebra_types3::internal::base::sym_matrix3::SymMatrix3;
+    use simba::scalar::FixedReal as R;
+    use super::{Cholesky3, Cholesky3Trait};
+
+    /// `Cholesky3InternalTrait::new_sym` before WP 11-OPT-2 (the same body, called, not inlined).
+    fn new_sym_reference(a: SymMatrix3<Fixed>) -> Option<Cholesky3<Fixed>> {
+        let p1 = a.m11;
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let l21 = R::div(a.m12, l11);
+        let l31 = R::div(a.m13, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m23);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        if p3 <= R::zero() {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        Some(Cholesky3 { l11, l21, l31, l22, l32, l33 })
+    }
+
+    /// `Cholesky3Trait::solve` before WP 11-OPT-2 (the same body, called, not inlined).
+    fn solve_reference(self: Cholesky3<Fixed>, b: Vector3<Fixed>) -> Vector3<Fixed> {
+        let y1 = R::div(b.x, self.l11);
+        let w = R::wide_add(R::wide_zero(), b.y);
+        let w = R::wide_sub_prod(w, self.l21, y1);
+        let f2 = R::wide_rescale(w);
+        let y2 = R::div(f2, self.l22);
+        let w = R::wide_add(R::wide_zero(), b.z);
+        let w = R::wide_sub_prod(w, self.l31, y1);
+        let w = R::wide_sub_prod(w, self.l32, y2);
+        let f3 = R::wide_rescale(w);
+        let y3 = R::div(f3, self.l33);
+        let x3 = R::div(y3, self.l33);
+        let w = R::wide_add(R::wide_zero(), y2);
+        let w = R::wide_sub_prod(w, self.l32, x3);
+        let g2 = R::wide_rescale(w);
+        let x2 = R::div(g2, self.l22);
+        let w = R::wide_add(R::wide_zero(), y1);
+        let w = R::wide_sub_prod(w, self.l21, x2);
+        let w = R::wide_sub_prod(w, self.l31, x3);
+        let g1 = R::wide_rescale(w);
+        let x1 = R::div(g1, self.l11);
+        Vector3 { x: x1, y: x2, z: x3 }
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn same(a: Cholesky3<Fixed>, b: Cholesky3<Fixed>) -> bool {
+        a.l11 == b.l11
+            && a.l21 == b.l21
+            && a.l31 == b.l31
+            && a.l22 == b.l22
+            && a.l32 == b.l32
+            && a.l33 == b.l33
+    }
+
+    fn same_option(a: Option<Cholesky3<Fixed>>, b: Option<Cholesky3<Fixed>>) -> bool {
+        match (a, b) {
+            (Some(x), Some(y)) => same(x, y),
+            (None, None) => true,
+            _ => false,
+        }
+    }
+
+    /// The symmetric matrix of lower triangle `(d1, d2, d3)` (diagonal) and `(o21, o31, o32)`;
+    /// the strictly upper triangle holds junk, which `new` must ignore.
+    fn sym(d: (i64, i64, i64), o: (i64, i64, i64)) -> Matrix3<Fixed> {
+        let (d1, d2, d3) = d;
+        let (o21, o31, o32) = o;
+        Matrix3 {
+            m11: fx(d1),
+            m21: fx(o21),
+            m31: fx(o31),
+            m12: fx(7),
+            m22: fx(d2),
+            m32: fx(o32),
+            m13: fx(-7),
+            m23: fx(11),
+            m33: fx(d3),
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// A raw value uniform in `[lo, lo + span]`.
+    fn draw_pos(ref state: u128, lo: u128, span: u128) -> i64 {
+        (lo + next(ref state) % (span + 1)).try_into().unwrap()
+    }
+
+    /// `new` (through the inlined `new_sym`) against the reference, bit for bit: edge cases (zero,
+    /// identity, a 1-ulp pivot, a negative and a zero pivot, diagonals of the largest and the
+    /// smallest magnitudes) and a deterministic sweep of diagonally dominant (positive-definite)
+    /// and indefinite matrices of every magnitude.
+    #[test]
+    fn test_new_matches_reference() {
+        let one = 0x100000000;
+        let edges = array![
+            ((0, 0, 0), (0, 0, 0)), ((one, one, one), (0, 0, 0)), ((1, 1, 1), (0, 0, 0)),
+            ((-one, one, one), (0, 0, 0)), ((one, one, one), (one, 0, 0)),
+            ((0x7fffffffffffffff, 0x7fffffffffffffff, 0x7fffffffffffffff), (0, 0, 0)),
+            (
+                (0x4000000000000000, 0x4000000000000000, 0x4000000000000000),
+                (0x1000000000000000, -0x1000000000000000, 0x800000000000000),
+            ),
+            ((4 * one, 3 * one, 2 * one), (one, -one, one)), ((one, one, one), (one - 1, 0, 0)),
+            ((one, one, one), (0, one, one)),
+        ];
+        let mut n = 0_u32;
+        let mut factored = 0_u32;
+        for e in edges.span() {
+            let (d, o) = *e;
+            let a = sym(d, o);
+            let s = SymMatrix3 {
+                m11: a.m11, m12: a.m21, m13: a.m31, m22: a.m22, m23: a.m32, m33: a.m33,
+            };
+            let got = Cholesky3Trait::new(a);
+            assert!(same_option(got, new_sym_reference(s)));
+            if got.is_some() {
+                factored += 1;
+            }
+            n += 1;
+        }
+        let mut state: u128 = 0xc401;
+        for k in 0..240_u32 {
+            // Off-diagonal magnitudes from 2^-24 to 2^12; the diagonal dominates them on 3 draws
+            // of 4 (positive definite), and is drawn on the same scale otherwise (often `None`).
+            let ob: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x100000000000,
+            };
+            let o = (draw(ref state, ob), draw(ref state, ob), draw(ref state, ob));
+            let d = if k % 4 == 3 {
+                (draw(ref state, 2 * ob), draw(ref state, 2 * ob), draw(ref state, 2 * ob))
+            } else {
+                (
+                    draw_pos(ref state, 2 * ob + 1, 4 * ob),
+                    draw_pos(ref state, 2 * ob + 1, 4 * ob),
+                    draw_pos(ref state, 2 * ob + 1, 4 * ob),
+                )
+            };
+            let a = sym(d, o);
+            let s = SymMatrix3 {
+                m11: a.m11, m12: a.m21, m13: a.m31, m22: a.m22, m23: a.m32, m33: a.m33,
+            };
+            let got = Cholesky3Trait::new(a);
+            assert!(same_option(got, new_sym_reference(s)));
+            if got.is_some() {
+                factored += 1;
+            }
+            n += 1;
+        }
+        assert!(n >= 200);
+        assert!(factored >= 150);
+    }
+
+    /// `solve` against the reference, bit for bit: edge cases (identity factor, zero and 1-ulp
+    /// right-hand sides, a large right-hand side, negative pivots of a hand-assembled factor) and
+    /// a deterministic sweep of factors (pivots in `[1/2, 4]`, entries in `[-1, 1]`) with
+    /// right-hand sides from 2^-32 to 2^12.
+    #[test]
+    fn test_solve_matches_reference() {
+        let one = 0x100000000;
+        let id = Cholesky3 {
+            l11: fx(one), l21: fx(0), l31: fx(0), l22: fx(one), l32: fx(0), l33: fx(one),
+        };
+        let f1 = Cholesky3 {
+            l11: fx(2856657257),
+            l21: fx(-129216969),
+            l31: fx(-129840718),
+            l22: fx(2831927752),
+            l32: fx(-958273473),
+            l33: fx(2701213669),
+        };
+        let fneg = Cholesky3 {
+            l11: fx(-one),
+            l21: fx(one / 2),
+            l31: fx(-one / 3),
+            l22: fx(-2 * one),
+            l32: fx(one),
+            l33: fx(3 * one),
+        };
+        let factors = array![id, f1, fneg];
+        let rhs = array![
+            (0, 0, 0), (1, -1, 1), (one, one, one),
+            (0x40000000000000, -0x40000000000000, 0x40000000000000),
+            (2792725566, 5137014102, 3010252812),
+        ];
+        let mut n = 0_u32;
+        for f in factors.span() {
+            for b in rhs.span() {
+                let (x, y, z) = *b;
+                let v = Vector3 { x: fx(x), y: fx(y), z: fx(z) };
+                assert!((*f).solve(v) == solve_reference(*f, v));
+                n += 1;
+            }
+        }
+        let u: u128 = 0x100000000;
+        let mut state: u128 = 0x501e;
+        for k in 0..240_u32 {
+            let f = Cholesky3 {
+                l11: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l21: fx(draw(ref state, u)),
+                l31: fx(draw(ref state, u)),
+                l22: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l32: fx(draw(ref state, u)),
+                l33: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+            };
+            let bb: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x100000000000,
+            };
+            let v = Vector3 {
+                x: fx(draw(ref state, bb)), y: fx(draw(ref state, bb)), z: fx(draw(ref state, bb)),
+            };
+            assert!(f.solve(v) == solve_reference(f, v));
+            n += 1;
+        }
+        assert!(n >= 200);
     }
 }

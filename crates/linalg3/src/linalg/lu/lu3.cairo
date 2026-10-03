@@ -301,6 +301,7 @@ pub impl Lu3Impl<
     /// over 3 columns and would be cheaper with one, and still does not use one (see there).
     ///
     /// Panics with the scalar's overflow error if a component of `x` does not fit.
+    #[inline(always)]
     fn solve(self: Lu3<T>, b: Vector3<T>) -> Option<Vector3<T>> {
         if !Self::is_invertible(self) {
             return None;
@@ -507,5 +508,177 @@ pub impl Matrix3LuImpl<
     #[inline(always)]
     fn lu(self: Matrix3<T>) -> Lu3<T> {
         Lu3Trait::new(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types3::base::matrix3::Matrix3;
+    use nalgebra_types3::base::vector3::Vector3;
+    use nalgebra_types3::linalg::lu::Perm3;
+    use simba::scalar::FixedReal as R;
+    use crate::internal::linalg::lu::lu3::Lu3InternalTrait;
+    use super::{Lu3, Lu3Trait, Matrix3LuTrait};
+
+    /// `Lu3Trait::solve` before WP 11-OPT-2 (the same body, called, not inlined).
+    fn solve_reference(self: Lu3<Fixed>, b: Vector3<Fixed>) -> Option<Vector3<Fixed>> {
+        if !Lu3Trait::is_invertible(self) {
+            return None;
+        }
+        let pb = Lu3InternalTrait::permute(self, b);
+        let y1 = pb.x;
+        let y2 = R::mul_add(-self.lu.m21, y1, pb.y);
+        let y3 = R::wide_rescale(
+            R::wide_sub_prod(
+                R::wide_sub_prod(R::wide_add(R::wide_zero(), pb.z), self.lu.m31, y1),
+                self.lu.m32,
+                y2,
+            ),
+        );
+        let x3 = R::div(y3, self.lu.m33);
+        let x2 = R::div(R::mul_add(-self.lu.m23, x3, y2), self.lu.m22);
+        let x1 = R::div(
+            R::wide_rescale(
+                R::wide_sub_prod(
+                    R::wide_sub_prod(R::wide_add(R::wide_zero(), y1), self.lu.m12, x2),
+                    self.lu.m13,
+                    x3,
+                ),
+            ),
+            self.lu.m11,
+        );
+        Some(Vector3 { x: x1, y: x2, z: x3 })
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// A raw value uniform in `[lo, lo + span]`.
+    fn draw_pos(ref state: u128, lo: u128, span: u128) -> i64 {
+        (lo + next(ref state) % (span + 1)).try_into().unwrap()
+    }
+
+    /// A pivot of a hand-assembled factor: of magnitude `[1/2, 4]`, of the sign of the parity of
+    /// `k`, and exactly zero on one draw in 16 (`solve` then returns `None`).
+    fn pivot(ref state: u128, k: u32) -> i64 {
+        let m = draw_pos(ref state, 0x80000000, 0x380000000);
+        if next(ref state) % 16 == 0 {
+            0
+        } else if k % 2 == 0 {
+            m
+        } else {
+            -m
+        }
+    }
+
+    /// A row index uniform in `[lo, 3 or 6]`.
+    fn row(ref state: u128, lo: u8, hi: u8) -> u8 {
+        let span: u128 = (hi - lo + 1).into();
+        lo + (next(ref state) % span).try_into().unwrap()
+    }
+
+    /// `solve` against the reference, bit for bit: edge cases (the factor of the identity, of the
+    /// probe's matrix and of a singular matrix; zero, 1-ulp and large right-hand sides) and a
+    /// deterministic sweep of hand-assembled factors (every permutation, pivots of either sign,
+    /// zero on one draw in 16, entries from 2^-24 to 4) with right-hand sides of every magnitude.
+    #[test]
+    fn test_solve_matches_reference() {
+        let one: i64 = 0x100000000;
+        let id = Matrix3 {
+            m11: fx(one),
+            m21: fx(0),
+            m31: fx(0),
+            m12: fx(0),
+            m22: fx(one),
+            m32: fx(0),
+            m13: fx(0),
+            m23: fx(0),
+            m33: fx(one),
+        };
+        let a = Matrix3 {
+            m11: fx(-2414118097),
+            m12: fx(417657389),
+            m13: fx(4595817171),
+            m21: fx(6298117444),
+            m22: fx(-2725477524),
+            m23: fx(-1338161353),
+            m31: fx(2614037897),
+            m32: fx(2690897069),
+            m33: fx(3051067169),
+        };
+        let sing = Matrix3 {
+            m11: fx(one),
+            m21: fx(2 * one),
+            m31: fx(0),
+            m12: fx(2 * one),
+            m22: fx(4 * one),
+            m32: fx(0),
+            m13: fx(0),
+            m23: fx(0),
+            m33: fx(one),
+        };
+        let mut cases: Array<(Lu3<Fixed>, Vector3<Fixed>)> = array![];
+        let rhs = array![
+            Vector3 { x: fx(0), y: fx(0), z: fx(0) }, Vector3 { x: fx(1), y: fx(-1), z: fx(1) },
+            Vector3 { x: fx(7757329492), y: fx(-3622378744), z: fx(4147284176) },
+            Vector3 { x: fx(0x40000000000000), y: fx(-0x40000000000000), z: fx(0x40000000000000) },
+        ];
+        for b in rhs.span() {
+            cases.append((id.lu(), *b));
+            cases.append((a.lu(), *b));
+            cases.append((sing.lu(), *b));
+        }
+        let mut state: u128 = 0x1053;
+        for k in 0..240_u32 {
+            let u: u128 = match k % 3 {
+                0 => 0x100,
+                1 => 0x100000000,
+                _ => 0x400000000,
+            };
+            let lu = Matrix3 {
+                m11: fx(pivot(ref state, k)),
+                m12: fx(draw(ref state, u)),
+                m13: fx(draw(ref state, u)),
+                m21: fx(draw(ref state, u)),
+                m22: fx(pivot(ref state, k)),
+                m23: fx(draw(ref state, u)),
+                m31: fx(draw(ref state, u)),
+                m32: fx(draw(ref state, u)),
+                m33: fx(pivot(ref state, k)),
+            };
+            let p = Perm3 { p1: row(ref state, 1, 3), p2: row(ref state, 2, 3) };
+            let bb: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x100000000000,
+            };
+            let v = Vector3 {
+                x: fx(draw(ref state, bb)), y: fx(draw(ref state, bb)), z: fx(draw(ref state, bb)),
+            };
+            cases.append((Lu3 { lu, p }, v));
+        }
+        let mut n = 0_u32;
+        for c in cases.span() {
+            let (f, v) = *c;
+            assert!(f.solve(v) == solve_reference(f, v));
+            n += 1;
+        }
+        assert!(n >= 200);
     }
 }
