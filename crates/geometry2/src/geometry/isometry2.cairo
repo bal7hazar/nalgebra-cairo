@@ -106,14 +106,28 @@ pub impl Isometry2Impl<
 
     /// The inverse isometry: the rotation is conjugated (exact) and the translation becomes
     /// `rotation⁻¹ · (-translation)`, i.e. two fused kernels on the negated vector —
-    /// upstream's order, which matters in fixed point since `floor(-x) ≠ -floor(x)`. Panics on
-    /// overflow (`-MIN` of a translation component). Upstream: `inverse`.
+    /// upstream's order, which matters in fixed point since `floor(-x) ≠ -floor(x)`. The
+    /// negation is folded into the exact products (WP 11-OPT-1: the same bits, without its two
+    /// `Fixed` negations, `test_inverse_matches_reference`), so a translation component equal to
+    /// the scalar's `MIN` no longer panics on it. Panics on overflow of a result component and
+    /// on `-MIN` of the rotation's imaginary part. Upstream: `inverse`.
     #[inline(always)]
     fn inverse(self: Isometry2<T>) -> Isometry2<T> {
-        let v = Vector2 { x: -self.translation.vector.x, y: -self.translation.vector.y };
+        // `rotation.inverse_transform_vector(-translation)` with the negation folded into the
+        // exact products: `re·(-x) + im·(-y)` is accumulated as `-re·x - im·y`, and
+        // `re·(-y) - im·(-x)` is `im·x - re·y`, the same exact sums, so the same floors.
+        let v = self.translation.vector;
+        let r = self.rotation;
         Isometry2 {
-            rotation: UnitComplex { re: self.rotation.re, im: -self.rotation.im },
-            translation: Translation2 { vector: self.rotation.inverse_transform_vector(v) },
+            rotation: UnitComplex { re: r.re, im: -r.im },
+            translation: Translation2 {
+                vector: Vector2 {
+                    x: R::wide_rescale(
+                        R::wide_sub_prod(R::wide_sub_prod(R::wide_zero(), r.re, v.x), r.im, v.y),
+                    ),
+                    y: R::diff_prod(r.im, v.x, r.re, v.y),
+                },
+            },
         }
     }
 
@@ -136,6 +150,7 @@ pub impl Isometry2Impl<
     /// (`bench_isometry2_inv_mul__alt_inverse_then_mul`). The two agree to 2 ulp but NOT bit for
     /// bit: the loser rounds the intermediate `rotation⁻¹ · (-translation)`
     /// (`test_inv_mul_alt_inverse_then_mul_differs_by_rounding`). Upstream: `inv_mul`.
+    #[inline(always)]
     fn inv_mul(self: Isometry2<T>, other: Isometry2<T>) -> Isometry2<T> {
         let d = Vector2 {
             x: other.translation.vector.x - self.translation.vector.x,
@@ -452,6 +467,7 @@ pub impl Isometry2Mul<
     +Neg<T>,
     +PartialEq<T>,
 > of Mul<Isometry2<T>> {
+    #[inline(always)]
     fn mul(lhs: Isometry2<T>, rhs: Isometry2<T>) -> Isometry2<T> {
         Isometry2 {
             rotation: lhs.rotation * rhs.rotation,
@@ -670,3 +686,97 @@ pub impl Matrix3FromIsometry2<
     }
 }
 // crate-map: end
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types2::base::vector2::Vector2;
+    use nalgebra_types2::geometry::translation2::Translation2;
+    use crate::geometry::unit_complex::{UnitComplex, UnitComplexTrait};
+    use super::{Isometry2, Isometry2Trait};
+
+    /// `inverse` before WP 11-OPT-1: the translation is negated (two negations), then rotated by
+    /// the conjugate (the new body folds the negation into the exact products).
+    fn inverse_reference(self: Isometry2<Fixed>) -> Isometry2<Fixed> {
+        let v = Vector2 { x: -self.translation.vector.x, y: -self.translation.vector.y };
+        Isometry2 {
+            rotation: UnitComplex { re: self.rotation.re, im: -self.rotation.im },
+            translation: Translation2 { vector: self.rotation.inverse_transform_vector(v) },
+        }
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn iso(t: (i64, i64), r: (i64, i64)) -> Isometry2<Fixed> {
+        let (x, y) = t;
+        let (re, im) = r;
+        Isometry2 {
+            rotation: UnitComplex { re: fx(re), im: fx(im) },
+            translation: Translation2 { vector: Vector2 { x: fx(x), y: fx(y) } },
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// `inverse` against the reference, bit for bit: edge cases (identity, zero translation, a
+    /// rotation by 180°, a near-180° rotation, translations near the scalar's range, the smallest
+    /// raw values) and a deterministic sweep of normalised and unnormalised rotations with
+    /// translations of every magnitude.
+    #[test]
+    fn test_inverse_matches_reference() {
+        let one = 0x100000000;
+        let big = 0x3fffffff00000000; // just under 2^30: |r| * |t| stays in range
+        let rots = array![
+            (one, 0), (-one, 0), (-one, 1), (0, one), (0, -one), (3037000500, 3037000500),
+            (-3037000499, 3037000500), (1, -1), (0x80000000, -0x80000000),
+        ];
+        let trans = array![
+            (0, 0), (one, -one), (6442450944, -9663676416), (1, -1), (big, -big), (-big, 0),
+            (0x7fffffff, -0x80000000),
+        ];
+        let mut n = 0_u32;
+        for r in rots.span() {
+            for t in trans.span() {
+                let x = iso(*t, *r);
+                assert!(x.inverse() == inverse_reference(x));
+                n += 1;
+            }
+        }
+        let mut state: u128 = 0x15e2;
+        for k in 0..240_u32 {
+            let r = (draw(ref state, 0x100000000), draw(ref state, 0x100000000));
+            let r = if k % 2 == 0 {
+                let (re, im) = r;
+                let c = UnitComplexTrait::new_normalize(Vector2 { x: fx(re), y: fx(im) });
+                (c.re.raw, c.im.raw)
+            } else {
+                r
+            };
+            // Translation magnitudes from 2^-32 to 2^29 (|r| <= sqrt(2), so the products stay
+            // in range).
+            let tb: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x100000000000,
+                _ => 0x2000000000000000,
+            };
+            let x = iso((draw(ref state, tb), draw(ref state, tb)), r);
+            assert!(x.inverse() == inverse_reference(x));
+            n += 1;
+        }
+        assert!(n >= 200);
+    }
+}

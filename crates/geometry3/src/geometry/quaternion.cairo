@@ -860,6 +860,7 @@ pub impl QuaternionNeg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<Quaternion<T>> {
 pub impl QuaternionMul<
     T, impl R: Real<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of Mul<Quaternion<T>> {
+    #[inline(always)]
     fn mul(lhs: Quaternion<T>, rhs: Quaternion<T>) -> Quaternion<T> {
         // w = aw·bw - ai·bi - aj·bj - ak·bk
         let w = R::wide_add_prod(R::wide_zero(), lhs.w, rhs.w);

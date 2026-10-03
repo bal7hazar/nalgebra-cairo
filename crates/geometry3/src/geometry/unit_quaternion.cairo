@@ -478,6 +478,7 @@ pub impl UnitQuaternionImpl<
     ///
     /// Panics on overflow of an intermediate doubling (`|v|` above about `2^30`). Upstream:
     /// `transform_vector` (`q * v`).
+    #[inline(always)]
     fn transform_vector(self: UnitQuaternion<T>, v: Vector3<T>) -> Vector3<T> {
         let u = Self::imag(self);
         let c = u.cross(v);
@@ -515,6 +516,7 @@ pub impl UnitQuaternionImpl<
     /// the quaternion equal to the scalar's `MIN` no longer panics on the negation. 15 products,
     /// 9 roundings, like `transform_vector`: 23 230 gas against 23 830 with the negations.
     /// Upstream: `inverse_transform_vector`.
+    #[inline(always)]
     fn inverse_transform_vector(self: UnitQuaternion<T>, v: Vector3<T>) -> Vector3<T> {
         let u = Self::imag(self);
         let c = v.cross(u);
@@ -880,6 +882,7 @@ pub impl UnitQuaternionAngleImpl<
     /// The rotation of `angle` radians about `axis`: `(cos(angle/2), axis·sin(angle/2))`. One
     /// `sin_cos` (of `angle · 1/2`, which floors exactly like upstream's `angle / 2`) and three
     /// products. `axis` MUST be a unit vector. Upstream: `from_axis_angle`.
+    #[inline(always)]
     fn from_axis_angle(axis: Unit<Vector3<T>>, angle: T) -> UnitQuaternion<T> {
         let (s, c) = Tr::sin_cos(angle * R::HALF);
         let v = axis.value;
@@ -1072,6 +1075,7 @@ pub impl UnitQuaternionAngleImpl<
     /// (it is at least `2^-16`). `epsilon = 0` is passed to `try_slerp`, so the panic
     /// `nalgebra: ambiguous slerp` is kept only for scalars whose resolution would make
     /// `sqrt(1 - cos²)` vanish. Upstream: `slerp`.
+    #[inline(always)]
     fn slerp(self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T) -> UnitQuaternion<T> {
         Self::try_slerp(self, other, t, R::zero()).expect('nalgebra: ambiguous slerp')
     }
@@ -1082,23 +1086,19 @@ pub impl UnitQuaternionAngleImpl<
     /// less than about 1/256 rad apart). `epsilon` is in scalar units, not upstream's relative
     /// float epsilon; with `epsilon = 0` the result is always `Some` (see `slerp`). Upstream:
     /// `try_slerp`.
+    #[inline(always)]
     fn try_slerp(
         self: UnitQuaternion<T>, other: UnitQuaternion<T>, t: T, epsilon: T,
     ) -> Option<UnitQuaternion<T>> {
-        // Shortest arc: flip `other` when the dot product is negative, so that cos >= 0.
+        // Shortest arc: flip `other` when the dot product is negative, so that cos >= 0. The flip
+        // is folded into the sign of `other`'s weight `tb` below: `(-o)·tb = o·(-tb)` exactly, so
+        // the fused sums are bit-identical to negating the four components, for one negation.
         let d = UnitQuaternionTrait::dot(self, other);
-        let (o, c) = if R::is_sign_negative(d) {
-            (
-                Quaternion {
-                    i: -other.quaternion.i,
-                    j: -other.quaternion.j,
-                    k: -other.quaternion.k,
-                    w: -other.quaternion.w,
-                },
-                -d,
-            )
+        let flip = R::is_sign_negative(d);
+        let c = if flip {
+            -d
         } else {
-            (other.quaternion, d)
+            d
         };
         if c >= R::one() {
             // The same rotation (up to rounding): nothing to interpolate.
@@ -1112,7 +1112,13 @@ pub impl UnitQuaternionAngleImpl<
         }
         let ta = R::div(Tr::sin((R::one() - t) * hang), shang);
         let tb = R::div(Tr::sin(t * hang), shang);
+        let tb = if flip {
+            -tb
+        } else {
+            tb
+        };
         let s = self.quaternion;
+        let o = other.quaternion;
         let q = Quaternion {
             i: R::sum_prod2(s.i, ta, o.i, tb),
             j: R::sum_prod2(s.j, ta, o.j, tb),
@@ -1524,3 +1530,135 @@ pub impl Matrix4FromUnitQuaternion<
     }
 }
 // crate-map: end
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use simba::scalar::{Real, Transcendental};
+    use super::{
+        Quaternion, QuaternionTrait, UnitQuaternion, UnitQuaternionAngleTrait, UnitQuaternionTrait,
+    };
+
+    /// `try_slerp` before WP 11-OPT-1: the shortest-arc flip negates the four components of
+    /// `other` (the new body folds it into the sign of `tb`).
+    fn try_slerp_reference(
+        self: UnitQuaternion<Fixed>, other: UnitQuaternion<Fixed>, t: Fixed, epsilon: Fixed,
+    ) -> Option<UnitQuaternion<Fixed>> {
+        let d = UnitQuaternionTrait::dot(self, other);
+        let (o, c) = if Real::is_sign_negative(d) {
+            (
+                Quaternion {
+                    i: -other.quaternion.i,
+                    j: -other.quaternion.j,
+                    k: -other.quaternion.k,
+                    w: -other.quaternion.w,
+                },
+                -d,
+            )
+        } else {
+            (other.quaternion, d)
+        };
+        if c >= Real::one() {
+            return Some(self);
+        }
+        let hang = Transcendental::acos(c);
+        let shang = Real::sqrt(Real::diff_prod(Real::one(), Real::one(), c, c));
+        if shang <= epsilon {
+            return None;
+        }
+        let one: Fixed = Real::one();
+        let ta = Real::div(Transcendental::sin((one - t) * hang), shang);
+        let tb = Real::div(Transcendental::sin(t * hang), shang);
+        let s = self.quaternion;
+        let q = Quaternion {
+            i: Real::sum_prod2(s.i, ta, o.i, tb),
+            j: Real::sum_prod2(s.j, ta, o.j, tb),
+            k: Real::sum_prod2(s.k, ta, o.k, tb),
+            w: Real::sum_prod2(s.w, ta, o.w, tb),
+        };
+        Some(UnitQuaternionTrait::new_normalize(q))
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn uq(i: i64, j: i64, k: i64, w: i64) -> UnitQuaternion<Fixed> {
+        UnitQuaternion { quaternion: Quaternion { i: fx(i), j: fx(j), k: fx(k), w: fx(w) } }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// A unit quaternion from four raw draws, normalised, or the raw draws themselves (an
+    /// unnormalised `UnitQuaternion`, which `slerp` accepts).
+    fn quat(ref state: u128, normalise: bool) -> UnitQuaternion<Fixed> {
+        let b = 0x100000000;
+        let q = uq(draw(ref state, b), draw(ref state, b), draw(ref state, b), draw(ref state, b));
+        if normalise && q.quaternion.norm_squared() > Real::zero() {
+            UnitQuaternionTrait::new_normalize(q.quaternion)
+        } else {
+            q
+        }
+    }
+
+    fn check(a: UnitQuaternion<Fixed>, b: UnitQuaternion<Fixed>, t: Fixed, eps: Fixed) -> u32 {
+        let new = UnitQuaternionAngleTrait::try_slerp(a, b, t, eps);
+        assert!(new == try_slerp_reference(a, b, t, eps));
+        if eps == Real::zero() {
+            assert!(Some(UnitQuaternionAngleTrait::slerp(a, b, t)) == new);
+        }
+        1
+    }
+
+    /// `try_slerp` and `slerp` against the reference, bit for bit: edge cases (identical and
+    /// opposite rotations, a rotation by about 180° between them, `t` outside `[0, 1]`, the
+    /// epsilons of the doc comment) and a deterministic sweep of normalised and unnormalised
+    /// pairs, with both signs of the dot product.
+    #[test]
+    fn test_try_slerp_matches_reference() {
+        let one = 0x100000000;
+        let half = 0x80000000;
+        let id = uq(0, 0, 0, one);
+        let a = uq(-1509276477, -2563574020, -2263667719, 2114881862);
+        let b = uq(-1829744033, 968283947, 3750500405, -308145672);
+        let ts = array![0, one, half, -half, 2 * one, 0x40000000, 1, -1];
+        let epss = array![0, 0x800000, one];
+        let mut n = 0_u32;
+        // Edge pairs: identity, the same rotation, the opposite quaternion, 180° apart (dot 0),
+        // nearly 180° apart, nearly aligned.
+        let pairs = array![
+            (id, id), (a, a), (a, -a), (id, uq(one, 0, 0, 0)), (id, uq(one, 0, 0, 1)),
+            (id, uq(one, 0, 0, -1)), (a, b), (b, a), (a, -b), (id, uq(0, 0, 3, one)),
+            (id, uq(0, 0, -0x100000, one)),
+        ];
+        for (p, q) in pairs {
+            for t in ts.span() {
+                for e in epss.span() {
+                    n += check(p, q, fx(*t), fx(*e));
+                }
+            }
+        }
+        let mut state: u128 = 0x5eed;
+        for k in 0..240_u32 {
+            let p = quat(ref state, k % 3 != 0);
+            let q = quat(ref state, k % 5 != 0);
+            let t = fx(draw(ref state, 0x200000000));
+            n += check(p, q, t, Real::zero());
+            if k % 4 == 0 {
+                n += check(p, q, t, fx(0x800000));
+            }
+        }
+        assert!(n >= 200);
+    }
+}
