@@ -132,6 +132,7 @@ pub impl Cholesky6Impl<
     /// same way, but only when it drives a pivot to zero: `new` is not a definiteness test.
     ///
     /// Panics on overflow of a pivot or a numerator; never wraps.
+    #[inline(always)]
     fn new(a: Matrix6<T>) -> Option<Cholesky6<T>> {
         let p1 = a.m11;
         if p1 <= R::zero() {
@@ -149,19 +150,16 @@ pub impl Cholesky6Impl<
         let w = R::wide_add(R::wide_zero(), a.m32);
         let w = R::wide_sub_prod(w, l31, l21);
         let n32 = R::wide_rescale(w);
-        let l32 = R::div(n32, l22);
         let w = R::wide_add(R::wide_zero(), a.m42);
         let w = R::wide_sub_prod(w, l41, l21);
         let n42 = R::wide_rescale(w);
-        let l42 = R::div(n42, l22);
         let w = R::wide_add(R::wide_zero(), a.m52);
         let w = R::wide_sub_prod(w, l51, l21);
         let n52 = R::wide_rescale(w);
-        let l52 = R::div(n52, l22);
         let w = R::wide_add(R::wide_zero(), a.m62);
         let w = R::wide_sub_prod(w, l61, l21);
         let n62 = R::wide_rescale(w);
-        let l62 = R::div(n62, l22);
+        let (l32, l42, l52, l62) = R::div4(n32, n42, n52, n62, l22);
         let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
@@ -174,17 +172,15 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l41, l31);
         let w = R::wide_sub_prod(w, l42, l32);
         let n43 = R::wide_rescale(w);
-        let l43 = R::div(n43, l33);
         let w = R::wide_add(R::wide_zero(), a.m53);
         let w = R::wide_sub_prod(w, l51, l31);
         let w = R::wide_sub_prod(w, l52, l32);
         let n53 = R::wide_rescale(w);
-        let l53 = R::div(n53, l33);
         let w = R::wide_add(R::wide_zero(), a.m63);
         let w = R::wide_sub_prod(w, l61, l31);
         let w = R::wide_sub_prod(w, l62, l32);
         let n63 = R::wide_rescale(w);
-        let l63 = R::div(n63, l33);
+        let (l43, l53, l63) = R::div3(n43, n53, n63, l33);
         let w = R::wide_add(R::wide_zero(), a.m44);
         let w = R::wide_sub_prod(w, l41, l41);
         let w = R::wide_sub_prod(w, l42, l42);
@@ -315,6 +311,7 @@ pub impl Cholesky6Impl<
     ///
     /// Panics on overflow. A factor built by `new` has non-zero pivots, so no division by zero can
     /// occur; a hand-assembled factor with a zero pivot panics with the scalar's error.
+    #[inline(always)]
     fn solve(self: Cholesky6<T>, b: Vector6<T>) -> Vector6<T> {
         let y1 = R::div(b.x, self.l11);
         let w = R::wide_add(R::wide_zero(), b.y);
@@ -653,19 +650,16 @@ pub impl Cholesky6Impl<
         let w = R::wide_add(R::wide_zero(), a.m32);
         let w = R::wide_sub_prod(w, l31, l21);
         let n32 = R::wide_rescale(w);
-        let l32 = R::div(n32, l22);
         let w = R::wide_add(R::wide_zero(), a.m42);
         let w = R::wide_sub_prod(w, l41, l21);
         let n42 = R::wide_rescale(w);
-        let l42 = R::div(n42, l22);
         let w = R::wide_add(R::wide_zero(), a.m52);
         let w = R::wide_sub_prod(w, l51, l21);
         let n52 = R::wide_rescale(w);
-        let l52 = R::div(n52, l22);
         let w = R::wide_add(R::wide_zero(), a.m62);
         let w = R::wide_sub_prod(w, l61, l21);
         let n62 = R::wide_rescale(w);
-        let l62 = R::div(n62, l22);
+        let (l32, l42, l52, l62) = R::div4(n32, n42, n52, n62, l22);
         let w = R::wide_add(R::wide_zero(), a.m33);
         let w = R::wide_sub_prod(w, l31, l31);
         let w = R::wide_sub_prod(w, l32, l32);
@@ -683,17 +677,15 @@ pub impl Cholesky6Impl<
         let w = R::wide_sub_prod(w, l41, l31);
         let w = R::wide_sub_prod(w, l42, l32);
         let n43 = R::wide_rescale(w);
-        let l43 = R::div(n43, l33);
         let w = R::wide_add(R::wide_zero(), a.m53);
         let w = R::wide_sub_prod(w, l51, l31);
         let w = R::wide_sub_prod(w, l52, l32);
         let n53 = R::wide_rescale(w);
-        let l53 = R::div(n53, l33);
         let w = R::wide_add(R::wide_zero(), a.m63);
         let w = R::wide_sub_prod(w, l61, l31);
         let w = R::wide_sub_prod(w, l62, l32);
         let n63 = R::wide_rescale(w);
-        let l63 = R::div(n63, l33);
+        let (l43, l53, l63) = R::div3(n43, n53, n63, l33);
         let w = R::wide_add(R::wide_zero(), a.m44);
         let w = R::wide_sub_prod(w, l41, l41);
         let w = R::wide_sub_prod(w, l42, l42);
@@ -921,5 +913,486 @@ pub impl Matrix6CholeskyImpl<
     #[inline(always)]
     fn cholesky(self: Matrix6<T>) -> Option<Cholesky6<T>> {
         Cholesky6Trait::new(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use fixed::Fixed;
+    use nalgebra_types6::base::matrix6::Matrix6;
+    use nalgebra_types6::base::vector6::Vector6;
+    use simba::scalar::FixedReal as R;
+    use super::{Cholesky6, Cholesky6Trait};
+
+    /// `Cholesky6Trait::new` before WP 11-OPT-2: one division per sub-diagonal entry (the new body
+    /// shares one prepared divisor per column, `Real::div4` / `div3`), called, not inlined.
+    fn new_reference(a: Matrix6<Fixed>) -> Option<Cholesky6<Fixed>> {
+        let p1 = a.m11;
+        if p1 <= R::zero() {
+            return None;
+        }
+        let l11 = R::sqrt(p1);
+        let (l21, l31, l41, l51, l61) = R::div5(a.m21, a.m31, a.m41, a.m51, a.m61, l11);
+        let w = R::wide_add(R::wide_zero(), a.m22);
+        let w = R::wide_sub_prod(w, l21, l21);
+        let p2 = R::wide_rescale(w);
+        if p2 <= R::zero() {
+            return None;
+        }
+        let l22 = R::sqrt(p2);
+        let w = R::wide_add(R::wide_zero(), a.m32);
+        let w = R::wide_sub_prod(w, l31, l21);
+        let n32 = R::wide_rescale(w);
+        let l32 = R::div(n32, l22);
+        let w = R::wide_add(R::wide_zero(), a.m42);
+        let w = R::wide_sub_prod(w, l41, l21);
+        let n42 = R::wide_rescale(w);
+        let l42 = R::div(n42, l22);
+        let w = R::wide_add(R::wide_zero(), a.m52);
+        let w = R::wide_sub_prod(w, l51, l21);
+        let n52 = R::wide_rescale(w);
+        let l52 = R::div(n52, l22);
+        let w = R::wide_add(R::wide_zero(), a.m62);
+        let w = R::wide_sub_prod(w, l61, l21);
+        let n62 = R::wide_rescale(w);
+        let l62 = R::div(n62, l22);
+        let w = R::wide_add(R::wide_zero(), a.m33);
+        let w = R::wide_sub_prod(w, l31, l31);
+        let w = R::wide_sub_prod(w, l32, l32);
+        let p3 = R::wide_rescale(w);
+        if p3 <= R::zero() {
+            return None;
+        }
+        let l33 = R::sqrt(p3);
+        let w = R::wide_add(R::wide_zero(), a.m43);
+        let w = R::wide_sub_prod(w, l41, l31);
+        let w = R::wide_sub_prod(w, l42, l32);
+        let n43 = R::wide_rescale(w);
+        let l43 = R::div(n43, l33);
+        let w = R::wide_add(R::wide_zero(), a.m53);
+        let w = R::wide_sub_prod(w, l51, l31);
+        let w = R::wide_sub_prod(w, l52, l32);
+        let n53 = R::wide_rescale(w);
+        let l53 = R::div(n53, l33);
+        let w = R::wide_add(R::wide_zero(), a.m63);
+        let w = R::wide_sub_prod(w, l61, l31);
+        let w = R::wide_sub_prod(w, l62, l32);
+        let n63 = R::wide_rescale(w);
+        let l63 = R::div(n63, l33);
+        let w = R::wide_add(R::wide_zero(), a.m44);
+        let w = R::wide_sub_prod(w, l41, l41);
+        let w = R::wide_sub_prod(w, l42, l42);
+        let w = R::wide_sub_prod(w, l43, l43);
+        let p4 = R::wide_rescale(w);
+        if p4 <= R::zero() {
+            return None;
+        }
+        let l44 = R::sqrt(p4);
+        let w = R::wide_add(R::wide_zero(), a.m54);
+        let w = R::wide_sub_prod(w, l51, l41);
+        let w = R::wide_sub_prod(w, l52, l42);
+        let w = R::wide_sub_prod(w, l53, l43);
+        let n54 = R::wide_rescale(w);
+        let l54 = R::div(n54, l44);
+        let w = R::wide_add(R::wide_zero(), a.m64);
+        let w = R::wide_sub_prod(w, l61, l41);
+        let w = R::wide_sub_prod(w, l62, l42);
+        let w = R::wide_sub_prod(w, l63, l43);
+        let n64 = R::wide_rescale(w);
+        let l64 = R::div(n64, l44);
+        let w = R::wide_add(R::wide_zero(), a.m55);
+        let w = R::wide_sub_prod(w, l51, l51);
+        let w = R::wide_sub_prod(w, l52, l52);
+        let w = R::wide_sub_prod(w, l53, l53);
+        let w = R::wide_sub_prod(w, l54, l54);
+        let p5 = R::wide_rescale(w);
+        if p5 <= R::zero() {
+            return None;
+        }
+        let l55 = R::sqrt(p5);
+        let w = R::wide_add(R::wide_zero(), a.m65);
+        let w = R::wide_sub_prod(w, l61, l51);
+        let w = R::wide_sub_prod(w, l62, l52);
+        let w = R::wide_sub_prod(w, l63, l53);
+        let w = R::wide_sub_prod(w, l64, l54);
+        let n65 = R::wide_rescale(w);
+        let l65 = R::div(n65, l55);
+        let w = R::wide_add(R::wide_zero(), a.m66);
+        let w = R::wide_sub_prod(w, l61, l61);
+        let w = R::wide_sub_prod(w, l62, l62);
+        let w = R::wide_sub_prod(w, l63, l63);
+        let w = R::wide_sub_prod(w, l64, l64);
+        let w = R::wide_sub_prod(w, l65, l65);
+        let p6 = R::wide_rescale(w);
+        if p6 <= R::zero() {
+            return None;
+        }
+        let l66 = R::sqrt(p6);
+        Some(
+            Cholesky6 {
+                l11,
+                l21,
+                l31,
+                l41,
+                l51,
+                l61,
+                l22,
+                l32,
+                l42,
+                l52,
+                l62,
+                l33,
+                l43,
+                l53,
+                l63,
+                l44,
+                l54,
+                l64,
+                l55,
+                l65,
+                l66,
+            },
+        )
+    }
+
+    /// `Cholesky6Trait::solve` before WP 11-OPT-2 (the same body, called, not inlined).
+    fn solve_reference(self: Cholesky6<Fixed>, b: Vector6<Fixed>) -> Vector6<Fixed> {
+        let y1 = R::div(b.x, self.l11);
+        let w = R::wide_add(R::wide_zero(), b.y);
+        let w = R::wide_sub_prod(w, self.l21, y1);
+        let f2 = R::wide_rescale(w);
+        let y2 = R::div(f2, self.l22);
+        let w = R::wide_add(R::wide_zero(), b.z);
+        let w = R::wide_sub_prod(w, self.l31, y1);
+        let w = R::wide_sub_prod(w, self.l32, y2);
+        let f3 = R::wide_rescale(w);
+        let y3 = R::div(f3, self.l33);
+        let w = R::wide_add(R::wide_zero(), b.w);
+        let w = R::wide_sub_prod(w, self.l41, y1);
+        let w = R::wide_sub_prod(w, self.l42, y2);
+        let w = R::wide_sub_prod(w, self.l43, y3);
+        let f4 = R::wide_rescale(w);
+        let y4 = R::div(f4, self.l44);
+        let w = R::wide_add(R::wide_zero(), b.a);
+        let w = R::wide_sub_prod(w, self.l51, y1);
+        let w = R::wide_sub_prod(w, self.l52, y2);
+        let w = R::wide_sub_prod(w, self.l53, y3);
+        let w = R::wide_sub_prod(w, self.l54, y4);
+        let f5 = R::wide_rescale(w);
+        let y5 = R::div(f5, self.l55);
+        let w = R::wide_add(R::wide_zero(), b.b);
+        let w = R::wide_sub_prod(w, self.l61, y1);
+        let w = R::wide_sub_prod(w, self.l62, y2);
+        let w = R::wide_sub_prod(w, self.l63, y3);
+        let w = R::wide_sub_prod(w, self.l64, y4);
+        let w = R::wide_sub_prod(w, self.l65, y5);
+        let f6 = R::wide_rescale(w);
+        let y6 = R::div(f6, self.l66);
+        let x6 = R::div(y6, self.l66);
+        let w = R::wide_add(R::wide_zero(), y5);
+        let w = R::wide_sub_prod(w, self.l65, x6);
+        let g5 = R::wide_rescale(w);
+        let x5 = R::div(g5, self.l55);
+        let w = R::wide_add(R::wide_zero(), y4);
+        let w = R::wide_sub_prod(w, self.l54, x5);
+        let w = R::wide_sub_prod(w, self.l64, x6);
+        let g4 = R::wide_rescale(w);
+        let x4 = R::div(g4, self.l44);
+        let w = R::wide_add(R::wide_zero(), y3);
+        let w = R::wide_sub_prod(w, self.l43, x4);
+        let w = R::wide_sub_prod(w, self.l53, x5);
+        let w = R::wide_sub_prod(w, self.l63, x6);
+        let g3 = R::wide_rescale(w);
+        let x3 = R::div(g3, self.l33);
+        let w = R::wide_add(R::wide_zero(), y2);
+        let w = R::wide_sub_prod(w, self.l32, x3);
+        let w = R::wide_sub_prod(w, self.l42, x4);
+        let w = R::wide_sub_prod(w, self.l52, x5);
+        let w = R::wide_sub_prod(w, self.l62, x6);
+        let g2 = R::wide_rescale(w);
+        let x2 = R::div(g2, self.l22);
+        let w = R::wide_add(R::wide_zero(), y1);
+        let w = R::wide_sub_prod(w, self.l21, x2);
+        let w = R::wide_sub_prod(w, self.l31, x3);
+        let w = R::wide_sub_prod(w, self.l41, x4);
+        let w = R::wide_sub_prod(w, self.l51, x5);
+        let w = R::wide_sub_prod(w, self.l61, x6);
+        let g1 = R::wide_rescale(w);
+        let x1 = R::div(g1, self.l11);
+        Vector6 { x: x1, y: x2, z: x3, w: x4, a: x5, b: x6 }
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    fn same(a: Cholesky6<Fixed>, b: Cholesky6<Fixed>) -> bool {
+        a.l11 == b.l11
+            && a.l21 == b.l21
+            && a.l31 == b.l31
+            && a.l41 == b.l41
+            && a.l51 == b.l51
+            && a.l61 == b.l61
+            && a.l22 == b.l22
+            && a.l32 == b.l32
+            && a.l42 == b.l42
+            && a.l52 == b.l52
+            && a.l62 == b.l62
+            && a.l33 == b.l33
+            && a.l43 == b.l43
+            && a.l53 == b.l53
+            && a.l63 == b.l63
+            && a.l44 == b.l44
+            && a.l54 == b.l54
+            && a.l64 == b.l64
+            && a.l55 == b.l55
+            && a.l65 == b.l65
+            && a.l66 == b.l66
+    }
+
+    fn same_option(a: Option<Cholesky6<Fixed>>, b: Option<Cholesky6<Fixed>>) -> bool {
+        match (a, b) {
+            (Some(x), Some(y)) => same(x, y),
+            (None, None) => true,
+            _ => false,
+        }
+    }
+
+    /// The symmetric matrix of diagonal `d` (6 raw values) and strict lower triangle `o` (15 raw
+    /// values, row by row); the strictly upper triangle holds junk, which `new` must ignore.
+    fn sym(d: Span<i64>, o: Span<i64>) -> Matrix6<Fixed> {
+        Matrix6 {
+            m11: fx(*d.at(0)),
+            m12: fx(3),
+            m13: fx(4),
+            m14: fx(5),
+            m15: fx(6),
+            m16: fx(-6),
+            m21: fx(*o.at(0)),
+            m22: fx(*d.at(1)),
+            m23: fx(-2),
+            m24: fx(-1),
+            m25: fx(0),
+            m26: fx(1),
+            m31: fx(*o.at(1)),
+            m32: fx(*o.at(2)),
+            m33: fx(*d.at(2)),
+            m34: fx(6),
+            m35: fx(-6),
+            m36: fx(-5),
+            m41: fx(*o.at(3)),
+            m42: fx(*o.at(4)),
+            m43: fx(*o.at(5)),
+            m44: fx(*d.at(3)),
+            m45: fx(1),
+            m46: fx(2),
+            m51: fx(*o.at(6)),
+            m52: fx(*o.at(7)),
+            m53: fx(*o.at(8)),
+            m54: fx(*o.at(9)),
+            m55: fx(*d.at(4)),
+            m56: fx(-4),
+            m61: fx(*o.at(10)),
+            m62: fx(*o.at(11)),
+            m63: fx(*o.at(12)),
+            m64: fx(*o.at(13)),
+            m65: fx(*o.at(14)),
+            m66: fx(*d.at(5)),
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// A raw value uniform in `[lo, lo + span]`.
+    fn draw_pos(ref state: u128, lo: u128, span: u128) -> i64 {
+        (lo + next(ref state) % (span + 1)).try_into().unwrap()
+    }
+
+    /// `n` raw values uniform in `[-bound, bound]`.
+    fn draws(ref state: u128, n: u32, bound: u128) -> Span<i64> {
+        let mut a = array![];
+        for _ in 0..n {
+            a.append(draw(ref state, bound));
+        }
+        a.span()
+    }
+
+    /// `n` raw values uniform in `[lo, lo + span]`.
+    fn draws_pos(ref state: u128, n: u32, lo: u128, span: u128) -> Span<i64> {
+        let mut a = array![];
+        for _ in 0..n {
+            a.append(draw_pos(ref state, lo, span));
+        }
+        a.span()
+    }
+
+    /// `new` against the reference, bit for bit: edge cases (zero, identity, 1-ulp pivots, a
+    /// negative first and a zero later pivot, diagonals of the largest magnitude, the oracle input
+    /// of the probe) and a deterministic sweep of diagonally dominant (positive-definite) and
+    /// indefinite matrices of every magnitude.
+    #[test]
+    fn test_new_matches_reference() {
+        let one: i64 = 0x100000000;
+        let z15 = array![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].span();
+        let big: i64 = 0x7fffffffffffffff;
+        let mut cases: Array<(Span<i64>, Span<i64>)> = array![
+            (array![0, 0, 0, 0, 0, 0].span(), z15),
+            (array![one, one, one, one, one, one].span(), z15),
+            (array![1, 1, 1, 1, 1, 1].span(), z15),
+            (array![-one, one, one, one, one, one].span(), z15),
+            (
+                array![one, one, one, one, one, one].span(),
+                array![one, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].span(),
+            ),
+            (array![big, big, big, big, big, big].span(), z15),
+            (
+                array![3654480394, 4075594332, 4932250777, 3475255779, 4388679014, 4212214819]
+                    .span(),
+                array![
+                    90933453, -304406952, -1110029388, -302438381, 810457968, 743241296, -235454993,
+                    432815, -713496402, 101179924, -273500147, 165140043, -664760589, 635633272,
+                    -240687438,
+                ]
+                    .span(),
+            ),
+        ];
+        let mut state: u128 = 0xc406;
+        for k in 0..240_u32 {
+            // Off-diagonal magnitudes from 2^-24 to 2^10; the diagonal dominates the 5 entries of
+            // its row on 3 draws of 4 (positive definite), and is drawn on their scale otherwise.
+            let ob: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x10000000000,
+                _ => 0x40000000000,
+            };
+            let o = draws(ref state, 15, ob);
+            let d = if k % 4 == 3 {
+                draws(ref state, 6, 2 * ob)
+            } else {
+                draws_pos(ref state, 6, 5 * ob + 1, 4 * ob)
+            };
+            cases.append((d, o));
+        }
+        let mut n = 0_u32;
+        let mut factored = 0_u32;
+        for c in cases.span() {
+            let (d, o) = *c;
+            let a = sym(d, o);
+            let got = Cholesky6Trait::new(a);
+            assert!(same_option(got, new_reference(a)));
+            if got.is_some() {
+                factored += 1;
+            }
+            n += 1;
+        }
+        assert!(n >= 200);
+        assert!(factored >= 150);
+    }
+
+    /// `solve` against the reference, bit for bit: edge cases (identity factor, zero and 1-ulp
+    /// right-hand sides, the probe's factor and right-hand side) and a deterministic sweep of
+    /// factors (pivots in `[1/2, 4]`, entries in `[-1, 1]`) with right-hand sides from 2^-32 to
+    /// 2^6.
+    #[test]
+    fn test_solve_matches_reference() {
+        let u: u128 = 0x100000000;
+        let one: i64 = 0x100000000;
+        let mut cases: Array<(Cholesky6<Fixed>, Vector6<Fixed>)> = array![];
+        let id = new_reference(
+            sym(
+                array![one, one, one, one, one, one].span(),
+                array![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0].span(),
+            ),
+        )
+            .unwrap();
+        let f = new_reference(
+            sym(
+                array![3654480394, 4075594332, 4932250777, 3475255779, 4388679014, 4212214819]
+                    .span(),
+                array![
+                    90933453, -304406952, -1110029388, -302438381, 810457968, 743241296, -235454993,
+                    432815, -713496402, 101179924, -273500147, 165140043, -664760589, 635633272,
+                    -240687438,
+                ]
+                    .span(),
+            ),
+        )
+            .unwrap();
+        let rhs = array![
+            Vector6 { x: fx(0), y: fx(0), z: fx(0), w: fx(0), a: fx(0), b: fx(0) },
+            Vector6 { x: fx(1), y: fx(-1), z: fx(1), w: fx(-1), a: fx(1), b: fx(-1) },
+            Vector6 {
+                x: fx(2829439348),
+                y: fx(-7782455719),
+                z: fx(7478168046),
+                w: fx(-4127194961),
+                a: fx(6320029132),
+                b: fx(7729783779),
+            },
+        ];
+        for b in rhs.span() {
+            cases.append((id, *b));
+            cases.append((f, *b));
+        }
+        let mut state: u128 = 0x5016;
+        for k in 0..240_u32 {
+            let f = Cholesky6 {
+                l11: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l21: fx(draw(ref state, u)),
+                l31: fx(draw(ref state, u)),
+                l41: fx(draw(ref state, u)),
+                l51: fx(draw(ref state, u)),
+                l61: fx(draw(ref state, u)),
+                l22: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l32: fx(draw(ref state, u)),
+                l42: fx(draw(ref state, u)),
+                l52: fx(draw(ref state, u)),
+                l62: fx(draw(ref state, u)),
+                l33: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l43: fx(draw(ref state, u)),
+                l53: fx(draw(ref state, u)),
+                l63: fx(draw(ref state, u)),
+                l44: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l54: fx(draw(ref state, u)),
+                l64: fx(draw(ref state, u)),
+                l55: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+                l65: fx(draw(ref state, u)),
+                l66: fx(draw_pos(ref state, u / 2, 7 * u / 2)),
+            };
+            let bb: u128 = match k % 4 {
+                0 => 0x100,
+                1 => 0x100000000,
+                2 => 0x1000000000,
+                _ => 0x4000000000,
+            };
+            let v = Vector6 {
+                x: fx(draw(ref state, bb)),
+                y: fx(draw(ref state, bb)),
+                z: fx(draw(ref state, bb)),
+                w: fx(draw(ref state, bb)),
+                a: fx(draw(ref state, bb)),
+                b: fx(draw(ref state, bb)),
+            };
+            cases.append((f, v));
+        }
+        let mut n = 0_u32;
+        for c in cases.span() {
+            let (f, v) = *c;
+            assert!(f.solve(v) == solve_reference(f, v));
+            n += 1;
+        }
+        assert!(n >= 200);
     }
 }
