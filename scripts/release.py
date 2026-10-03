@@ -160,7 +160,8 @@ def render_request(version, commit, rows, header, dry_run_problems=None):
         out += ["**DRY RUN: not a release request.** Checks a real request refuses on:", ""]
         out += [f"- {p}" for p in dry_run_problems] or ["- none"]
         out.append("")
-    out += ["Status: requested, not published.", ""]
+    else:
+        out += ["Status: requested, not published.", ""]
     out += header + [""]
     out.append("| " + " | ".join(REQUEST_COLUMNS) + " |")
     out.append("|" + "|".join("---:" if c in ("#",) or "bytes" in c else "---" for c in REQUEST_COLUMNS) + "|")
