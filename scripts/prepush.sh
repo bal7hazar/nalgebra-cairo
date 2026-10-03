@@ -52,7 +52,9 @@
 # block runs directly, with no wait: a caller does not wait for itself. The time the lock was waited for and
 # the time the block itself took are printed separately. If this script is killed without being able to clean up
 # (SIGKILL), the inner script notices within 0.3 s and stops its own process group (the waiter's), so the lock is
-# released within seconds.
+# released within seconds. (A caller pid reused by another process is only noticed when that process ends: the inner
+# script is bounded by the length of its own block.) If the inner script alone is signalled, the caller sees the
+# waiter gone without a result and fails the push.
 #
 # Bash: needs bash >= 4.4 (`wait $!` on a process substitution in the hook, empty arrays under `set -u`); an older
 # bash fails at once with a clear message (the macOS system bash is 3.2: use a newer one first in PATH).
@@ -339,9 +341,15 @@ elif [[ $use_lock == 1 ]]; then
         size=$(wc -c 2> /dev/null < "$logs/cairo.log" || echo 0)
         if ((size > off)); then tail -c +$((off + 1)) "$logs/cairo.log" | head -c $((size - off)) || true; off=$size; fi
     }
-    while [[ ! -e "$logs/flock.rc" ]]; do flush; sleep 0.5; done
+    # ... or until the waiter is gone: when the inner script alone is signalled it stops its whole group, the waiter
+    # included, which then never writes flock.rc; that is a failure, not a reason to wait for ever.
+    while [[ ! -e "$logs/flock.rc" ]] && kill -0 "$waiter" 2> /dev/null; do flush; sleep 0.5; done
     flush
-    waiter="" # ended by itself
+    waiter="" # ended
+    if [[ ! -e "$logs/flock.rc" ]]; then
+        echo "prepush: Cairo block interrupted (the lock waiter was stopped without a result)" >&2
+        exit 1
+    fi
     if [[ -e "$mark" ]]; then
         [[ "$(< "$logs/flock.rc")" -eq 0 ]] || exit 1 # a step failed inside the lock; it printed its own message
     else
