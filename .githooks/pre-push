@@ -13,6 +13,12 @@
 # CI, which does not have them, would fail (e.g. a never-added `.cairo` file behind a committed `mod foo;`).
 # Files ignored by .gitignore are not listed by `git status` and stay allowed. Read-only: `git status` runs
 # with --no-optional-locks, so it does not even refresh the index.
+# Needs bash >= 4.4 (`wait $!` on a process substitution, empty arrays under `set -u`); an older bash fails at
+# once with a clear message (the macOS system bash is 3.2: put a newer one first in PATH).
+if ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4))); then
+    echo "pre-push: bash >= 4.4 is required (this is bash ${BASH_VERSION}); put a newer bash first in PATH." >&2
+    exit 1
+fi
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 zero=0000000000000000000000000000000000000000

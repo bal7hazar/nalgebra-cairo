@@ -1415,7 +1415,9 @@ against the merged pull requests and files; shas are squash commits.
   (−7830 per bench); simba-cairo #5 (`811e3ab`), pre-push check, hook and CI retries; nalgebra-cairo
   #93 (`d87c4e5`), WP 10-TC.
 - **WP 10-TC (#93).** Every test passes unchanged; path proof 9,289 / 9,289; gas: every entry moved,
-  uniformly within each test group (−7830 typical, between −7830 and +8070 across groups); 89 margins
+  uniformly within each test group (−7830 typical, between −7830 and +8070 across groups)
+  (corrected 2026-10-03: not uniformly within 31 groups, 10 in `gas/` and 21 in `benchmarks/gas/`: the
+  +100 builtin / dictionary tests and the `exp4`–`exp6` baselines); 89 margins
   over a baseline changed, all explained (snforge 0.64 charges +100 per test using a builtin or a
   dictionary; the `exp4`–`exp6` baselines' setup moved) and accepted by the orchestrator. Consumer cost
   with the compiler's default threads: every gate passes, facade 35.8 s → 33.9 s. One compiler thread
@@ -1427,6 +1429,24 @@ against the merged pull requests and files; shas are squash commits.
   review), PP-S2 (notes of #5's review), TC2 (what #93 left on the old toolchain), PUB (publishing by
   hand under the organisation's rule of 2026-10-02: `scripts/release.py` to be reconciled before the
   next release), TC3 (a Scarb release with path-free closure names gets its own lot).
+
+**Update 2026-10-03: after the pre-push and CI lots (WP 10-ST2).** Facts are checked against the merged
+pull requests (`gh pr view`), the merged files and `git log`; shas are squash commits.
+- **Merged on 2026-10-02/03.** nalgebra-cairo #95 (`0e478c4`), WP 10-PP: the pre-push check, its hook,
+  retries on the 12 setup steps, cancel-in-progress for pull-request runs only; #96 (`7ee554d`), WP
+  10-PP-FU: untracked build files refused, fixed checks gated on their inputs, the lock wait overlaps the
+  checks, an interrupt stops the Cairo block, a lock held by an ancestor is not waited for, `realpath`,
+  the whole gas comparison when `gas/**` changes with a package (times in the PR body); #97 (`7111163`),
+  WP 10-CI-N: a `changes` job, the test jobs gated on their files (prose `.md` triggers nothing,
+  `docs/API_PARITY.md` triggers the workspace job), a push to main runs everything in a per-commit
+  concurrency group, `CI result` always runs. simba-cairo #6 (`9b7c065`), CI path gating; #7 (`d2a80f8`),
+  pre-push follow-ups.
+- **Corrections of #94**, in place above and in `docs/PLAN.md` (row TC): the gas of 31 groups did not
+  move uniformly, and the moves are not all the harness offset.
+- **Reading of a brief rule.** "Kills nothing" in the pre-push briefs means "kills nothing the script did
+  not start" (review of #96): the script stops its own background jobs, never another process or lock
+  holder.
+- **In progress:** lot PP-FU2, the deferred notes of the pre-push reviews (row PP-FU2 of `docs/PLAN.md`).
 
 ## 22. Release 0.1.1: readiness (2026-09-30, orchestrator)
 
@@ -1469,4 +1489,3 @@ tag `v0.1.1` on `b3915c7`, [GitHub release](https://github.com/bal7hazar/nalgebr
   the 5 s gate), the facade 46.0 s against 29.8 s over the baseline (reported only). That spread
   between runs of identical code is what the TC lots must measure and explain, every measurement with
   `RAYON_NUM_THREADS=1`.
-
