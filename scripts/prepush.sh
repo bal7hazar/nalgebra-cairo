@@ -27,6 +27,9 @@
 #       .tool-versions or scripts/gas_report.py changed. When gas/** or scripts/gas_report.py changed (alone or
 #       with a package), the whole workspace is tested and checked against the whole snapshot, as scripts/check.sh
 #       does: the snapshot is the thing that changed, so a partial comparison would not vouch for it.
+#   A manifest or lock file outside the root workspace (benchmarks/**, tools/**: Scarb.toml, Scarb.lock) touches no
+#       package of it: unless gas/** or scripts/gas_report.py changed too, there is nothing to compile, no lock is
+#       waited for and no workspace test runs.
 #   (The `nalgebra` package is tested with the Scarb features CI gives it: --no-default-features --features eigen,svd,qr.)
 #
 # The heavy-build lock. On the shared VPS the scarb/snforge shims serialise every compile through one lock
@@ -49,9 +52,16 @@
 # block runs directly, with no wait: a caller does not wait for itself. The time the lock was waited for and
 # the time the block itself took are printed separately.
 #
+# Bash: needs bash >= 4.4 (`wait $!` on a process substitution in the hook, empty arrays under `set -u`); an older
+# bash fails at once with a clear message (the macOS system bash is 3.2: use a newer one first in PATH).
+#
 # Git: every git command here is a read of the repository being pushed (rev-parse, merge-base, diff); none
 # writes, so none needs a sanitised environment.
 # Exits non-zero on the first failure, with a one-line message naming the step.
+if ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4))); then
+    echo "prepush: bash >= 4.4 is required (this is bash ${BASH_VERSION}); put a newer bash first in PATH." >&2
+    exit 1
+fi
 set -euo pipefail
 # The script's own absolute path, resolved once before any `cd` (it is re-run by path under the lock).
 self=$(realpath "$0" 2> /dev/null || { cd "$(dirname "$0")" && echo "$(pwd -P)/$(basename "$0")"; })
@@ -207,7 +217,15 @@ for f in os.environ["PREPUSH_CHANGED"].split("\n"):
         d = os.path.dirname(d)
 print(" ".join(sorted(touched)))
 ')
-    echo "prepush: touched packages: ${PREPUSH_PKGS:-none (gas/ or gas_report.py only: the whole workspace is checked)}"
+    if [[ -z "$PREPUSH_PKGS" && "$PREPUSH_GAS_FULL" == 0 ]]; then
+        # no workspace package touched (e.g. a manifest of benchmarks/ or tools/, not a member): nothing to compile
+        PREPUSH_DO_BUILD=0
+        PREPUSH_DO_GAS=0
+        export PREPUSH_DO_BUILD PREPUSH_DO_GAS
+        echo "prepush: touched packages: none (no workspace package is concerned)"
+    else
+        echo "prepush: touched packages: ${PREPUSH_PKGS:-none (gas/ or gas_report.py only: the whole workspace is checked)}"
+    fi
 fi
 export PREPUSH_PKGS
 
@@ -224,10 +242,20 @@ trap 'step=interrupted; exit 129' HUP
 # stop the whole tree of a job THIS script started, and nothing else: `kill -TERM -- -<pgid>`.
 waiter=""
 pids=()
+# Is process <pid> still a child of this script (a reaped id, or a recycled one, is not)? Field 4 of /proc/<pid>/stat
+# is the parent pid; the command name (field 2) may hold spaces, so it is cut off at its last ")" first.
+is_my_child() {
+    local stat rest
+    { stat=$(< "/proc/$1/stat"); } 2> /dev/null || return 1
+    rest=${stat##*) } # "<state> <ppid> ..."
+    rest=${rest#* }
+    [[ "${rest%% *}" == "$$" ]]
+}
 stop_jobs() {
     local g
     for g in $waiter ${pids[@]+"${pids[@]}"}; do
-        [[ -z "$g" ]] || kill -TERM -- "-$g" 2> /dev/null || true # a cleared id (job ended and waited) is skipped
+        # a cleared id (job ended and waited) is skipped, and so is one that is no longer our child
+        if [[ -n "$g" ]] && is_my_child "$g"; then kill -TERM -- "-$g" 2> /dev/null || true; fi
     done
     return 0
 }
@@ -275,7 +303,7 @@ else
 fi
 
 if [[ "$PREPUSH_DO_BUILD" == 0 && "$PREPUSH_DO_GAS" == 0 ]]; then
-    echo "prepush: Cairo compile skipped (no Cairo source, manifest or gas input changed against $base)"
+    echo "prepush: Cairo compile skipped (no workspace Cairo source, manifest or gas input changed against $base)"
 elif [[ $use_lock == 1 ]]; then
     step="Cairo compile (the failing step is named above)"
     # the block started as soon as the lock was obtained; print its output as it grows, until the waiter ends
