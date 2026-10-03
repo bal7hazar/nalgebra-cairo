@@ -1477,6 +1477,9 @@ EXCLUSIONS = {
               "`&mut` element access, mutable views): Cairo values are `Copy` and passed by value.",
     "fmt": "`Debug` / `Display` / `LowerExp` formatting (Cairo's derived `Debug` exists but "
            "prints nothing nalgebra-shaped): diagnostics, not API.",
+    "fs": "File-system access: a Cairo program has no file system or path, so the readers that "
+          "take a `Path` (`cs_matrix_from_matrix_market`) have no counterpart; the `_str` form "
+          "that takes the content is ported.",
     "glue": "Serialization / zero-copy glue other than Cairo `Serde` (`bytemuck`, `rkyv`, "
             "`encase`, the `serde` visitor types).",
     "random": "`rand` / `proptest` / `quickcheck` generators and the `debug` random-matrix "
@@ -1957,6 +1960,7 @@ EXCLUDE = (
     exclude(r".*ShapeConstraint.*|MatrixIndex|MatrixIndexMut", r".*", "generic-dim"),
     exclude(r".*", r"type:MatrixVec", "generic-dim"),
     exclude(r"CustomPhantom", r".*", "glue"),
+    exclude(r"nalgebra::io", r"cs_matrix_from_matrix_market", "fs"),
     exclude(r"(?:mut )?\[T\]", r".*", "borrow"),
     exclude(r"MatrixValueTree", r".*", "random"),
     exclude(r".*", r"unsafe-method:.*", "unsafe"),
