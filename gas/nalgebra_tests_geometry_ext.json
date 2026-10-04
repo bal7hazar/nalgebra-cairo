@@ -88,7 +88,7 @@
   },
   "nalgebra_tests_geometry_ext::rotation3::benches": {
     "rotation3_angle_to": {
-      "alt_rotation_to_angle": 576490,
+      "alt_rotation_to_angle": 571830,
       "baseline": 496540,
       "fused_trace": 528770
     },
@@ -97,11 +97,11 @@
       "baseline": 291720
     },
     "rotation3_euler_angles_ordered": {
-      "baseline": 460830,
-      "shuster_markley": 687090
+      "baseline": 455850,
+      "shuster_markley": 672020
     },
     "rotation3_from_matrix": {
-      "alt_matrix_iterate_8": 2157010,
+      "alt_matrix_iterate_8": 2086130,
       "baseline": 531150,
       "closed_form": 1060750,
       "iterate_8": 1893770
@@ -133,9 +133,9 @@
       "ulps_eq": 281910
     },
     "rotation3_rotation_to": {
-      "baseline": 490780,
-      "div": 513030,
-      "product_with_transpose": 513030
+      "baseline": 486350,
+      "div": 505070,
+      "product_with_transpose": 505070
     },
     "rotation3_slerp": {
       "baseline": 670440,

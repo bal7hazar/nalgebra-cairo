@@ -6,13 +6,13 @@
     },
     "affine2_try_inverse": {
       "alt_block": 52170,
-      "alt_full_matrix": 98070,
+      "alt_full_matrix": 87390,
       "baseline": 9710,
       "refined_block": 60890
     },
     "affine3_mul": {
-      "baseline": 298340,
-      "full_product": 341350
+      "baseline": 271720,
+      "full_product": 314730
     },
     "affine3_mul_isometry": {
       "alt_full_product": 141650,
@@ -35,10 +35,10 @@
       "baseline": 23280
     },
     "affine3_try_inverse": {
-      "alt_block": 113240,
+      "alt_block": 99930,
       "alt_full_matrix": 206330,
       "baseline": 11110,
-      "refined_block": 127520
+      "refined_block": 114210
     },
     "isometry3_mul_affine3": {
       "alt_full_product": 135330,

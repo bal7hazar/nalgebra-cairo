@@ -644,11 +644,11 @@
     },
     "rotation3_mul": {
       "baseline": 15710,
-      "matrix_product": 37860
+      "matrix_product": 34330
     },
     "rotation3_renormalize": {
       "alt_gram_schmidt": 60560,
-      "alt_newton": 93720,
+      "alt_newton": 87790,
       "baseline": 13710,
       "closed_form": 514470
     },

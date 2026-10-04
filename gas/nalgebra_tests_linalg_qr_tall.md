@@ -80,7 +80,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `full_q` | 296560 | 255470 | x1.00 |
+| `full_q` | 294160 | 253070 | x1.00 |
 
 ## nalgebra_tests_linalg_qr_tall::qr5x2
 
@@ -94,7 +94,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `full_q` | 286050 | 202840 | x1.00 |
+| `full_q` | 284450 | 201240 | x1.00 |
 
 ## nalgebra_tests_linalg_qr_tall::qr5x3
 
@@ -108,7 +108,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `full_q` | 292120 | 147810 | x1.00 |
+| `full_q` | 291520 | 147210 | x1.00 |
 
 ## nalgebra_tests_linalg_qr_tall::qr5x4
 
@@ -122,7 +122,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `full_q` | 299570 | 84280 | x1.00 |
+| `full_q` | 296470 | 81180 | x1.00 |
 
 ## nalgebra_tests_linalg_qr_tall::qr5x6
 

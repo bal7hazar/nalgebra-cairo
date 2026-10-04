@@ -54,13 +54,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 215650 | 65520 | x1.00 |
+| `library` | 211220 | 61090 | x1.00 |
 
 ### matrix3_quadform_tr_matrix3
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `library` | 215650 | 65520 | x1.00 |
+| `library` | 211220 | 61090 | x1.00 |
 
 ### matrix3_tr_dot
 

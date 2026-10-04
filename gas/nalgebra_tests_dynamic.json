@@ -26,7 +26,7 @@
     },
     "dmatrix_mul3": {
       "baseline": 93270,
-      "library": 118420
+      "library": 116690
     },
     "dmatrix_mul6": {
       "baseline": 354090,
@@ -42,7 +42,7 @@
     },
     "dmatrix_mul_vec6": {
       "baseline": 208490,
-      "library": 238800
+      "library": 233580
     },
     "dmatrix_remove_rows16": {
       "baseline": 1244270,

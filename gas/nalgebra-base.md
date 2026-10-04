@@ -26,8 +26,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `structured` | 17380 | 7670 | x1.00 |
-| `generic` | 19960 | 10250 | x1.34 |
+| `generic` | 17030 | 7320 | x1.00 |
+| `structured` | 17380 | 7670 | x1.05 |
 
 ### matrix2_try_inverse
 
@@ -84,7 +84,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `structured` | 27220 | 15010 | x1.00 |
-| `generic` | 34960 | 22750 | x1.52 |
+| `generic` | 30530 | 18320 | x1.22 |
 
 ### matrix3_row
 
@@ -96,9 +96,9 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_recip` | 62790 | - | x1.00 |
-| `alt_div_n` | 80570 | - | x1.28 |
-| `alt_div` | 83640 | - | x1.33 |
+| `alt_recip` | 60060 | - | x1.00 |
+| `alt_div_n` | 77840 | - | x1.30 |
+| `alt_div` | 80910 | - | x1.35 |
 
 ## nalgebra::base::matrix4::tests
 
@@ -183,7 +183,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `structured` | 24900 | 14590 | x1.00 |
-| `generic` | 30610 | 20300 | x1.39 |
+| `generic` | 24950 | 14640 | x1.00 |
 
 ### sym_matrix2_to_matrix
 
@@ -198,7 +198,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `structured` | 43440 | 30430 | x1.00 |
-| `generic` | 58010 | 45000 | x1.48 |
+| `generic` | 48550 | 35540 | x1.17 |
 
 ### sym_matrix3_to_matrix
 

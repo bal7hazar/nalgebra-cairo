@@ -53,7 +53,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 112270 | 28600 | x1.00 |
+| `scaled_product` | 110870 | 27200 | x1.00 |
 
 ### svd2_singular_values
 
@@ -66,7 +66,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `products` | 109110 | 25440 | x1.00 |
+| `products` | 106180 | 22510 | x1.00 |
 
 ## nalgebra_tests_linalg_svd::svd3
 
@@ -82,7 +82,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 710670 | 54630 | x1.00 |
+| `scaled_product` | 708270 | 52230 | x1.00 |
 
 ### svd3_singular_values
 
@@ -95,7 +95,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `products` | 709520 | 53480 | x1.00 |
+| `products` | 705090 | 49050 | x1.00 |
 
 ## nalgebra_tests_linalg_svd::svd4
 

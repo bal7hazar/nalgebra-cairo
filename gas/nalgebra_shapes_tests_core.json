@@ -34,12 +34,12 @@
     },
     "matrix5_mul_vector5": {
       "baseline": 139680,
-      "mul_mat": 159910
+      "mul_mat": 155180
     },
     "matrix5_tr_mul_vector5": {
-      "alt_transpose_then_mul_mat": 159910,
+      "alt_transpose_then_mul_mat": 155180,
       "baseline": 139680,
-      "tr_mul": 159910
+      "tr_mul": 155180
     },
     "matrix6x4_mul_matrix4x6": {
       "baseline": 315170,

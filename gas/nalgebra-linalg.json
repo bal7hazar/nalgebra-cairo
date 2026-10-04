@@ -160,7 +160,7 @@
   },
   "nalgebra::linalg::qr::qr3::tests": {
     "qr3_determinant": {
-      "diagonal_product": 102840
+      "diagonal_product": 100110
     },
     "qr3_new": {
       "alt_completed_basis": 115890,

@@ -11,7 +11,7 @@
     },
     "matrix2_mul_transpose": {
       "baseline": 9710,
-      "generic": 19960,
+      "generic": 17030,
       "structured": 17380
     },
     "matrix2_try_inverse": {
@@ -47,16 +47,16 @@
     },
     "matrix3_mul_transpose": {
       "baseline": 12210,
-      "generic": 34960,
+      "generic": 30530,
       "structured": 27220
     },
     "matrix3_row": {
       "second": 11010
     },
     "matrix3_try_inverse": {
-      "alt_div": 83640,
-      "alt_div_n": 80570,
-      "alt_recip": 62790
+      "alt_div": 80910,
+      "alt_div_n": 77840,
+      "alt_recip": 60060
     }
   },
   "nalgebra::base::matrix4::tests": {
@@ -105,7 +105,7 @@
   "nalgebra::base::sym_matrix2::tests": {
     "sym_matrix2_quadform": {
       "baseline": 10310,
-      "generic": 30610,
+      "generic": 24950,
       "structured": 24900
     },
     "sym_matrix2_to_matrix": {
@@ -116,7 +116,7 @@
   "nalgebra::base::sym_matrix3::tests": {
     "sym_matrix3_quadform": {
       "baseline": 13010,
-      "generic": 58010,
+      "generic": 48550,
       "structured": 43440
     },
     "sym_matrix3_to_matrix": {
