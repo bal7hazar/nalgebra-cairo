@@ -1095,6 +1095,7 @@ pub impl Matrix6MulVector6<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Matrix6<T>, Vector6<T>> {
     type Output = Vector6<T>;
+    #[inline(always)]
     fn mul_mat(self: Matrix6<T>, rhs: Vector6<T>) -> Vector6<T> {
         Vector6 {
             x: R::wide_rescale(

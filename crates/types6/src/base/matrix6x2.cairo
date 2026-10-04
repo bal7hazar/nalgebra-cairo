@@ -142,6 +142,7 @@ pub impl Matrix6x2MulVector2<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Matrix6x2<T>, Vector2<T>> {
     type Output = Vector6<T>;
+    #[inline(always)]
     fn mul_mat(self: Matrix6x2<T>, rhs: Vector2<T>) -> Vector6<T> {
         Vector6 {
             x: R::sum_prod2(self.m11, rhs.x, self.m12, rhs.y),

@@ -122,6 +122,7 @@ pub impl Vector5MulMatrix1<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Vector5<T>, Matrix1<T>> {
     type Output = Vector5<T>;
+    #[inline(always)]
     fn mul_mat(self: Vector5<T>, rhs: Matrix1<T>) -> Vector5<T> {
         Vector5 {
             x: self.x * rhs.x,

@@ -286,6 +286,7 @@ pub impl Matrix3Impl<
     /// one rounding each) then one `sum_prod3` (second rounding). The error against the exact
     /// floor is at most `|m11| + |m12| + |m13| + 1` ulp (values, not raw: 4 ulp for a rotation).
     /// Panics on overflow. Upstream: `determinant`.
+    #[inline(always)]
     fn determinant(self: Matrix3<T>) -> T {
         R::sum_prod3(
             self.m11,
@@ -322,16 +323,25 @@ pub impl Matrix3Impl<
     /// tolerance (`test_try_inverse_candidates_error`), so the pre-scaled algorithm stays. The
     /// charged gas is that of the costliest branch (the pre-scaled one): the three
     /// `bench_matrix3_try_inverse__prescaled_*` benchmarks measure the same figure.
+    ///
+    /// WP 13-OPT-3, same bits and same panics as before: `k = floor(2 / f) >= 2` exactly when
+    /// `f <= 1` (`2 / f` is rounded to nearest: one ulp above 1 it is already 2 ulp below 2), so
+    /// the division is made on the pre-scaled branch only; the six cofactors the determinant does
+    /// not use are computed after that branch, which never needs them (its components are at most 1
+    /// in magnitude, so they could not overflow there), and before the singularity test, as before.
+    #[inline(always)]
     fn try_inverse(self: Matrix3<T>) -> Option<Matrix3<T>> {
-        let adj = Matrix3InternalTrait::adjugate(self);
-        let det = R::sum_prod3(self.m11, adj.m11, self.m12, adj.m21, self.m13, adj.m31);
-        if det < R::HALF && det > -R::HALF {
+        let a11 = R::diff_prod(self.m22, self.m33, self.m23, self.m32);
+        let a21 = R::diff_prod(self.m23, self.m31, self.m21, self.m33);
+        let a31 = R::diff_prod(self.m21, self.m32, self.m22, self.m31);
+        let det = R::sum_prod3(self.m11, a11, self.m12, a21, self.m13, a31);
+        let (a12, a22, a32, a13, a23, a33) = if det < R::HALF && det > -R::HALF {
             let f = Self::norm(self);
             if f == R::zero() {
                 return None;
             }
-            let k = R::floor(R::div(R::TWO, f));
-            if k >= R::TWO {
+            if f <= R::one() {
+                let k = R::floor(R::div(R::TWO, f));
                 let b = Self::scale(self, k);
                 let adj_b = Matrix3InternalTrait::adjugate(b);
                 let det_b = R::sum_prod3(b.m11, adj_b.m11, b.m12, adj_b.m21, b.m13, adj_b.m31);
@@ -340,12 +350,30 @@ pub impl Matrix3Impl<
                 }
                 return Some(Self::scale(adj_b, R::div(k, det_b)));
             }
+            let rest = (
+                R::diff_prod(self.m13, self.m32, self.m12, self.m33),
+                R::diff_prod(self.m11, self.m33, self.m13, self.m31),
+                R::diff_prod(self.m12, self.m31, self.m11, self.m32),
+                R::diff_prod(self.m12, self.m23, self.m13, self.m22),
+                R::diff_prod(self.m13, self.m21, self.m11, self.m23),
+                R::diff_prod(self.m11, self.m22, self.m12, self.m21),
+            );
             if det == R::zero() {
                 return None;
             }
-        }
+            rest
+        } else {
+            (
+                R::diff_prod(self.m13, self.m32, self.m12, self.m33),
+                R::diff_prod(self.m11, self.m33, self.m13, self.m31),
+                R::diff_prod(self.m12, self.m31, self.m11, self.m32),
+                R::diff_prod(self.m12, self.m23, self.m13, self.m22),
+                R::diff_prod(self.m13, self.m21, self.m11, self.m23),
+                R::diff_prod(self.m11, self.m22, self.m12, self.m21),
+            )
+        };
         let (m11, m21, m31, m12, m22, m32, m13, m23, m33) = R::div9(
-            adj.m11, adj.m21, adj.m31, adj.m12, adj.m22, adj.m32, adj.m13, adj.m23, adj.m33, det,
+            a11, a21, a31, a12, a22, a32, a13, a23, a33, det,
         );
         Some(Matrix3 { m11, m21, m31, m12, m22, m32, m13, m23, m33 })
     }

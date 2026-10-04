@@ -8,6 +8,7 @@
 //! are methods of `Matrix3Trait`, the products with every conformable shape `MatrixMul::mul_mat`
 //! (`self * rhs`) and `MatrixTrMul::tr_mul` (`selfᵀ * rhs`).
 
+use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 #[cfg(test)]
 use nalgebra_static3::internal::base::matrix3::Matrix3InternalTrait;
 
@@ -16,6 +17,229 @@ mod benches_views;
 
 #[cfg(test)]
 mod tests;
+
+/// `try_inverse` before WP 13-OPT-3 against the current one, bit for bit (results and panics).
+#[cfg(test)]
+mod try_inverse_reference {
+    use fixed::Fixed;
+    use simba::scalar::FixedReal as R;
+    use super::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+
+    /// `Matrix3Trait::try_inverse` before WP 13-OPT-3 (the same body, called, not inlined): the
+    /// whole adjugate first, then `k = floor(2 / f)` on every small determinant.
+    fn try_inverse_reference(self: Matrix3<Fixed>) -> Option<Matrix3<Fixed>> {
+        let adj = Matrix3InternalTrait::adjugate(self);
+        let det = R::sum_prod3(self.m11, adj.m11, self.m12, adj.m21, self.m13, adj.m31);
+        if det < R::HALF && det > -R::HALF {
+            let f = Matrix3Trait::norm(self);
+            if f == R::zero() {
+                return None;
+            }
+            let k = R::floor(R::div(R::TWO, f));
+            if k >= R::TWO {
+                let b = Matrix3Trait::scale(self, k);
+                let adj_b = Matrix3InternalTrait::adjugate(b);
+                let det_b = R::sum_prod3(b.m11, adj_b.m11, b.m12, adj_b.m21, b.m13, adj_b.m31);
+                if det_b == R::zero() {
+                    return None;
+                }
+                return Some(Matrix3Trait::scale(adj_b, R::div(k, det_b)));
+            }
+            if det == R::zero() {
+                return None;
+            }
+        }
+        let (m11, m21, m31, m12, m22, m32, m13, m23, m33) = R::div9(
+            adj.m11, adj.m21, adj.m31, adj.m12, adj.m22, adj.m32, adj.m13, adj.m23, adj.m33, det,
+        );
+        Some(Matrix3 { m11, m21, m31, m12, m22, m32, m13, m23, m33 })
+    }
+
+    fn fx(raw: i64) -> Fixed {
+        Fixed { raw }
+    }
+
+    /// The matrix of row-major raw components `r`.
+    fn m(r: [i64; 9]) -> Matrix3<Fixed> {
+        let [a, b, c, d, e, f, g, h, i] = r;
+        Matrix3 {
+            m11: fx(a),
+            m12: fx(b),
+            m13: fx(c),
+            m21: fx(d),
+            m22: fx(e),
+            m23: fx(f),
+            m31: fx(g),
+            m32: fx(h),
+            m33: fx(i),
+        }
+    }
+
+    /// Deterministic 64-bit LCG (Knuth's MMIX constants).
+    fn next(ref state: u128) -> u128 {
+        state = (state * 6364136223846793005 + 1442695040888963407) % 0x10000000000000000;
+        state
+    }
+
+    /// A raw value uniform in `[-bound, bound]`.
+    fn draw(ref state: u128, bound: u128) -> i64 {
+        let r: i128 = (next(ref state) % (2 * bound + 1)).try_into().unwrap();
+        let b: i128 = bound.try_into().unwrap();
+        (r - b).try_into().unwrap()
+    }
+
+    /// A raw value of magnitude uniform in `[lo, lo + span]` and a random sign.
+    fn draw_mag(ref state: u128, lo: u128, span: u128) -> i64 {
+        let v: i64 = (lo + next(ref state) % (span + 1)).try_into().unwrap();
+        if next(ref state) % 2 == 0 {
+            v
+        } else {
+            -v
+        }
+    }
+
+    /// The branch of `try_inverse` a matrix takes: 0 `|det| >= 1/2`, 1 pre-scaled (`f <= 1`),
+    /// 2 small determinant with `f > 1` (or the zero matrix).
+    fn branch(a: Matrix3<Fixed>) -> u32 {
+        let det = Matrix3Trait::determinant(a);
+        if !(det < R::HALF && det > -R::HALF) {
+            0
+        } else if Matrix3Trait::norm(a) <= R::one() && Matrix3Trait::norm(a) != R::zero() {
+            1
+        } else {
+            2
+        }
+    }
+
+    /// Edge cases (zero, identity, singular, the pre-scaling threshold `f = 1` and one ulp above
+    /// it, 1-ulp and extreme components; `f > 2^-30`, below which both bodies panic) and four
+    /// deterministic bands of 50 matrices: diagonally dominant with diagonals from 2 to 2^10
+    /// (`|det| >= 1/2`), components up to 1/3 (pre-scaled, `f <= 1`), nearly singular rows `r3 = r1
+    /// + r2 + δ` with components from 1 to 4 (small determinant, `f > 1`), and one large diagonal
+    /// component up to 2^20 with off-diagonals up to 1/2.
+    /// Every branch is taken at least 40 times.
+    #[test]
+    fn test_try_inverse_matches_reference() {
+        let one: i64 = 0x100000000;
+        let half: i64 = 0x80000000;
+        let mut cases: Array<Matrix3<Fixed>> = array![
+            m([0, 0, 0, 0, 0, 0, 0, 0, 0]), m([one, 0, 0, 0, one, 0, 0, 0, one]),
+            m([-one, 0, 0, 0, -one, 0, 0, 0, -one]),
+            m([one, one, one, one, one, one, one, one, one]),
+            m([one, 2 * one, 3 * one, 4 * one, 5 * one, 6 * one, 7 * one, 8 * one, 9 * one]),
+            m([16, 0, 0, 0, 16, 0, 0, 0, 16]), m([-16, 1, 0, 1, 16, -1, 0, 1, 16]),
+            m([half, half, 0, 0, half, 0, 0, 0, half]), m([half, 0, 0, 0, half, 0, 0, 0, half]),
+            m([one + 1, 0, 0, 0, 1, 0, 0, 0, 1]), m([one, 0, 0, 0, 1, 0, 0, 0, 1]),
+            m([one - 1, 0, 0, 0, 1, 0, 0, 0, 1]), m([0, one, 0, one, 0, 0, 0, 0, one]),
+            m([0x7fffffff, 0, 0, 0, one, 0, 0, 0, one]),
+            m([0x40000000000000, 0, 0, 0, one, 0, 0, 0, one]),
+            m([-0x40000000000000, 1, -1, 1, one, 0, -1, 0, 0x100000]),
+            m([3 * half, 0, 0, 0, 3 * half, 0, 0, 0, 3 * half]),
+            m([half, 0, 0, 0, half, 0, 0, 0, half + 1]),
+            m([half, half, 0, half, half, 0, 0, 0, half]),
+            m([16, -16, 16, -16, 16, 16, 16, 16, -16]),
+            m(
+                [
+                    1651849619, 3942926787, -4111385247, -2706174340, -1356311774, -3161153896,
+                    1713407532, -2388220103, 1097729905,
+                ],
+            ),
+        ];
+        let mut state: u128 = 0x13579bdf2468ace0;
+        let mut i: u32 = 0;
+        while i < 50 {
+            let d1 = draw_mag(ref state, 2 * 0x100000000, 0x3fe00000000);
+            let d2 = draw_mag(ref state, 2 * 0x100000000, 0x3fe00000000);
+            let d3 = draw_mag(ref state, 2 * 0x100000000, 0x3fe00000000);
+            let o = 0x100000000;
+            cases
+                .append(
+                    m(
+                        [
+                            d1, draw(ref state, o), draw(ref state, o), draw(ref state, o), d2,
+                            draw(ref state, o), draw(ref state, o), draw(ref state, o), d3,
+                        ],
+                    ),
+                );
+            let t = 0x55555555;
+            cases
+                .append(
+                    m(
+                        [
+                            draw(ref state, t), draw(ref state, t), draw(ref state, t),
+                            draw(ref state, t), draw(ref state, t), draw(ref state, t),
+                            draw(ref state, t), draw(ref state, t), draw(ref state, t),
+                        ],
+                    ),
+                );
+            let (a1, a2, a3) = (
+                draw_mag(ref state, 0x100000000, 0x300000000),
+                draw_mag(ref state, 0x100000000, 0x300000000),
+                draw_mag(ref state, 0x100000000, 0x300000000),
+            );
+            let (b1, b2, b3) = (
+                draw_mag(ref state, 0x100000000, 0x300000000),
+                draw_mag(ref state, 0x100000000, 0x300000000),
+                draw_mag(ref state, 0x100000000, 0x300000000),
+            );
+            let dlt = 0x1000000;
+            cases
+                .append(
+                    m(
+                        [
+                            a1, a2, a3, b1, b2, b3, a1 + b1 + draw(ref state, dlt),
+                            a2 + b2 + draw(ref state, dlt), a3 + b3 + draw(ref state, dlt),
+                        ],
+                    ),
+                );
+            let (h, q) = (0x80000000, 0x20000000);
+            cases
+                .append(
+                    m(
+                        [
+                            draw_mag(ref state, 0x100000000, 0xfffff00000000), draw(ref state, h),
+                            draw(ref state, h), draw(ref state, h),
+                            draw_mag(ref state, 0x80000000, 0x380000000), draw(ref state, q),
+                            draw(ref state, h), draw(ref state, q),
+                            draw_mag(ref state, 0x80000000, 0x380000000),
+                        ],
+                    ),
+                );
+            i += 1;
+        }
+        let (mut b0, mut b1, mut b2, mut n) = (0_u32, 0_u32, 0_u32, 0_u32);
+        for a in cases {
+            assert!(Matrix3Trait::try_inverse(a) == try_inverse_reference(a), "case {}", n);
+            match branch(a) {
+                0 => b0 += 1,
+                1 => b1 += 1,
+                _ => b2 += 1,
+            }
+            n += 1;
+        }
+        assert!(n >= 200, "{} cases", n);
+        assert!(b0 >= 40 && b1 >= 40 && b2 >= 40, "branches {} {} {}", b0, b1, b2);
+    }
+
+    /// A small determinant with `f > 1` and a cofactor that overflows (`m33` of the adjugate,
+    /// `2^20 * 2^20`): the new body computes it after the norm and still panics, with the same
+    /// error as the reference.
+    fn overflowing() -> Matrix3<Fixed> {
+        m([0x10000000000000, 0, 0, 0, 0x10000000000000, 0, 0, 0, 0])
+    }
+
+    #[test]
+    #[should_panic(expected: 'Fixed: overflow')]
+    fn test_try_inverse_cofactor_overflow_panics() {
+        let _ = Matrix3Trait::try_inverse(overflowing());
+    }
+
+    #[test]
+    #[should_panic(expected: 'Fixed: overflow')]
+    fn test_try_inverse_reference_cofactor_overflow_panics() {
+        let _ = try_inverse_reference(overflowing());
+    }
+}
 pub use nalgebra_blocks::base::matrix_kronecker::{
     Matrix3KroneckerMatrix1, Matrix3KroneckerMatrix2, Matrix3KroneckerRowVector2,
     Matrix3KroneckerVector2,

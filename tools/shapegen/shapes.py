@@ -25,8 +25,8 @@ Kernels (AGENTS.md rule 4): each output scalar of a product is ONE fused sum of 
 `#[inline(always)]` helpers `Fused::sum_prod5/6` of `base/kernels.cairo` (one `Real::Wide` chain,
 rescaled once; same Sierra as the chain written in place, `DESIGN.md` §2), except the products
 that existed on `Matrix6` before, which keep their nested chain verbatim (`LEGACY_WIDE`).
-Inlining reproduces the measured rule of the former shapes: `#[inline(always)]` when the output
-is a vector of at most 4 components, the default otherwise.
+Inlining: `#[inline(always)]` when the output is a column vector (every matrix-vector product) or
+a vector of at most 4 components, the default otherwise (WP 13-OPT-3, `product_inline`).
 """
 
 import re
@@ -109,10 +109,12 @@ def kernel_note(k: int) -> str:
 
 
 def product_inline(out: Shape) -> bool:
-    """`#[inline(always)]` for vector outputs of at most 4 components (the former
-    `Matrix2/3/4::mul_vec` / `tr_mul_vec`), the default for the others (matrix products,
-    `Matrix6 * Vector6`), as measured on the hand-written shapes."""
-    return out.is_vector and out.n <= 4
+    """`#[inline(always)]` for column-vector outputs (every matrix-vector product) and vector
+    outputs of at most 4 components, the default for the others (matrix products). Up to WP
+    13-OPT-3 the column vectors of 5 and 6 components were not inlined either: inlining
+    `Matrix6 * Vector6` saves 49 of its 192 Cairo steps (`docs/STEPS.md`), the cost of the call
+    (36 arguments in, 6 out) against 6 accumulations of 6 products."""
+    return out.is_vector and (out.n <= 4 or out.is_column)
 
 
 def products(s: Shape, docs: dict[str, str]) -> tuple[list[str], list[str]]:
