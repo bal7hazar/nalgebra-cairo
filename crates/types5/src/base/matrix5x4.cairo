@@ -169,6 +169,7 @@ pub impl Matrix5x4MulVector4<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Matrix5x4<T>, Vector4<T>> {
     type Output = Vector5<T>;
+    #[inline(always)]
     fn mul_mat(self: Matrix5x4<T>, rhs: Vector4<T>) -> Vector5<T> {
         Vector5 {
             x: R::sum_prod4(self.m11, rhs.x, self.m12, rhs.y, self.m13, rhs.z, self.m14, rhs.w),

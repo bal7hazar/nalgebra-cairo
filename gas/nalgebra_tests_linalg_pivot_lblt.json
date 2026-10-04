@@ -86,7 +86,7 @@
     },
     "lblt5_solve": {
       "baseline": 443180,
-      "substitution": 577340
+      "substitution": 572710
     }
   },
   "nalgebra_tests_linalg_pivot_lblt::lblt6": {
@@ -104,7 +104,7 @@
     },
     "lblt6_solve": {
       "baseline": 714620,
-      "substitution": 894820
+      "substitution": 888990
     }
   }
 }

@@ -16,13 +16,13 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `alt_block` | 52170 | 42460 | x1.00 |
 | `refined_block` | 60890 | 51180 | x1.21 |
-| `alt_full_matrix` | 98070 | 88360 | x2.08 |
+| `alt_full_matrix` | 87390 | 77680 | x1.83 |
 
 ### affine3_mul
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `full_product` | 341350 | 43010 | x1.00 |
+| `full_product` | 314730 | 43010 | x1.00 |
 
 ### affine3_mul_isometry
 
@@ -56,9 +56,9 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_block` | 113240 | 102130 | x1.00 |
-| `refined_block` | 127520 | 116410 | x1.14 |
-| `alt_full_matrix` | 206330 | 195220 | x1.91 |
+| `alt_block` | 99930 | 88820 | x1.00 |
+| `refined_block` | 114210 | 103100 | x1.16 |
+| `alt_full_matrix` | 206330 | 195220 | x2.20 |
 
 ### isometry3_mul_affine3
 

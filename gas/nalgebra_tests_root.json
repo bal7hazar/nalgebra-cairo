@@ -33,9 +33,9 @@
     },
     "product_matrix3_4": {
       "baseline": 14210,
-      "chain": 81860,
+      "chain": 70470,
       "owned_corelib": 119560,
-      "snapshots": 95100
+      "snapshots": 84910
     },
     "stack_2x2_blocks": {
       "baseline": 12170,

@@ -40,8 +40,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 84150 | 35740 | x1.00 |
-| `alt_inverse_then_mul` | 89370 | 40960 | x1.15 |
+| `fused` | 79720 | 31310 | x1.00 |
+| `alt_inverse_then_mul` | 84940 | 36530 | x1.17 |
 
 ### isometry_matrix3_inverse
 
@@ -59,7 +59,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `composition` | 82530 | 34120 | x1.00 |
+| `composition` | 78100 | 29690 | x1.00 |
 
 ### isometry_matrix3_transform_point
 
@@ -112,7 +112,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `matrix` | 62150 | 29390 | x1.00 |
+| `matrix` | 57720 | 24960 | x1.00 |
 
 ### similarity2_mul_isometry
 
@@ -156,7 +156,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `composition` | 90150 | 40840 | x1.00 |
+| `composition` | 85920 | 36610 | x1.00 |
 
 ### similarity_matrix3_transform_point
 

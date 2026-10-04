@@ -16,10 +16,10 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pade3` | 101410 | 91990 | x1.00 |
-| `pade5` | 125560 | 116140 | x1.26 |
-| `pade7` | 146270 | 136850 | x1.49 |
-| `pade7_squared2` | 185230 | 175810 | x1.91 |
+| `pade3` | 96350 | 86930 | x1.00 |
+| `pade5` | 117970 | 108550 | x1.25 |
+| `pade7` | 136150 | 126730 | x1.46 |
+| `pade7_squared2` | 169250 | 159830 | x1.84 |
 
 ## nalgebra_tests_linalg_exp::exp3
 
@@ -27,10 +27,10 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `pade3` | 233680 | 223260 | x1.00 |
-| `pade5` | 284030 | 273610 | x1.23 |
-| `pade7` | 320330 | 309910 | x1.39 |
-| `pade7_squared2` | 393090 | 382670 | x1.71 |
+| `pade3` | 226620 | 216200 | x1.00 |
+| `pade5` | 273440 | 263020 | x1.22 |
+| `pade7` | 306210 | 295790 | x1.37 |
+| `pade7_squared2` | 370110 | 359690 | x1.66 |
 
 ## nalgebra_tests_linalg_exp::exp4
 
@@ -79,7 +79,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `by_squaring` | 55340 | 45520 | x1.00 |
+| `by_squaring` | 46300 | 36480 | x1.00 |
 
 ## nalgebra_tests_linalg_exp::pow3
 
@@ -87,7 +87,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `by_squaring` | 99870 | 89050 | x1.00 |
+| `by_squaring` | 86180 | 75360 | x1.00 |
 
 ## nalgebra_tests_linalg_exp::pow4
 

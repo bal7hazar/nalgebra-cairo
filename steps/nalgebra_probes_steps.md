@@ -33,17 +33,17 @@ Cairo steps per probe (`snforge test --tracked-resource cairo-steps --detailed-r
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `matrix3_determinant` | `op` | 96 | 178 | 82 |
-| `matrix3_mul` | `op` | 154 | 340 | 186 |
+| `matrix3_determinant` | `op` | 96 | 161 | 65 |
+| `matrix3_mul` | `op` | 154 | 315 | 161 |
 | `matrix3_mul_vec` | `op` | 112 | 165 | 53 |
 | `matrix3_transpose` | `op` | 136 | 145 | 9 |
-| `matrix3_try_inverse` | `op` | 136 | 566 | 430 |
+| `matrix3_try_inverse` | `op` | 136 | 548 | 412 |
 
 ## nalgebra_probes_steps::matrix6
 
 | probe | variant | baseline | raw | net steps |
 |---|---|---:|---:|---:|
-| `matrix6_mul_vec` | `op` | 187 | 379 | 192 |
+| `matrix6_mul_vec` | `op` | 187 | 330 | 143 |
 
 ## nalgebra_probes_steps::scalar
 

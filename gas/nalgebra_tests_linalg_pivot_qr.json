@@ -66,7 +66,7 @@
     },
     "col_piv_qr5_solve": {
       "baseline": 379400,
-      "substitution": 615730
+      "substitution": 611000
     }
   },
   "nalgebra_tests_linalg_pivot_qr::col_piv_qr6": {
@@ -81,7 +81,7 @@
     "col_piv_qr6_solve": {
       "alt_reflections": 739680,
       "baseline": 604530,
-      "substitution": 961930
+      "substitution": 956000
     }
   }
 }

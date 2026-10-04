@@ -54,7 +54,7 @@
     },
     "qr5x1_q_tr_mul": {
       "baseline": 41090,
-      "full_q": 296560
+      "full_q": 294160
     }
   },
   "nalgebra_tests_linalg_qr_tall::qr5x2": {
@@ -64,7 +64,7 @@
     },
     "qr5x2_q_tr_mul": {
       "baseline": 83210,
-      "full_q": 286050
+      "full_q": 284450
     }
   },
   "nalgebra_tests_linalg_qr_tall::qr5x3": {
@@ -74,7 +74,7 @@
     },
     "qr5x3_q_tr_mul": {
       "baseline": 144310,
-      "full_q": 292120
+      "full_q": 291520
     }
   },
   "nalgebra_tests_linalg_qr_tall::qr5x4": {
@@ -84,7 +84,7 @@
     },
     "qr5x4_q_tr_mul": {
       "baseline": 215290,
-      "full_q": 299570
+      "full_q": 296470
     }
   },
   "nalgebra_tests_linalg_qr_tall::qr5x6": {

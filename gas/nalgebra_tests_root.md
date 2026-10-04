@@ -51,9 +51,9 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `chain` | 81860 | 67650 | x1.00 |
-| `snapshots` | 95100 | 80890 | x1.20 |
-| `owned_corelib` | 119560 | 105350 | x1.56 |
+| `chain` | 70470 | 56260 | x1.00 |
+| `snapshots` | 84910 | 70700 | x1.26 |
+| `owned_corelib` | 119560 | 105350 | x1.87 |
 
 ### stack_2x2_blocks
 

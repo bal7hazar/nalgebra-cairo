@@ -210,6 +210,7 @@ pub impl Matrix6x5MulVector5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Matrix6x5<T>, Vector5<T>> {
     type Output = Vector6<T>;
+    #[inline(always)]
     fn mul_mat(self: Matrix6x5<T>, rhs: Vector5<T>) -> Vector6<T> {
         Vector6 {
             x: Fused::sum_prod5(

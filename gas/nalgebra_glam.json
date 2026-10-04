@@ -22,7 +22,7 @@
     },
     "mat3_to_isometry2": {
       "baseline": 9310,
-      "try_into": 31370
+      "try_into": 28640
     },
     "mat3_to_similarity2": {
       "baseline": 9310,
@@ -30,13 +30,13 @@
     },
     "mat4_to_isometry3": {
       "baseline": 10710,
-      "try_into": 89610
+      "try_into": 82450
     },
     "mat4_to_isometry3_reject": {
       "baseline": 14110,
       "bottom_first": 15320,
-      "orthogonal_first": 93310,
-      "single_function": 93310
+      "orthogonal_first": 86150,
+      "single_function": 86150
     },
     "mat4_to_matrix4": {
       "baseline": 10710,
@@ -44,8 +44,8 @@
     },
     "mat4_to_similarity3": {
       "baseline": 10710,
-      "one_pass": 110050,
-      "two_pass": 155340
+      "one_pass": 107320,
+      "two_pass": 152610
     },
     "matrix4_to_mat4": {
       "baseline": 14110,

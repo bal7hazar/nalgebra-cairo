@@ -505,6 +505,7 @@ pub impl Matrix5MulVector5<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Matrix5<T>, Vector5<T>> {
     type Output = Vector5<T>;
+    #[inline(always)]
     fn mul_mat(self: Matrix5<T>, rhs: Vector5<T>) -> Vector5<T> {
         Vector5 {
             x: Fused::sum_prod5(

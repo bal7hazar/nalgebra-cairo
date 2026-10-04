@@ -178,12 +178,12 @@
     },
     "lu3_vs_matrix3_determinant": {
       "baseline": 9710,
-      "cofactors": 20060,
+      "cofactors": 17330,
       "lu": 55560
     },
     "lu3_vs_matrix3_inverse": {
       "baseline": 14010,
-      "cofactors": 102370,
+      "cofactors": 62250,
       "lu": 109770
     }
   },
@@ -315,7 +315,7 @@
     },
     "qr3_determinant_closed_form": {
       "baseline": 9720,
-      "matrix3_cofactors": 20670
+      "matrix3_cofactors": 17940
     },
     "qr3_factors": {
       "baseline": 83830,
@@ -375,7 +375,7 @@
     },
     "svd2_pseudo_inverse": {
       "baseline": 82300,
-      "reciprocals": 110700
+      "reciprocals": 109300
     },
     "svd2_rank": {
       "baseline": 82300,
@@ -383,7 +383,7 @@
     },
     "svd2_recompose": {
       "baseline": 82300,
-      "scaled_product": 101770
+      "scaled_product": 100370
     },
     "svd2_singular_values": {
       "baseline": 8720,
@@ -395,7 +395,7 @@
     },
     "svd2_to_polar": {
       "baseline": 82300,
-      "quadform": 107940
+      "quadform": 105110
     }
   },
   "nalgebra_tests_linalg::svd3::tests": {
@@ -408,7 +408,7 @@
     },
     "svd3_pseudo_inverse": {
       "baseline": 673350,
-      "reciprocals": 727780
+      "reciprocals": 725380
     },
     "svd3_rank": {
       "baseline": 673350,
@@ -416,7 +416,7 @@
     },
     "svd3_recompose": {
       "baseline": 673350,
-      "scaled_product": 714520
+      "scaled_product": 712120
     },
     "svd3_singular_values": {
       "baseline": 9720,
@@ -428,7 +428,7 @@
     },
     "svd3_to_polar": {
       "baseline": 673350,
-      "quadform": 727030
+      "quadform": 722700
     }
   },
   "nalgebra_tests_linalg::udu::benches": {
