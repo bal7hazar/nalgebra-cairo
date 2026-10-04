@@ -213,8 +213,9 @@ The probe of `try_inverse` takes the branch `|det| >= 1/2` (its matrix has `f` a
 only the inlining acts. The two other branches were measured the same way on an uncommitted
 package (raw steps of one call, the previous body called as before against the new one inlined,
 same harness): pre-scaled (`f` about 0.62) 804 -> 703 (-101), small determinant with `f > 1`
-(det about 0.02) 593 -> 551 (-42), and this probe's matrix 519 -> 502 (-17). A probe per branch
-would pin them (probes are hand-written, outside that lot).
+(det about 0.02) 593 -> 551 (-42), and this probe's matrix 519 -> 502 (-17). These three figures
+are not pinned by `steps/` (no committed probe takes those branches): a probe per branch would pin
+them (probes are hand-written, outside that lot).
 
 ## Limits
 
