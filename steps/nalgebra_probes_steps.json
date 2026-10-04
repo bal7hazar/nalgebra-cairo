@@ -56,11 +56,11 @@
   "nalgebra_probes_steps::matrix3": {
     "matrix3_determinant": {
       "baseline": 96,
-      "op": 178
+      "op": 161
     },
     "matrix3_mul": {
       "baseline": 154,
-      "op": 340
+      "op": 315
     },
     "matrix3_mul_vec": {
       "baseline": 112,
@@ -72,13 +72,13 @@
     },
     "matrix3_try_inverse": {
       "baseline": 136,
-      "op": 566
+      "op": 548
     }
   },
   "nalgebra_probes_steps::matrix6": {
     "matrix6_mul_vec": {
       "baseline": 187,
-      "op": 379
+      "op": 330
     }
   },
   "nalgebra_probes_steps::scalar": {
