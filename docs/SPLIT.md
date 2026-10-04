@@ -1448,6 +1448,32 @@ pull requests (`gh pr view`), the merged files and `git log`; shas are squash co
   holder.
 - **In progress:** lot PP-FU2, the deferred notes of the pre-push reviews (row PP-FU2 of `docs/PLAN.md`).
 
+**Update 2026-10-04: nalgebra 0.2.0 published (WP 12-REC-N).** Facts are checked against the registry
+index (`scripts/release.py verify`), `git ls-remote --tags origin v0.2.0`, `gh release view v0.2.0` and
+the merged pull requests; shas are squash commits.
+- **Published.** nalgebra 0.2.0, all 54 packages, from the release commit `efa49dd` (#106), on the
+  project manager's go for the request `docs/releases/0.2.0.md` (#107, `ab3095f`): every registry
+  checksum equals its row (54 of 54), annotated tag `v0.2.0` on `efa49dd`, GitHub release
+  `nalgebra 0.2.0`. Rows 1-52 on 2026-10-03, 22:20-22:33 UTC, under the 8 GiB cap.
+- **The facade needed a one-off.** Its publish verification exceeded the cap (`memory allocation of
+  114688 bytes failed`); on the Overseer's one-off ruling, rows 53-54 ran under the heavy-build lock with
+  a 24 GiB address-space cap, started at 20 GB free: `nalgebra` 2026-10-03 23:23 UTC, 2:28.09, maximum
+  resident set size 9154636 kB; `nalgebra_glam` 2026-10-04 00:31 UTC, 0:22.71, 1912516 kB. A later facade
+  release needs the same room (the Mac, or a new ruling).
+- **What 0.2.0 holds.** No numeric result moves (every test, golden and oracle vector of 0.1.1 passes
+  unedited); Scarb 2.20.1 / Cairo 2.20.0 for consumers; fewer Cairo steps on the hot paths, bit-identical
+  (OPT-0 #101 `791cd4d`, OPT-1 #102 `472fa36`, OPT-2 #103 `3df1854`, tables in `CHANGELOG.md`); the API
+  parity close-out (API-1 #100 `557a5be`, 100.0 % of the inventory); the pre-push cap (#104 `c344428`);
+  the request / verify release tooling and the exact-zero analysis (REL-a #105 `5262548`); version 0.2.0
+  everywhere and `from_rotation_matrix` on upstream's `tr > 0` (REL-b #106 `efa49dd`).
+- **simba 0.3.0 not taken.** 0.2.0 stays on simba 0.2.0 / fixed 0.4.0: `nalgebra_glam` depends on
+  `glam_core` 0.4.1, which requires `fixed ^0.4.0`, and Scarb resolves one `fixed` per build. The
+  `tr > 0` guard already keeps `from_rotation_matrix` where it is at a zero trace under simba 0.3.0
+  (`docs/research/rel-zero.md`).
+- **In progress / waiting.** Row OPT-3 of `docs/PLAN.md` (more steps probes and optimisations); row
+  NAL-S3 (nalgebra on simba 0.3.0 / fixed 0.5.0) waits for a `glam_core` on fixed 0.5.0, requested from
+  the glam track through the project manager.
+
 ## 22. Release 0.1.1: readiness (2026-09-30, orchestrator)
 
 The conditions of the release go (§17, §19, `slingfall/OPERATIONS.md` §6-§7) and where each is met.

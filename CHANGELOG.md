@@ -5,7 +5,7 @@ release that changes results is scheduled so that consumers regenerate their gol
 package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates since 0.1.1, and
 `nalgebra_glam`) is versioned together.
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-10-03)
 
 No numeric result moves: every test, golden and oracle vector of 0.1.1 passes unedited. MINOR:
 consumers need Cairo 2.20.0 (below).
