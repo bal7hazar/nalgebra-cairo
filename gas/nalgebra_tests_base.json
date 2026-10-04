@@ -59,9 +59,9 @@
       "baseline": 8720
     },
     "matrix2_mul": {
-      "assign": 21160,
+      "assign": 18630,
       "baseline": 11210,
-      "fused": 21160
+      "fused": 18630
     },
     "matrix2_mul_vec": {
       "baseline": 9810,
@@ -94,8 +94,8 @@
     },
     "matrix2_tr_mul": {
       "baseline": 11210,
-      "fused": 21160,
-      "transpose_mul": 21160
+      "fused": 18630,
+      "transpose_mul": 18630
     },
     "matrix2_tr_mul_vec": {
       "baseline": 9810,
@@ -155,12 +155,12 @@
     },
     "matrix3_cross_matrix_mul": {
       "baseline": 14510,
-      "materialised": 37260
+      "materialised": 33430
     },
     "matrix3_determinant": {
       "alt_triple_products": 25100,
       "baseline": 9710,
-      "cofactors": 20060
+      "cofactors": 17330
     },
     "matrix3_diagonal": {
       "baseline": 10710,
@@ -194,9 +194,9 @@
       "baseline": 9720
     },
     "matrix3_mul": {
-      "assign": 37860,
+      "assign": 34330,
       "baseline": 15710,
-      "fused": 37860
+      "fused": 34330
     },
     "matrix3_mul_vec": {
       "baseline": 11510,
@@ -232,8 +232,8 @@
     },
     "matrix3_tr_mul": {
       "baseline": 15710,
-      "fused": 37860,
-      "transpose_mul": 37860
+      "fused": 34330,
+      "transpose_mul": 34330
     },
     "matrix3_tr_mul_vec": {
       "baseline": 11510,
@@ -250,13 +250,13 @@
     },
     "matrix3_try_inverse": {
       "baseline": 13710,
-      "prescaled_det_ge_half": 102070,
-      "prescaled_norm_gt_one": 102070,
-      "prescaled_small": 102070
+      "prescaled_det_ge_half": 63130,
+      "prescaled_norm_gt_one": 68940,
+      "prescaled_small": 85880
     },
     "matrix3_try_inverse_singular": {
       "baseline": 9720,
-      "none": 98380
+      "none": 40750
     },
     "matrix3_zeros": {
       "baseline": 11710,
@@ -436,7 +436,7 @@
       "first_differs": 17910
     },
     "matrix6_mul": {
-      "alt_blocks": 264380,
+      "alt_blocks": 236140,
       "assign": 152920,
       "baseline": 44010,
       "fused": 152920
@@ -444,7 +444,7 @@
     "matrix6_mul_vec": {
       "alt_blocks": 54540,
       "baseline": 19010,
-      "fused": 40920
+      "fused": 34990
     },
     "matrix6_neg": {
       "baseline": 36610,
@@ -469,9 +469,9 @@
       "fused": 152920
     },
     "matrix6_tr_mul_vec": {
-      "alt_transpose_then_mul_vec": 40920,
+      "alt_transpose_then_mul_vec": 34990,
       "baseline": 19010,
-      "fused": 40920
+      "fused": 34990
     },
     "matrix6_trace": {
       "baseline": 15110,

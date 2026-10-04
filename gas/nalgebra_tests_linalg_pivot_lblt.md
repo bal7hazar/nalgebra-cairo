@@ -130,7 +130,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 577340 | 134160 | x1.00 |
+| `substitution` | 572710 | 129530 | x1.00 |
 
 ## nalgebra_tests_linalg_pivot_lblt::lblt6
 
@@ -156,5 +156,5 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `substitution` | 894820 | 180200 | x1.00 |
+| `substitution` | 888990 | 174370 | x1.00 |
 

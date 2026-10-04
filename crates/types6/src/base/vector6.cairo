@@ -180,6 +180,7 @@ pub impl Vector6MulMatrix1<
     T, impl R: Real<T>, +Mul<T>, +Copy<T>, +Drop<T>, +Drop<R::Wide>,
 > of MatrixMul<Vector6<T>, Matrix1<T>> {
     type Output = Vector6<T>;
+    #[inline(always)]
     fn mul_mat(self: Vector6<T>, rhs: Matrix1<T>) -> Vector6<T> {
         Vector6 {
             x: self.x * rhs.x,

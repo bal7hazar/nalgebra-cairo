@@ -860,8 +860,11 @@ def matrix_operators(m: Mat, docs: dict[str, str]) -> list[str]:
         doc = (f"/// `a * b` (matrix product): {n * n} `sum_prod{n}`, one rounding per component. "
                f"Panics on overflow.")
     real = "impl R: Real<T>, +Copy<T>, +Drop<T>" + (", +Drop<R::Wide>" if wide else "")
+    # `*` is inlined up to 3x3 (WP 13-OPT-3): on `Matrix3` the call (18 arguments in, 9 out) cost
+    # 25 of 186 Cairo steps against 9 `sum_prod3`; larger products keep the call.
+    inline = f"{INLINE}\n" if n <= 3 else ""
     out.append(f"{docs.get('Mul', doc)}\n"
-               f"pub impl {S}Mul<T, {real}> of Mul<{T}> {{\n"
+               f"pub impl {S}Mul<T, {real}> of Mul<{T}> {{\n{inline}"
                f"fn mul(lhs: {T}, rhs: {T}) -> {T} {{\n{product}\n}}\n}}")
     for trait, op, verb, bound in (("Add", "+", "add", "+Add<T>"), ("Sub", "-", "sub", "+Sub<T>")):
         out.append(f"/// `a {op}= b`.\n"

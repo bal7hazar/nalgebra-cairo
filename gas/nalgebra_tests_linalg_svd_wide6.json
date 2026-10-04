@@ -2,22 +2,22 @@
   "nalgebra_tests_linalg_svd_wide6::svd1x6": {
     "svd1x6_new": {
       "baseline": 10490,
-      "eigen_of_gram": 61890,
-      "without_u": 62690,
-      "without_v": 62690
+      "eigen_of_gram": 59460,
+      "without_u": 60260,
+      "without_v": 60260
     },
     "svd1x6_pseudo_inverse": {
-      "baseline": 62720,
-      "scaled_product": 92810
+      "baseline": 60290,
+      "scaled_product": 89080
     },
     "svd1x6_singular_values": {
       "baseline": 10490,
-      "eigen_of_gram": 33440,
-      "svd_without_factors": 62590
+      "eigen_of_gram": 31010,
+      "svd_without_factors": 60160
     },
     "svd1x6_to_polar": {
-      "baseline": 62720,
-      "products": 81890
+      "baseline": 60290,
+      "products": 79460
     }
   },
   "nalgebra_tests_linalg_svd_wide6::svd2x6": {

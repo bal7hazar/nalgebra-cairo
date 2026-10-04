@@ -132,7 +132,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `fused_trace` | 528770 | 32230 | x1.00 |
-| `alt_rotation_to_angle` | 576490 | 79950 | x2.48 |
+| `alt_rotation_to_angle` | 571830 | 75290 | x2.34 |
 
 ### rotation3_axis_angle
 
@@ -144,7 +144,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `shuster_markley` | 687090 | 226260 | x1.00 |
+| `shuster_markley` | 672020 | 216170 | x1.00 |
 
 ### rotation3_from_matrix
 
@@ -152,7 +152,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `closed_form` | 1060750 | 529600 | x1.00 |
 | `iterate_8` | 1893770 | 1362620 | x2.57 |
-| `alt_matrix_iterate_8` | 2157010 | 1625860 | x3.07 |
+| `alt_matrix_iterate_8` | 2086130 | 1554980 | x2.94 |
 
 ### rotation3_index
 
@@ -196,8 +196,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `div` | 513030 | 22250 | x1.00 |
-| `product_with_transpose` | 513030 | 22250 | x1.00 |
+| `div` | 505070 | 18720 | x1.00 |
+| `product_with_transpose` | 505070 | 18720 | x1.00 |
 
 ### rotation3_slerp
 

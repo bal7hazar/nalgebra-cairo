@@ -23,9 +23,9 @@
       "fused": 14270
     },
     "isometry_matrix3_inv_mul": {
-      "alt_inverse_then_mul": 89370,
+      "alt_inverse_then_mul": 84940,
       "baseline": 48410,
-      "fused": 84150
+      "fused": 79720
     },
     "isometry_matrix3_inverse": {
       "baseline": 30760,
@@ -37,7 +37,7 @@
     },
     "isometry_matrix3_mul": {
       "baseline": 48410,
-      "composition": 82530
+      "composition": 78100
     },
     "isometry_matrix3_transform_point": {
       "alt_rotate_then_add": 35820,
@@ -74,7 +74,7 @@
     },
     "rotation3_mul_isometry": {
       "baseline": 32760,
-      "matrix": 62150
+      "matrix": 57720
     },
     "similarity2_mul_isometry": {
       "baseline": 11910,
@@ -104,7 +104,7 @@
     },
     "similarity_matrix3_mul": {
       "baseline": 49310,
-      "composition": 90150
+      "composition": 85920
     },
     "similarity_matrix3_transform_point": {
       "baseline": 27260,

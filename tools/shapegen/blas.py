@@ -301,7 +301,8 @@ def method(sig: str, body: str, inline: bool) -> str:
 
 def small(out: Shape) -> bool:
     """`#[inline(always)]` for vector outputs of at most 4 components, the rule of the products
-    (`shapes.product_inline`)."""
+    before WP 13-OPT-3 (`shapes.product_inline` now also inlines the column vectors of 5 and 6
+    components; the BLAS impls keep this rule, outside that lot)."""
     return out.is_vector and out.n <= 4
 
 

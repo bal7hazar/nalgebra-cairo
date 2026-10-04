@@ -35,7 +35,7 @@
     },
     "svd2_pseudo_inverse": {
       "baseline": 83670,
-      "scaled_product": 112270
+      "scaled_product": 110870
     },
     "svd2_singular_values": {
       "baseline": 10090,
@@ -44,7 +44,7 @@
     },
     "svd2_to_polar": {
       "baseline": 83670,
-      "products": 109110
+      "products": 106180
     }
   },
   "nalgebra_tests_linalg_svd::svd3": {
@@ -56,7 +56,7 @@
     },
     "svd3_pseudo_inverse": {
       "baseline": 656040,
-      "scaled_product": 710670
+      "scaled_product": 708270
     },
     "svd3_singular_values": {
       "baseline": 11090,
@@ -65,7 +65,7 @@
     },
     "svd3_to_polar": {
       "baseline": 656040,
-      "products": 709520
+      "products": 705090
     }
   },
   "nalgebra_tests_linalg_svd::svd4": {

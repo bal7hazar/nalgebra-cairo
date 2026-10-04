@@ -81,8 +81,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `assign` | 21160 | 9950 | x1.00 |
-| `fused` | 21160 | 9950 | x1.00 |
+| `assign` | 18630 | 7420 | x1.00 |
+| `fused` | 18630 | 7420 | x1.00 |
 
 ### matrix2_mul_vec
 
@@ -131,8 +131,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 21160 | 9950 | x1.00 |
-| `transpose_mul` | 21160 | 9950 | x1.00 |
+| `fused` | 18630 | 7420 | x1.00 |
+| `transpose_mul` | 18630 | 7420 | x1.00 |
 
 ### matrix2_tr_mul_vec
 
@@ -210,14 +210,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `materialised` | 37260 | 22750 | x1.00 |
+| `materialised` | 33430 | 18920 | x1.00 |
 
 ### matrix3_determinant
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `cofactors` | 20060 | 10350 | x1.00 |
-| `alt_triple_products` | 25100 | 15390 | x1.49 |
+| `cofactors` | 17330 | 7620 | x1.00 |
+| `alt_triple_products` | 25100 | 15390 | x2.02 |
 
 ### matrix3_diagonal
 
@@ -265,8 +265,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `assign` | 37860 | 22150 | x1.00 |
-| `fused` | 37860 | 22150 | x1.00 |
+| `assign` | 34330 | 18620 | x1.00 |
+| `fused` | 34330 | 18620 | x1.00 |
 
 ### matrix3_mul_vec
 
@@ -315,8 +315,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 37860 | 22150 | x1.00 |
-| `transpose_mul` | 37860 | 22150 | x1.00 |
+| `fused` | 34330 | 18620 | x1.00 |
+| `transpose_mul` | 34330 | 18620 | x1.00 |
 
 ### matrix3_tr_mul_vec
 
@@ -341,15 +341,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `prescaled_det_ge_half` | 102070 | 88360 | x1.00 |
-| `prescaled_norm_gt_one` | 102070 | 88360 | x1.00 |
-| `prescaled_small` | 102070 | 88360 | x1.00 |
+| `prescaled_det_ge_half` | 63130 | 49420 | x1.00 |
+| `prescaled_norm_gt_one` | 68940 | 55230 | x1.12 |
+| `prescaled_small` | 85880 | 72170 | x1.46 |
 
 ### matrix3_try_inverse_singular
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `none` | 98380 | 88660 | x1.00 |
+| `none` | 40750 | 31030 | x1.00 |
 
 ### matrix3_zeros
 
@@ -592,14 +592,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 |---|---:|---:|---:|
 | `assign` | 152920 | 108910 | x1.00 |
 | `fused` | 152920 | 108910 | x1.00 |
-| `alt_blocks` | 264380 | 220370 | x2.02 |
+| `alt_blocks` | 236140 | 192130 | x1.76 |
 
 ### matrix6_mul_vec
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `fused` | 40920 | 21910 | x1.00 |
-| `alt_blocks` | 54540 | 35530 | x1.62 |
+| `fused` | 34990 | 15980 | x1.00 |
+| `alt_blocks` | 54540 | 35530 | x2.22 |
 
 ### matrix6_neg
 
@@ -637,8 +637,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `alt_transpose_then_mul_vec` | 40920 | 21910 | x1.00 |
-| `fused` | 40920 | 21910 | x1.00 |
+| `alt_transpose_then_mul_vec` | 34990 | 15980 | x1.00 |
+| `fused` | 34990 | 15980 | x1.00 |
 
 ### matrix6_trace
 

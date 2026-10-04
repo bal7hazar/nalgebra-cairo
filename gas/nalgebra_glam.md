@@ -38,7 +38,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `try_into` | 31370 | 22060 | x1.00 |
+| `try_into` | 28640 | 19330 | x1.00 |
 
 ### mat3_to_similarity2
 
@@ -50,15 +50,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `try_into` | 89610 | 78900 | x1.00 |
+| `try_into` | 82450 | 71740 | x1.00 |
 
 ### mat4_to_isometry3_reject
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
 | `bottom_first` | 15320 | 1210 | x1.00 |
-| `orthogonal_first` | 93310 | 79200 | x65.45 |
-| `single_function` | 93310 | 79200 | x65.45 |
+| `orthogonal_first` | 86150 | 72040 | x59.54 |
+| `single_function` | 86150 | 72040 | x59.54 |
 
 ### mat4_to_matrix4
 
@@ -70,8 +70,8 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `one_pass` | 110050 | 99340 | x1.00 |
-| `two_pass` | 155340 | 144630 | x1.46 |
+| `one_pass` | 107320 | 96610 | x1.00 |
+| `two_pass` | 152610 | 141900 | x1.47 |
 
 ### matrix4_to_mat4
 

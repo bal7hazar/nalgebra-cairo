@@ -8,19 +8,19 @@
   "nalgebra_tests_linalg_exp::exp2": {
     "exp2": {
       "baseline": 9420,
-      "pade3": 101410,
-      "pade5": 125560,
-      "pade7": 146270,
-      "pade7_squared2": 185230
+      "pade3": 96350,
+      "pade5": 117970,
+      "pade7": 136150,
+      "pade7_squared2": 169250
     }
   },
   "nalgebra_tests_linalg_exp::exp3": {
     "exp3": {
       "baseline": 10420,
-      "pade3": 233680,
-      "pade5": 284030,
-      "pade7": 320330,
-      "pade7_squared2": 393090
+      "pade3": 226620,
+      "pade5": 273440,
+      "pade7": 306210,
+      "pade7_squared2": 370110
     }
   },
   "nalgebra_tests_linalg_exp::exp4": {
@@ -59,13 +59,13 @@
   "nalgebra_tests_linalg_exp::pow2": {
     "pow2": {
       "baseline": 9820,
-      "by_squaring": 55340
+      "by_squaring": 46300
     }
   },
   "nalgebra_tests_linalg_exp::pow3": {
     "pow3": {
       "baseline": 10820,
-      "by_squaring": 99870
+      "by_squaring": 86180
     }
   },
   "nalgebra_tests_linalg_exp::pow4": {

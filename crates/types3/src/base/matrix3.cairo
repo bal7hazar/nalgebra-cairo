@@ -103,6 +103,7 @@ pub impl Matrix3Neg<T, +Neg<T>, +Copy<T>, +Drop<T>> of Neg<Matrix3<T>> {
 
 /// `a * b` (matrix product): 9 `sum_prod3`, one rounding per component. Panics on overflow.
 pub impl Matrix3Mul<T, impl R: Real<T>, +Copy<T>, +Drop<T>> of Mul<Matrix3<T>> {
+    #[inline(always)]
     fn mul(lhs: Matrix3<T>, rhs: Matrix3<T>) -> Matrix3<T> {
         Matrix3 {
             m11: R::sum_prod3(lhs.m11, rhs.m11, lhs.m12, rhs.m21, lhs.m13, rhs.m31),

@@ -244,15 +244,15 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `cofactors` | 20060 | 10350 | x1.00 |
-| `lu` | 55560 | 45850 | x4.43 |
+| `cofactors` | 17330 | 7620 | x1.00 |
+| `lu` | 55560 | 45850 | x6.02 |
 
 ### lu3_vs_matrix3_inverse
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `cofactors` | 102370 | 88360 | x1.00 |
-| `lu` | 109770 | 95760 | x1.08 |
+| `cofactors` | 62250 | 48240 | x1.00 |
+| `lu` | 109770 | 95760 | x1.99 |
 
 ## nalgebra_tests_linalg::lu::lu4::tests
 
@@ -413,7 +413,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `matrix3_cofactors` | 20670 | 10950 | x1.00 |
+| `matrix3_cofactors` | 17940 | 8220 | x1.00 |
 
 ### qr3_factors
 
@@ -496,7 +496,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reciprocals` | 110700 | 28400 | x1.00 |
+| `reciprocals` | 109300 | 27000 | x1.00 |
 
 ### svd2_rank
 
@@ -508,7 +508,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 101770 | 19470 | x1.00 |
+| `scaled_product` | 100370 | 18070 | x1.00 |
 
 ### svd2_singular_values
 
@@ -526,7 +526,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 107940 | 25640 | x1.00 |
+| `quadform` | 105110 | 22810 | x1.00 |
 
 ## nalgebra_tests_linalg::svd3::tests
 
@@ -540,7 +540,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `reciprocals` | 727780 | 54430 | x1.00 |
+| `reciprocals` | 725380 | 52030 | x1.00 |
 
 ### svd3_rank
 
@@ -552,7 +552,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `scaled_product` | 714520 | 41170 | x1.00 |
+| `scaled_product` | 712120 | 38770 | x1.00 |
 
 ### svd3_singular_values
 
@@ -570,7 +570,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `quadform` | 727030 | 53680 | x1.00 |
+| `quadform` | 722700 | 49350 | x1.00 |
 
 ## nalgebra_tests_linalg::udu::benches
 
