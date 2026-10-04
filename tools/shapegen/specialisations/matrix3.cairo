@@ -175,12 +175,28 @@ fn adjugate(self: Matrix3<T>) -> Matrix3<T> {
 mod try_inverse_reference {
     use fixed::Fixed;
     use simba::scalar::FixedReal as R;
-    use super::{Matrix3, Matrix3InternalTrait, Matrix3Trait};
+    use super::{Matrix3, Matrix3Trait};
+
+    /// The internal `adjugate` (`#[inline(always)]`), written in place: naming the crate-internal
+    /// trait here would make the package split import it outside the tests.
+    fn adjugate(self: Matrix3<Fixed>) -> Matrix3<Fixed> {
+        Matrix3 {
+            m11: R::diff_prod(self.m22, self.m33, self.m23, self.m32),
+            m21: R::diff_prod(self.m23, self.m31, self.m21, self.m33),
+            m31: R::diff_prod(self.m21, self.m32, self.m22, self.m31),
+            m12: R::diff_prod(self.m13, self.m32, self.m12, self.m33),
+            m22: R::diff_prod(self.m11, self.m33, self.m13, self.m31),
+            m32: R::diff_prod(self.m12, self.m31, self.m11, self.m32),
+            m13: R::diff_prod(self.m12, self.m23, self.m13, self.m22),
+            m23: R::diff_prod(self.m13, self.m21, self.m11, self.m23),
+            m33: R::diff_prod(self.m11, self.m22, self.m12, self.m21),
+        }
+    }
 
     /// `Matrix3Trait::try_inverse` before WP 13-OPT-3 (the same body, called, not inlined): the
     /// whole adjugate first, then `k = floor(2 / f)` on every small determinant.
     fn try_inverse_reference(self: Matrix3<Fixed>) -> Option<Matrix3<Fixed>> {
-        let adj = Matrix3InternalTrait::adjugate(self);
+        let adj = adjugate(self);
         let det = R::sum_prod3(self.m11, adj.m11, self.m12, adj.m21, self.m13, adj.m31);
         if det < R::HALF && det > -R::HALF {
             let f = Matrix3Trait::norm(self);
@@ -190,7 +206,7 @@ mod try_inverse_reference {
             let k = R::floor(R::div(R::TWO, f));
             if k >= R::TWO {
                 let b = Matrix3Trait::scale(self, k);
-                let adj_b = Matrix3InternalTrait::adjugate(b);
+                let adj_b = adjugate(b);
                 let det_b = R::sum_prod3(b.m11, adj_b.m11, b.m12, adj_b.m21, b.m13, adj_b.m31);
                 if det_b == R::zero() {
                     return None;
