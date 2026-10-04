@@ -320,9 +320,11 @@ pub impl Matrix3Impl<
     /// pre-scaling — upstream's 3x3 formula — costs 66 860 gas through `Real::div9`
     /// (`bench_matrix3_try_inverse__alt_div_n`) against 88 360, and `adjugate * (1 / det)` is
     /// cheaper still, but they leave respectively 2 and 9 of the 30 oracle cases outside their
-    /// tolerance (`test_try_inverse_candidates_error`), so the pre-scaled algorithm stays. The
-    /// charged gas is that of the costliest branch (the pre-scaled one): the three
-    /// `bench_matrix3_try_inverse__prescaled_*` benchmarks measure the same figure.
+    /// tolerance (`test_try_inverse_candidates_error`), so the pre-scaled algorithm stays. Up to WP
+    /// 13-OPT-3 the call was charged the gas of its costliest branch (the three
+    /// `bench_matrix3_try_inverse__prescaled_*` benchmarks measured the same 88 360); inlined, each
+    /// branch is charged its own (`|det| >= 1/2` 49 420, small determinant with `f > 1` 55 230,
+    /// pre-scaled 72 170 net).
     ///
     /// WP 13-OPT-3, same bits and same panics as before: `k = floor(2 / f) >= 2` exactly when
     /// `f <= 1` (`2 / f` is rounded to nearest: one ulp above 1 it is already 2 ulp below 2), so
