@@ -28,7 +28,7 @@ How to read it:
 | debug | 0 | 0 | 0 | 12 | 12 | — |
 | **total** | **1885** | **0** | **0** | **551** | **2436** | **100.0%** |
 
-nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **41** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
+nalgebra-cairo items with no upstream counterpart (undocumented extras): **0** ([list](#items-in-nalgebra-cairo-but-not-upstream)); Cairo-imposed forms of upstream operators, fields and `Deref` access: **107** ([list](#cairo-imposed-forms)); scalar layer: **61** items named as in simba-rs, **35** documented exceptions ([list](#scalar-layer-simba)).
 
 ## Proposed work packages
 
@@ -298,11 +298,11 @@ The `simba` package ([simba-cairo](https://github.com/bal7hazar/simba-cairo), a 
 
 | Owner | Items | simba-rs trait |
 |---|---|---|
-| simba::Real | `abs`, `clamp`, `e`, `floor`, `frac_1_pi`, `frac_pi_2`, `frac_pi_3`, `frac_pi_4`, `frac_pi_6`, `is_sign_negative`, `is_sign_positive`, `ln_10`, `ln_2`, `max_value`, `max`, `min_value`, `min`, `mul_add`, `pi`, `recip`, `signum`, `sqrt`, `two_pi` | RealField / ComplexField / Field |
+| simba::Real | `abs`, `ceil`, `clamp`, `copysign`, `e`, `floor`, `frac_1_pi`, `frac_2_pi`, `frac_pi_2`, `frac_pi_3`, `frac_pi_4`, `frac_pi_6`, `frac_pi_8`, `fract`, `hypot`, `is_sign_negative`, `is_sign_positive`, `ln_10`, `ln_2`, `max_value`, `max`, `min_value`, `min`, `mul_add`, `pi`, `powi`, `recip`, `round`, `signum`, `sqrt`, `trunc`, `two_pi` | RealField / ComplexField / Field |
 | simba::Real | `default_epsilon` | approx::AbsDiffEq |
 | simba::Real | `one` | num::One |
 | simba::Real | `zero` | num::Zero |
-| simba::Transcendental | `acos`, `asin`, `atan2`, `atan`, `cos`, `cosh`, `coshc`, `exp`, `ln`, `sin_cos`, `sin`, `sinh`, `sinhc`, `tan`, `tanh` | RealField / ComplexField / Field |
+| simba::Transcendental | `acos`, `acosh`, `asin`, `asinh`, `atan2`, `atan`, `atanh`, `cos`, `cosh`, `coshc`, `exp2`, `exp_m1`, `exp`, `ln_1p`, `ln`, `log10`, `log2`, `log`, `powf`, `sin_cos`, `sin`, `sinh_cosh`, `sinh`, `sinhc`, `tan`, `tanh` | RealField / ComplexField / Field |
 
 ### Documented exception: fused scalar kernels and constants
 
