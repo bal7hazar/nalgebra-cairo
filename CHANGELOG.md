@@ -5,12 +5,12 @@ release that changes results is scheduled so that consumers regenerate their gol
 package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates since 0.1.1, and
 `nalgebra_glam`) is versioned together.
 
-## 0.3.0 (unreleased)
+## 0.3.0 (2026-10-05)
 
 No result moves: every test, golden, oracle vector and steps entry of 0.2.0 passes unedited. Gas
 moves by +100 / +200 in the `from_matrix` paths and -180 in `UnitComplex::axis_angle`
-(dependency-induced, below). MINOR: simba's public traits move from 0.2 to 0.3. Prepared; release
-pending (`docs/PLAN.md`).
+(dependency-induced, below). MINOR: simba's public traits move from 0.2 to 0.3. Published on
+scarbs.xyz on 2026-10-05 (`docs/releases/0.3.0.md`).
 
 ### Changed
 
