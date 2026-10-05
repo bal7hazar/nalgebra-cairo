@@ -39,7 +39,7 @@ facade_no_default_features = { members = ["nalgebra"], default_features = false,
 # (WP 9-NS5: `glam_int` dropped, docs/SPLIT.md §15; WP 9-R1: its direct dependencies on the
 # per-dimension map, docs/SPLIT.md §18.1)
 nalgebra_glam = ["nalgebra_glam", "nalgebra_core", "nalgebra_types2", "nalgebra_types3", "nalgebra_types4",
-    "nalgebra_static2", "nalgebra_static3", "nalgebra_geometry2", "nalgebra_geometry3", "glam_core@0.4.1"]
+    "nalgebra_static2", "nalgebra_static3", "nalgebra_geometry2", "nalgebra_geometry3", "glam_core@0.5.0"]
 # WP 9-NS5: static 1-4 + geometry (docs/SPLIT.md §6.2, §12.4); WP 9-R1: static 2-4 + geometry 2-4
 # + transforms 2-3 on the per-dimension map (docs/SPLIT.md §18.2); WP 9-R3: budgets declared below
 # (15 s / 3 GB up to dimension 4)
@@ -91,4 +91,4 @@ static4_views = { members = ["nalgebra_static4", "nalgebra_views"], report_only 
 static4_norm = { members = ["nalgebra_static4", "nalgebra_norm"], report_only = true }
 
 # WP 9-R3: the reference for `nalgebra_glam`'s closure (the glam types alone), shown, never gated
-glam_0_4_1_alone = { members = ["glam_core@0.4.1"], report_only = true }
+glam_0_5_0_alone = { members = ["glam_core@0.5.0"], report_only = true }

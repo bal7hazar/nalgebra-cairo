@@ -20,12 +20,12 @@ eigen = ["nalgebra_linalg_svd_eigen2/eigen"]
 svd = ["eigen", "nalgebra_linalg_core/svd", "nalgebra_linalg_svd_eigen2/svd"]
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.2.0" }
-nalgebra_types2 = { path = "../types2", version = "0.2.0" }
-nalgebra_types3 = { path = "../types3", version = "0.2.0" }
-nalgebra_static3 = { path = "../static3", version = "0.2.0", default-features = false }
-nalgebra_linalg_core = { path = "../linalg_core", version = "0.2.0", default-features = false }
-nalgebra_linalg_svd_eigen2 = { path = "../linalg_svd_eigen2", version = "0.2.0", default-features = false }
+nalgebra_core = { path = "../core", version = "0.3.0" }
+nalgebra_types2 = { path = "../types2", version = "0.3.0" }
+nalgebra_types3 = { path = "../types3", version = "0.3.0" }
+nalgebra_static3 = { path = "../static3", version = "0.3.0", default-features = false }
+nalgebra_linalg_core = { path = "../linalg_core", version = "0.3.0", default-features = false }
+nalgebra_linalg_svd_eigen2 = { path = "../linalg_svd_eigen2", version = "0.3.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]
