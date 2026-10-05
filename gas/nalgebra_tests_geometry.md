@@ -1283,7 +1283,7 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `atan2` | 39410 | 30600 | x1.00 |
+| `atan2` | 39230 | 30420 | x1.00 |
 
 ### unit_complex_cast
 
@@ -1711,14 +1711,14 @@ Sierra gas (`l2_gas`) per benchmark; `net` = raw - group baseline.
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `closed_form` | 501470 | 490260 | x1.00 |
-| `alt_iterate` | 2350880 | 2339670 | x4.77 |
+| `closed_form` | 501570 | 490360 | x1.00 |
+| `alt_iterate` | 2350980 | 2339770 | x4.77 |
 
 ### unit_quaternion_from_matrix_eps
 
 | variant | raw | net | vs best |
 |---|---:|---:|---:|
-| `muller_8` | 908910 | 897700 | x1.00 |
+| `muller_8` | 909010 | 897800 | x1.00 |
 
 ### unit_quaternion_from_quaternion
 

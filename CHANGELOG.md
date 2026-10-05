@@ -7,9 +7,10 @@ package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates s
 
 ## 0.3.0 (unreleased)
 
-No numeric result moves: every test, golden, oracle vector, gas and steps entry of 0.2.0 passes
-unedited. MINOR: simba's public traits move from 0.2 to 0.3. Prepared; release pending
-(`docs/PLAN.md`).
+No result moves: every test, golden, oracle vector and steps entry of 0.2.0 passes unedited. Gas
+moves by +100 / +200 in the `from_matrix` paths and -180 in `UnitComplex::axis_angle`
+(dependency-induced, below). MINOR: simba's public traits move from 0.2 to 0.3. Prepared; release
+pending (`docs/PLAN.md`).
 
 ### Changed
 
@@ -29,6 +30,15 @@ unedited. MINOR: simba's public traits move from 0.2 to 0.3. Prepared; release p
     additions.
   - fixed 0.5.0 adds `sinh_cosh`, `asinh`, `acosh`, `atanh`; `sinh` and `cosh` share their rounding
     with `sinh_cosh` through inlined helpers holding the same operations: no kernel result changes.
+- **Gas, dependency-induced** (seven benchmarks, no result): simba 0.3.0's `Real::is_sign_positive`
+  on `Fixed` is fixed's `is_sign_positive`, `!is_negative(raw)` with one `bounded_int::constrain`,
+  where simba 0.2.0 forwarded to `is_positive`, `raw > 0`. `UnitComplex::axis_angle` (one call after
+  `atan2`, whose `trig.cairo` is identical in fixed 0.4.0 and 0.5.0): -180
+  (`unit_complex_axis_angle__atan2` 39410 -> 39230). The Shepperd sign canonicalisation that ends
+  `UnitQuaternion::from_matrix` / `from_matrix_eps` and `Rotation3::from_matrix` (four calls in its
+  branches, one taken): +100 per canonicalisation (`unit_quaternion_from_matrix__closed_form`,
+  `__alt_iterate`, `from_matrix_eps__muller_8`, `rotation3_from_matrix__baseline` +100;
+  `rotation3_from_matrix__closed_form`, `__iterate_8` +200, so +100 net of their baseline).
 
 ### Performance
 

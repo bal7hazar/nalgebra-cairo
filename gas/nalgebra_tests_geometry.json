@@ -896,7 +896,7 @@
   },
   "nalgebra_tests_geometry::unit_complex::benches_ext": {
     "unit_complex_axis_angle": {
-      "atan2": 39410,
+      "atan2": 39230,
       "baseline": 8810
     },
     "unit_complex_cast": {
@@ -1188,13 +1188,13 @@
       "shepperd": 54240
     },
     "unit_quaternion_from_matrix": {
-      "alt_iterate": 2350880,
+      "alt_iterate": 2350980,
       "baseline": 11210,
-      "closed_form": 501470
+      "closed_form": 501570
     },
     "unit_quaternion_from_matrix_eps": {
       "baseline": 11210,
-      "muller_8": 908910
+      "muller_8": 909010
     },
     "unit_quaternion_from_quaternion": {
       "baseline": 10210,
