@@ -5,6 +5,49 @@ release that changes results is scheduled so that consumers regenerate their gol
 package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates since 0.1.1, and
 `nalgebra_glam`) is versioned together.
 
+## 0.3.0 (unreleased)
+
+No numeric result moves: every test, golden, oracle vector, gas and steps entry of 0.2.0 passes
+unedited. MINOR: simba's public traits move from 0.2 to 0.3. Prepared, not published (programme
+paused, `docs/PLAN.md`).
+
+### Changed
+
+- **Version 0.3.0 for every package** (the 54 published ones and the unpublished test crates), and
+  every inter-crate requirement `0.3.0`.
+- **Dependencies**: simba 0.3.0, fixed 0.5.0, `glam_core` 0.5.0 (`nalgebra_glam`). `glam_core` 0.5.0
+  requires `fixed ^0.5.0`, which lifts what kept 0.2.0 on simba 0.2.0 / fixed 0.4.0. What they change
+  moves no nalgebra result:
+  - simba 0.3.0's `is_sign_positive(0)` is true (false in 0.2.0), as simba-rs. Of the six sites
+    (`docs/research/rel-zero.md`), `UnitQuaternion::from_rotation_matrix` already selects its trace
+    branch with nalgebra-rs's own `tr > 0` (0.2.0, pinned by `test_from_rotation_matrix_zero_trace`);
+    the four in the Shepperd sign of the internal quaternion see a zero only on a non-unit input no
+    caller passes; `UnitComplex::axis_angle` returns `None` at a zero angle first. Its other changes add
+    trait methods (`sinh_cosh`, `asinh`, `acosh`, `atanh`, `exp2`, `powf`, `hypot`, ...).
+  - `glam_core` 0.5.0 changes `Quat::to_axis_angle` / `to_scaled_axis` for vector parts of length in
+    `[2^-16, 2^-8)`: neither nalgebra nor `nalgebra_glam` calls them; the rest of its changes are
+    additions.
+  - fixed 0.5.0 adds `sinh_cosh`, `asinh`, `acosh`, `atanh`; `sinh` and `cosh` share their rounding
+    with `sinh_cosh` through inlined helpers holding the same operations: no kernel result changes.
+
+### Performance
+
+Fewer Cairo steps in the generated shapes (WP 13-OPT-3, #109, `tools/shapegen`), every result
+bit-identical; net steps per call (`docs/STEPS.md`), 0.2.0 → 0.3.0:
+
+| probe | 0.2.0 | 0.3.0 | saved |
+|---|---:|---:|---:|
+| `matrix3_mul` | 186 | 161 | 25 |
+| `matrix3_determinant` | 82 | 65 | 17 |
+| `matrix3_try_inverse` | 430 | 412 | 18 |
+| `matrix6_mul_vec` | 192 | 143 | 49 |
+
+- `#[inline(always)]` on `*` of `Matrix2` / `Matrix3`, on every matrix-vector product into a column
+  vector, and on `Matrix3::determinant` / `try_inverse`.
+- `Matrix3::try_inverse` also does less on its small-determinant branches; the probe takes the branch
+  `|det| >= 1/2`, so the others were measured off-probe (`docs/STEPS.md`, not pinned by `steps/`):
+  pre-scaled 804 → 703 (-101), small determinant with `f > 1` 593 → 551 (-42).
+
 ## 0.2.0 (2026-10-03)
 
 No numeric result moves: every test, golden and oracle vector of 0.1.1 passes unedited. MINOR:
