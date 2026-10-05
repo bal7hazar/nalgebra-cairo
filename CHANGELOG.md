@@ -8,8 +8,8 @@ package of this repository (the `nalgebra` facade, its `nalgebra_*` sub-crates s
 ## 0.3.0 (unreleased)
 
 No numeric result moves: every test, golden, oracle vector, gas and steps entry of 0.2.0 passes
-unedited. MINOR: simba's public traits move from 0.2 to 0.3. Prepared, not published (programme
-paused, `docs/PLAN.md`).
+unedited. MINOR: simba's public traits move from 0.2 to 0.3. Prepared; release pending
+(`docs/PLAN.md`).
 
 ### Changed
 
