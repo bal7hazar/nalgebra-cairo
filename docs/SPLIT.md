@@ -1478,6 +1478,27 @@ the merged pull requests; shas are squash commits.
   NAL-S3 (nalgebra on simba 0.3.0 / fixed 0.5.0) waits for a `glam_core` on fixed 0.5.0, requested from
   the glam track through the project manager.
 
+**Update 2026-10-05: nalgebra 0.3.0 published (WP 14-REC-N3).** Facts are checked against the registry
+index (`scripts/release.py verify`), `git ls-remote --tags origin v0.3.0`, `gh release view v0.3.0` and
+the merged pull requests; shas are squash commits.
+- **Published.** nalgebra 0.3.0, all 54 packages, from the release commit `8891748` (#111), on the
+  project manager's go for the request `docs/releases/0.3.0.md` (#112, `e2bbc09`): every registry
+  checksum equals its row (54 of 54), annotated tag `v0.3.0` on `8891748`, GitHub release
+  `nalgebra 0.3.0`. Rows 1-52 on 2026-10-05, 10:32-10:44 UTC, and row 54 (`nalgebra_glam`) at 14:54 UTC,
+  under the 8 GiB cap.
+- **What 0.3.0 holds.** nalgebra on simba 0.3.0 / fixed 0.5.0 / glam_core 0.5.0 (NAL-S3 #110, `60dc9bf`),
+  the block of 0.2.0 lifted (`glam_core` 0.5.0 requires `fixed ^0.5.0`). No result moves: every test,
+  golden, oracle vector and steps entry of 0.2.0 passes unedited; gas moves only through the dependency
+  (+100 / +200 in the `from_matrix` paths, -180 in `UnitComplex::axis_angle`, `CHANGELOG.md`).
+- **The facade under the standing rule.** Row 53, `nalgebra`, was published inside the heavy-build lock
+  with `RAYON_NUM_THREADS=1` and a 24 GiB address-space cap, as the Overseer's standing rule of 2026-10-04
+  says. The VPS stayed at 18-19 GB free for about four hours, and the Overseer lowered the start threshold
+  of the rule on 2026-10-05 from 20 GB to 18 GB free. Started at 14:49:05 UTC with 18 GB free; wall
+  4:41.57; maximum resident set size 8985020 kB (8.6 GiB), under the 16 GiB line of the rule. The record
+  is `docs/releases/0.3.0.md`.
+- **Status of the track.** Planned versions finished; the track is idle and the programme paused by the
+  owner (`docs/PLAN.md`, "Status 2026-10-05 — final").
+
 ## 22. Release 0.1.1: readiness (2026-09-30, orchestrator)
 
 The conditions of the release go (§17, §19, `slingfall/OPERATIONS.md` §6-§7) and where each is met.
