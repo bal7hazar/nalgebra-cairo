@@ -11,13 +11,13 @@ keywords = ["linear-algebra", "fixed-point", "base", "edition", "blocks"]
 readme = "README.md"
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.2.0" }
-nalgebra_types2 = { path = "../types2", version = "0.2.0" }
-nalgebra_types3 = { path = "../types3", version = "0.2.0" }
-nalgebra_types4 = { path = "../types4", version = "0.2.0" }
-nalgebra_types5 = { path = "../types5", version = "0.2.0" }
-nalgebra_types6 = { path = "../types6", version = "0.2.0" }
-nalgebra_static6_tall = { path = "../static6_tall", version = "0.2.0", default-features = false }
+nalgebra_core = { path = "../core", version = "0.3.0" }
+nalgebra_types2 = { path = "../types2", version = "0.3.0" }
+nalgebra_types3 = { path = "../types3", version = "0.3.0" }
+nalgebra_types4 = { path = "../types4", version = "0.3.0" }
+nalgebra_types5 = { path = "../types5", version = "0.3.0" }
+nalgebra_types6 = { path = "../types6", version = "0.3.0" }
+nalgebra_static6_tall = { path = "../static6_tall", version = "0.3.0", default-features = false }
 simba.workspace = true
 
 [dev-dependencies]

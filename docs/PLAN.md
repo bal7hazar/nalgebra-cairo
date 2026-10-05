@@ -1,5 +1,19 @@
 # Execution plan
 
+## Status 2026-10-05 — programme paused (owner)
+
+- **Merged since 0.1.1:** nalgebra 0.2.0 published on scarbs.xyz (54 packages, 2026-10-03/04, tag
+  `v0.2.0` on `efa49dd`, record #108); OPT-0 #101, OPT-1 #102, OPT-2 #103, OPT-3 #109 (Cairo steps
+  saved, results bit-identical); API-1 #100 (parity 100 %); release tooling #105 (request / verify
+  modes); pre-push and CI gating #95-#99, #104; simba-cairo 0.3.0 published (#9-#12).
+- **Open:** this lot, NAL-S3: nalgebra 0.3.0 prepared on simba 0.3.0 / fixed 0.5.0 / glam_core 0.5.0;
+  release pending.
+- **The pause:** no new lot, thread, release or publication until `hp resume` (owner).
+- **Reactivated for 0.3.0 only (owner, 2026-10-05):** the nalgebra track was reactivated the same day
+  only to finish and publish 0.3.0: after NAL-S3, its release request, the go and the publication (the
+  facade under the Overseer's standing rule of 2026-10-04). No other lot; the deferred rows (TC2, the
+  pre-push follow-up notes) wait for the pause to lift.
+
 > **State (2026-09-30): `nalgebra` 0.1.0 and `nalgebra_glam` 0.1.0 are published** (M8 done, parity
 > 99.9 %). Active: **M9, package split behind a facade** (owner decision 2026-09-28), now the
 > per-dimension re-cut (R1-R3, `docs/SPLIT.md` §18); its dated status is `docs/SPLIT.md` §20 and the
@@ -47,8 +61,8 @@ outside `src/`, one README per package).
 | OPT-1 ✅ | Fewer Cairo steps on the geometry hot paths, bit-identical: eight probes, −6 to −17 % steps (`isometry3_inv_mul` 321 → 265, `isometry3_mul` 292 → 253); merged 2026-10-03 (#102, `472fa36`) | OPT-0 |
 | OPT-2 ✅ | Fewer Cairo steps in small linear algebra, bit-identical (`SymmetricEigen3`, `Svd3`, Cholesky 3 / 6, LU 3 / 6; `Real::div3` / `div4` proven exact); merged 2026-10-03 (#103, `3df1854`) | OPT-1 |
 | API-1 ✅ | API parity close-out: the last `missing` item (`io::cs_matrix_from_matrix_market`, a file path) becomes a documented exclusion (reason `fs`), coverage 100.0 %; the report `docs/research/api-1.md` (simba gaps, nalgebra-rs 0.35.0 still the latest); merged 2026-10-03 (#100, `557a5be`) | 0.1.1 |
-| REL ✅ | nalgebra 0.2.0 on simba 0.2.0 / fixed 0.4.0. REL-a (2026-10-03, no manifest change): the release tooling (PUB, REL-FU2), the slerp and test doc lines, and the exact-zero analysis of the six `R::is_sign_positive` sites (`docs/research/rel-zero.md`: one public result moves, `from_rotation_matrix` at a zero trace, away from nalgebra-rs unless its test becomes `tr > 0`). REL-b (2026-10-03): version 0.2.0 for every package, `from_rotation_matrix` on upstream's `tr > 0` with its zero-trace test, CHANGELOG 0.2.0. simba 0.3.0 / fixed 0.5.0 **not taken**: Scarb cannot resolve them with `nalgebra_glam`, whose `glam_core` 0.4.1 (the latest) requires `fixed ^0.4.0`; it waits for a `glam_core` on fixed 0.5.0 or a decision on `nalgebra_glam` Released 2026-10-03/04: #105 (REL-a, `5262548`), #106 (REL-b, `efa49dd`, the release commit), the request #107 (`ab3095f`, `docs/releases/0.2.0.md`); the 54 packages on scarbs.xyz (52 under the 8 GiB cap; the facade and `nalgebra_glam` under a one-off ruling, the facade's publish peaking at 8.7 GiB resident), every checksum equal to its row, tag `v0.2.0` on `efa49dd`, GitHub release; the record is this lot (REC-N) | OPT-2 |
-| NAL-S3 | nalgebra on simba 0.3.0 / fixed 0.5.0 (next release, MINOR): waiting for a `glam_core` on fixed 0.5.0, which `nalgebra_glam` needs (Scarb resolves one `fixed` per build; `glam_core` 0.4.1 requires `fixed ^0.4.0`), requested from the glam track through the project manager. The zero-trace guard of `from_rotation_matrix` (`tr > 0`) already keeps every result where it is (`docs/research/rel-zero.md`) | REL, `glam_core` on fixed 0.5.0 |
+| REL ✅ | nalgebra 0.2.0 on simba 0.2.0 / fixed 0.4.0. REL-a (2026-10-03, no manifest change): the release tooling (PUB, REL-FU2), the slerp and test doc lines, and the exact-zero analysis of the six `R::is_sign_positive` sites (`docs/research/rel-zero.md`: one public result moves, `from_rotation_matrix` at a zero trace, away from nalgebra-rs unless its test becomes `tr > 0`). REL-b (2026-10-03): version 0.2.0 for every package, `from_rotation_matrix` on upstream's `tr > 0` with its zero-trace test, CHANGELOG 0.2.0. simba 0.3.0 / fixed 0.5.0 **not taken**: Scarb cannot resolve them with `nalgebra_glam`, whose `glam_core` 0.4.1 (the latest) requires `fixed ^0.4.0`; it waits for a `glam_core` on fixed 0.5.0 or a decision on `nalgebra_glam`. Released 2026-10-03/04: #105 (REL-a, `5262548`), #106 (REL-b, `efa49dd`, the release commit), the request #107 (`ab3095f`, `docs/releases/0.2.0.md`); the 54 packages on scarbs.xyz (52 under the 8 GiB cap; the facade and `nalgebra_glam` under a one-off ruling, the facade's publish peaking at 8.7 GiB resident), every checksum equal to its row, tag `v0.2.0` on `efa49dd`, GitHub release; the record is this lot (REC-N) | OPT-2 |
+| NAL-S3 | Prepared, release pending (WP 14-NAL-S3, 2026-10-05): nalgebra 0.3.0 on simba 0.3.0 / fixed 0.5.0 / glam_core 0.5.0 (MINOR: simba's public traits move 0.2 -> 0.3). `glam_core` 0.5.0 requires `fixed ^0.5.0`, which lifts the block of 0.2.0 (Scarb resolves one `fixed` per build). No nalgebra result moves: the zero-trace guard of `from_rotation_matrix` (`tr > 0`) and the other five `is_sign_positive` sites (`docs/research/rel-zero.md`), the unchanged `glam_core` functions nalgebra calls, fixed 0.5.0 a pure addition. Release request, go and publication follow (status above); CHANGELOG 0.3.0 "unreleased" until the publication | REL, `glam_core` on fixed 0.5.0 |
 | OPT-3 | The next Cairo-steps lot, same method as OPT-0..2: probe first, bit-identical results, net steps in `docs/STEPS.md` (in progress 2026-10-04) | OPT-2 |
 | TC3 | A future Scarb release carrying the upstream fix that makes closure type names path-free changes the Sierra and class hashes of anything holding a closure: such a bump gets its own lot (row only; our libraries declare no class) | TC |
 

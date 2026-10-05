@@ -1459,7 +1459,11 @@ the merged pull requests; shas are squash commits.
   114688 bytes failed`); on the Overseer's one-off ruling, rows 53-54 ran under the heavy-build lock with
   a 24 GiB address-space cap, started at 20 GB free: `nalgebra` 2026-10-03 23:23 UTC, 2:28.09, maximum
   resident set size 9154636 kB; `nalgebra_glam` 2026-10-04 00:31 UTC, 0:22.71, 1912516 kB. A later facade
-  release needs the same room (the Mac, or a new ruling).
+  release falls under the Overseer's standing rule of 2026-10-04: a package whose `scarb publish`
+  verification exceeds the 8 GiB cap is published by the orchestrator on the VPS inside the heavy flock,
+  `RAYON_NUM_THREADS=1`, `prlimit --as=25769803776 -- /usr/bin/time -v scarb publish -p <pkg>`, started
+  only at >= 20 GB free, its peak recorded in the release record; a package whose last recorded peak
+  exceeded 16 GiB RSS, or whose verification failed once under that rule, goes to the owner on the Mac.
 - **What 0.2.0 holds.** No numeric result moves (every test, golden and oracle vector of 0.1.1 passes
   unedited); Scarb 2.20.1 / Cairo 2.20.0 for consumers; fewer Cairo steps on the hot paths, bit-identical
   (OPT-0 #101 `791cd4d`, OPT-1 #102 `472fa36`, OPT-2 #103 `3df1854`, tables in `CHANGELOG.md`); the API

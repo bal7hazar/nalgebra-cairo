@@ -102,9 +102,9 @@
     },
     "rotation3_from_matrix": {
       "alt_matrix_iterate_8": 2086130,
-      "baseline": 531150,
-      "closed_form": 1060750,
-      "iterate_8": 1893770
+      "baseline": 531250,
+      "closed_form": 1060950,
+      "iterate_8": 1893970
     },
     "rotation3_index": {
       "baseline": 236070,

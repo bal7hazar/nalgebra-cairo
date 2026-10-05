@@ -11,15 +11,15 @@ keywords.workspace = true
 readme = "README.md"
 
 [dependencies]
-nalgebra_core = { path = "../core", version = "0.2.0" }
-nalgebra_types2 = { path = "../types2", version = "0.2.0" }
-nalgebra_types3 = { path = "../types3", version = "0.2.0" }
-nalgebra_types4 = { path = "../types4", version = "0.2.0" }
-nalgebra_static2 = { path = "../static2", version = "0.2.0", default-features = false }
-nalgebra_static3 = { path = "../static3", version = "0.2.0", default-features = false }
-nalgebra_geometry2 = { path = "../geometry2", version = "0.2.0" }
-nalgebra_geometry3 = { path = "../geometry3", version = "0.2.0" }
-glam_core = "0.4.1"
+nalgebra_core = { path = "../core", version = "0.3.0" }
+nalgebra_types2 = { path = "../types2", version = "0.3.0" }
+nalgebra_types3 = { path = "../types3", version = "0.3.0" }
+nalgebra_types4 = { path = "../types4", version = "0.3.0" }
+nalgebra_static2 = { path = "../static2", version = "0.3.0", default-features = false }
+nalgebra_static3 = { path = "../static3", version = "0.3.0", default-features = false }
+nalgebra_geometry2 = { path = "../geometry2", version = "0.3.0" }
+nalgebra_geometry3 = { path = "../geometry3", version = "0.3.0" }
+glam_core = "0.5.0"
 fixed.workspace = true
 
 [dev-dependencies]
