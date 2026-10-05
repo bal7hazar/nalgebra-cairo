@@ -23,24 +23,24 @@ provable.
 
 ```toml
 [dependencies]
-nalgebra = "0.1.1"
-fixed = "0.4.0"          # the scalar: `Vector3<Fixed>`, `Matrix4<Fixed>`...
-simba = "0.2.0"          # `use simba::prelude::*;` for the scalar traits (`Real`, `Transcendental`)
+nalgebra = "0.3.0"
+fixed = "0.5.0"          # the scalar: `Vector3<Fixed>`, `Matrix4<Fixed>`...
+simba = "0.3.0"          # `use simba::prelude::*;` for the scalar traits (`Real`, `Transcendental`)
 ```
 
-`nalgebra = "0.1.1"` has every feature on (`default`), the whole nalgebra-rs surface. A dependent
+`nalgebra = "0.3.0"` has every feature on (`default`), the whole nalgebra-rs surface. A dependent
 that needs only a part of it compiles much less by depending on the packages it uses instead of the
 facade (see [Packages](#packages)); the features are the [feature table](#features):
 
 ```toml
-nalgebra = { version = "0.1.1", default-features = false, features = ["qr"] }
+nalgebra = { version = "0.3.0", default-features = false, features = ["qr"] }
 ```
 
 The glam-cairo conversions are a separate package (see [glam conversions](#glam-conversions)):
 
 ```toml
-nalgebra_glam = "0.1.1"
-glam = "0.4.1"          # nalgebra_glam 0.1.1 needs glam >= 0.4.1
+nalgebra_glam = "0.3.0"
+glam = "0.5.0"          # nalgebra_glam 0.3.0 needs glam >= 0.5.0
 ```
 
 Versioning (pre-1.0): **numeric results are part of the API**. Any change of a result, down to the
@@ -68,7 +68,7 @@ rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of 
 | the named methods of dimensions 2-4 (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*`...) | `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4` (`static4` pulls the two others and the types) | marginal of `static4`: 1.0 s / 0.33 GB |
 | 2D / 3D geometry (rotations, quaternions, isometries, similarities) | `nalgebra_static3`, `nalgebra_geometry2`, `nalgebra_geometry3` | 6.3 s / 1.43 GB (`static3_geometry`) |
 | geometry 2-4 with the transforms | `nalgebra_static4`, `nalgebra_geometry2` .. `nalgebra_geometry4`, `nalgebra_transform2`, `nalgebra_transform3` | 11.2 s / 2.44 GB (`static4_geometry`) |
-| conversions to glam-cairo | `nalgebra_glam` (needs `glam` >= 0.4.1) | 7.4 s / 1.77 GB (`nalgebra_glam`; `glam_core` alone 1.3 s / 0.56 GB) |
+| conversions to glam-cairo | `nalgebra_glam` (needs `glam` >= 0.5.0) | 6.5 s / 1.55 GB (`nalgebra_glam`; `glam_core` alone 1.4 s / 0.44 GB) |
 | LU, Cholesky, LDL / UDU, QR, inverse of dimensions 2-4 | `nalgebra_static4`, `nalgebra_linalg2`, `nalgebra_linalg3`, `nalgebra_linalg4` | 8.9 s / 2.06 GB (`static4_factor`) |
 | SVD and symmetric eigen of dimensions 2-3 | `nalgebra_static3`, `nalgebra_linalg_svd_eigen2`, `nalgebra_linalg_svd_eigen3` | 5.8 s / 1.23 GB (`static3_svd`) |
 | SVD and symmetric eigen of dimensions 2-4 | `nalgebra_static4`, `nalgebra_linalg_svd_eigen2` .. `nalgebra_linalg_svd_eigen4` | 6.9 s / 2.11 GB (`static4_svd`) |
@@ -88,19 +88,19 @@ Every package has a README (what it holds, its dependencies, when to depend on i
 - families: `nalgebra_statistics2` .. `nalgebra_statistics6`, `nalgebra_blas`, `nalgebra_blocks`, `nalgebra_views`, `nalgebra_norm`, `nalgebra_dynamic`, `nalgebra_sparse`;
 - the facade `nalgebra` and the glam conversions `nalgebra_glam`.
 
-Its scalar layer is the registry package `simba = "0.2.0"`
+Its scalar layer is the registry package `simba = "0.3.0"`
 ([simba-cairo](https://github.com/bal7hazar/simba-cairo): `Real` / `Transcendental` implemented for
-fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.4.0, the scalar
+fixed-cairo's Q32.32 [`fixed::Fixed`](https://github.com/bal7hazar/fixed-cairo) 0.5.0, the scalar
 shared by the whole stack), like nalgebra-rs depends on simba-rs.
 
 A dependent that wants the light build names the packages instead of the facade:
 
 ```toml
 [dependencies]
-nalgebra_static4 = "0.1.1"
-nalgebra_linalg_svd_eigen4 = "0.1.1"
-nalgebra_linalg_svd_eigen3 = "0.1.1"
-nalgebra_linalg_svd_eigen2 = "0.1.1"
+nalgebra_static4 = "0.3.0"
+nalgebra_linalg_svd_eigen4 = "0.3.0"
+nalgebra_linalg_svd_eigen3 = "0.3.0"
+nalgebra_linalg_svd_eigen2 = "0.3.0"
 ```
 
 ### Dimensions 5 and 6
@@ -169,8 +169,8 @@ dependencies and `glam` costs every dependent +0.46 GB of cold compile, so the C
 a separate package: add `nalgebra_glam` next to `nalgebra` and `glam` and `use
 nalgebra_glam::prelude::*;` (upstream's `From` is `Into`, `TryFrom` is `TryInto` returning an
 `Option`; details in the [package README](https://github.com/bal7hazar/nalgebra-cairo/tree/main/crates/nalgebra_glam)).
-`nalgebra_glam` 0.1.1 depends on the sub-crates it converts and on `glam_core`, so it needs
-**`glam` >= 0.4.1** (which re-exports `glam_core`).
+`nalgebra_glam` 0.3.0 depends on the sub-crates it converts and on `glam_core`, so it needs
+**`glam` >= 0.5.0** (which re-exports `glam_core`).
 
 ## Features
 

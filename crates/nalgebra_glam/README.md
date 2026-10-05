@@ -13,18 +13,18 @@ It depends on the sub-crates of nalgebra-cairo that define the types it converts
 [`nalgebra_static2`](../static2/README.md) and [`nalgebra_static3`](../static3/README.md) (their
 methods up to 3x3) and [`nalgebra_geometry2`](../geometry2/README.md) and
 [`nalgebra_geometry3`](../geometry3/README.md) (the 2D / 3D geometry: rotations, quaternions,
-isometries, similarities), and on glam-cairo's `glam_core` 0.4.1 (every glam type it converts and
-every impl it needs; it needs **`glam` >= 0.4.1**, which re-exports `glam_core`), not on the
+isometries, similarities), and on glam-cairo's `glam_core` 0.5.0 (every glam type it converts and
+every impl it needs; it needs **`glam` >= 0.5.0**, which re-exports `glam_core`), not on the
 `nalgebra` / `glam` facades: a much cheaper build. The types are the same as the facades' (`nalgebra` and `glam`
 re-export them, glam from 0.4.1 on), so a dependent of the facades uses it unchanged; glam 0.4.0
-defines its own types, so a lock file pinned to it needs `scarb update glam` (0.4.1):
+defines its own types, so a lock file pinned to it needs `scarb update glam` (0.5.0):
 
 ```toml
 [dependencies]
-nalgebra = "0.1.1"          # or the sub-crates above
-nalgebra_glam = "0.1.1"
-glam = "0.4.1"              # or glam_core
-fixed = "0.4.0"
+nalgebra = "0.3.0"          # or the sub-crates above
+nalgebra_glam = "0.3.0"
+glam = "0.5.0"              # or glam_core
+fixed = "0.5.0"
 ```
 
 Upstream's `From<X> for Y` is `Into<X, Y>` here, `TryFrom` is `TryInto` (returning an `Option`), and
@@ -66,8 +66,8 @@ Deviations from upstream (`Result` is an `Option`, zero-length inputs panic inst
 ## When to depend on it
 
 Depend on `nalgebra_glam` when you convert between nalgebra-cairo and glam-cairo types. It is the
-declared closure `nalgebra_glam` (7.4 s / 1.77 GB on a GitHub runner over an empty consumer, budget
-15 s / 3 GB; the reference `glam_core` 0.4.1 alone is 1.3 s / 0.56 GB), and it does not pull dimension
+declared closure `nalgebra_glam` (6.5 s / 1.55 GB on a GitHub runner over an empty consumer, budget
+15 s / 3 GB; the reference `glam_core` 0.5.0 alone is 1.4 s / 0.44 GB), and it does not pull dimension
 5 or 6. The facade [`nalgebra`](../../README.md) does not depend on it: add it next to the facade.
 
 ## `internal`
