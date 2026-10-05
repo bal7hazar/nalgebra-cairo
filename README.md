@@ -68,7 +68,7 @@ rounds, docs/SPLIT.md §18.2); a package pulls its dependencies, so the cost of 
 | the named methods of dimensions 2-4 (`norm()`, `normalize()`, `dot`, `cross`, `transpose`, `inverse`, `insert_*`...) | `nalgebra_static2`, `nalgebra_static3`, `nalgebra_static4` (`static4` pulls the two others and the types) | marginal of `static4`: 1.0 s / 0.33 GB |
 | 2D / 3D geometry (rotations, quaternions, isometries, similarities) | `nalgebra_static3`, `nalgebra_geometry2`, `nalgebra_geometry3` | 6.3 s / 1.43 GB (`static3_geometry`) |
 | geometry 2-4 with the transforms | `nalgebra_static4`, `nalgebra_geometry2` .. `nalgebra_geometry4`, `nalgebra_transform2`, `nalgebra_transform3` | 11.2 s / 2.44 GB (`static4_geometry`) |
-| conversions to glam-cairo | `nalgebra_glam` (needs `glam` >= 0.5.0) | 7.4 s / 1.77 GB (`nalgebra_glam`; `glam_core` alone 1.3 s / 0.56 GB) |
+| conversions to glam-cairo | `nalgebra_glam` (needs `glam` >= 0.5.0) | 6.5 s / 1.55 GB (`nalgebra_glam`; `glam_core` alone 1.4 s / 0.44 GB) |
 | LU, Cholesky, LDL / UDU, QR, inverse of dimensions 2-4 | `nalgebra_static4`, `nalgebra_linalg2`, `nalgebra_linalg3`, `nalgebra_linalg4` | 8.9 s / 2.06 GB (`static4_factor`) |
 | SVD and symmetric eigen of dimensions 2-3 | `nalgebra_static3`, `nalgebra_linalg_svd_eigen2`, `nalgebra_linalg_svd_eigen3` | 5.8 s / 1.23 GB (`static3_svd`) |
 | SVD and symmetric eigen of dimensions 2-4 | `nalgebra_static4`, `nalgebra_linalg_svd_eigen2` .. `nalgebra_linalg_svd_eigen4` | 6.9 s / 2.11 GB (`static4_svd`) |

@@ -66,8 +66,8 @@ Deviations from upstream (`Result` is an `Option`, zero-length inputs panic inst
 ## When to depend on it
 
 Depend on `nalgebra_glam` when you convert between nalgebra-cairo and glam-cairo types. It is the
-declared closure `nalgebra_glam` (7.4 s / 1.77 GB on a GitHub runner over an empty consumer, budget
-15 s / 3 GB; the reference `glam_core` 0.5.0 alone is 1.3 s / 0.56 GB), and it does not pull dimension
+declared closure `nalgebra_glam` (6.5 s / 1.55 GB on a GitHub runner over an empty consumer, budget
+15 s / 3 GB; the reference `glam_core` 0.5.0 alone is 1.4 s / 0.44 GB), and it does not pull dimension
 5 or 6. The facade [`nalgebra`](../../README.md) does not depend on it: add it next to the facade.
 
 ## `internal`
