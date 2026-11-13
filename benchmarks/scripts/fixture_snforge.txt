@@ -1,0 +1,8 @@
+Collected 5 test(s) from scalar package
+Running 5 test(s) from src/
+[PASS] scalar::abs::tests::bench_abs_felt__baseline (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~15840)
+[PASS] scalar::abs::tests::bench_abs_felt__felt_p (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~17750)
+[PASS] scalar::abs::tests::bench_abs_felt__felt_n (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~17430)
+[PASS] scalar::other::tests::helper_not_a_bench (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~1)
+[PASS] scalar::abs::tests::bench_noop__only (l1_gas: ~0, l1_data_gas: ~0, l2_gas: ~500)
+Tests: 5 passed, 0 failed, 0 skipped, 0 ignored, 0 filtered out
