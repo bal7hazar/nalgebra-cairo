@@ -17,6 +17,7 @@ Usage:
     snforge test -p nalgebra nalgebra::base | python3 scripts/gas_report.py --check gas/ --filter nalgebra::base
     snforge test -p nalgebra nalgebra::base::vector | python3 scripts/gas_report.py --check gas/ --partial
     snforge test -p nalgebra | python3 scripts/gas_report.py         # print a report
+    snforge test -p scalar | python3 scripts/gas_report.py --md scalar/GAS.md   # print it and write it to a file
 """
 
 import argparse
@@ -103,6 +104,7 @@ def flatten(report, prefix=""):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("--update", metavar="DIR", help="write `<shard>.json` and `<shard>.md` snapshots into DIR")
+    parser.add_argument("--md", metavar="FILE", help="also write the Markdown gas table to FILE (stdout is unchanged)")
     parser.add_argument("--check", metavar="DIR", help="compare against the snapshots in DIR; exit 1 on any difference")
     parser.add_argument("--filter", default="", help="with --check: only compare modules with this prefix")
     parser.add_argument(
@@ -142,6 +144,9 @@ def main():
         ]
         if diffs:
             sys.exit("gas snapshot mismatch (regenerate with --update if intended):\n  " + "\n  ".join(diffs))
+    if args.md:
+        with open(args.md, "w") as file:
+            file.write(to_markdown(report) + "\n")
     if not (args.update or args.check):
         print(to_markdown(report))
 
