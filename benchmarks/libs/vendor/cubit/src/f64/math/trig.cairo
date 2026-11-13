@@ -1,5 +1,5 @@
 use core::debug::PrintTrait;
-use core::integer::{u64_safe_divmod, u64_as_non_zero};
+use core::integer::{u64_safe_divmod};
 use core::option::OptionTrait;
 
 use cubit::f64::math::lut;
@@ -145,7 +145,7 @@ fn cos_fast(a: Fixed) -> Fixed {
 
 fn sin(a: Fixed) -> Fixed {
     let a1 = a.mag % TWO_PI;
-    let (whole_rem, partial_rem) = u64_safe_divmod(a1, u64_as_non_zero(PI));
+    let (whole_rem, partial_rem) = u64_safe_divmod(a1, PI.try_into().unwrap());
     let a2 = FixedTrait::new(partial_rem, false);
     let partial_sign = whole_rem == 1;
 
@@ -155,7 +155,7 @@ fn sin(a: Fixed) -> Fixed {
 
 fn sin_fast(a: Fixed) -> Fixed {
     let a1 = a.mag % TWO_PI;
-    let (whole_rem, mut partial_rem) = u64_safe_divmod(a1, u64_as_non_zero(PI));
+    let (whole_rem, mut partial_rem) = u64_safe_divmod(a1, PI.try_into().unwrap());
     let partial_sign = whole_rem == 1;
 
     if partial_rem >= HALF_PI {

@@ -1,5 +1,5 @@
 use core::debug::PrintTrait;
-use core::integer::{U256DivRem, u256_safe_divmod, u256_as_non_zero, u256_from_felt252};
+use core::integer::{U256DivRem, u256_safe_divmod, u256_from_felt252};
 
 use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
 use core::option::OptionTrait;
@@ -522,7 +522,7 @@ impl PackFixed of StorePacking<Fixed, felt252> {
 
     fn unpack(value: felt252) -> Fixed {
         let (q, r) = U256DivRem::div_rem(
-            value.into(), u256_as_non_zero(0x100000000000000000000000000000000)
+            value.into(), 0x100000000000000000000000000000000_u256.try_into().unwrap()
         );
         let mag: u128 = r.try_into().unwrap();
         let sign: bool = q.into() == 1;

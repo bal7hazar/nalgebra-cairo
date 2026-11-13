@@ -520,9 +520,8 @@ jobs:
         run: |
           scarb fmt --check
           snforge test --workspace | python3 scripts/gas_report.py --check gas/
-      # benchmarks/libs stays on Scarb 2.19.4 / starknet-foundry 0.61.0 (its own .tool-versions): a frozen
-      # comparison of vendored third-party libraries (cubit, orion) that corelib 2.20.0 no longer compiles
-      # (u32_as_non_zero / u64_as_non_zero removed); patching them would change the compared figures.
+      # benchmarks/libs is a standalone package with its own .tool-versions (Scarb 2.20.1 / starknet-foundry
+      # 0.64.0, like the workspace); its vendored cubit / orion carry a corelib 2.20.0 patch (see their NOTICE).
       - id: scarb7
         continue-on-error: true
         uses: software-mansion/setup-scarb@2a96b748888e3329ee44ac9ac073d930e692b3cd # v1.6.2

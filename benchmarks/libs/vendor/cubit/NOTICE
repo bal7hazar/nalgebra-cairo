@@ -15,3 +15,10 @@ Local changes:
   - Removed: src/math/, src/types/ (dead duplicates, not declared in lib.cairo), *.js helpers,
     test/ directory, JS packaging files.
   - Scarb.toml rewritten (name/version/edition kept: cubit 1.4.0, edition 2023_10).
+  - Corelib 2.20.0 (TC2-LIBS, 2026-11-13): `core::integer::u{64,128,256}_as_non_zero` were removed.
+    Each call `uN_as_non_zero(x)` became `x.try_into().unwrap()` (corelib's TryInto<T, NonZero<T>>,
+    which also panics on zero; every argument is a non-zero constant), and the name was dropped
+    from the `use core::integer::{..}` lines. 15 call sites + 8 imports, in src/f64/{math/ops,
+    math/trig,types/fixed,procgen/rand}.cairo and src/f128/{same four}.cairo. Same results: the
+    library's 235 unit tests pass before (2.19.4) and after (2.20.1); the patched paths' Sierra gas
+    moves only by the toolchain's uniform per-test offset.

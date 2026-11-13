@@ -1,5 +1,5 @@
 use core::array::ArrayTrait;
-use core::integer::{u64_safe_divmod, u64_as_non_zero, u256_from_felt252};
+use core::integer::{u64_safe_divmod, u256_from_felt252};
 use core::option::OptionTrait;
 use core::traits::{Into, TryInto};
 

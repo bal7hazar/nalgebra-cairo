@@ -1,7 +1,7 @@
 use core::option::OptionTrait;
 use core::result::{ResultTrait, ResultTraitImpl};
 use core::traits::{Into, TryInto};
-use core::integer::{u64_safe_divmod, u64_as_non_zero};
+use core::integer::{u64_safe_divmod};
 use core::num::traits::{Sqrt, WideMul};
 
 use cubit::f64::math::lut;
@@ -30,7 +30,7 @@ fn add(a: Fixed, b: Fixed) -> Fixed {
 }
 
 fn ceil(a: Fixed) -> Fixed {
-    let (div, rem) = u64_safe_divmod(a.mag, u64_as_non_zero(ONE));
+    let (div, rem) = u64_safe_divmod(a.mag, ONE.try_into().unwrap());
 
     if rem == 0 {
         return a;
@@ -66,7 +66,7 @@ fn exp2(a: Fixed) -> Fixed {
         return FixedTrait::ONE();
     }
 
-    let (int_part, frac_part) = core::integer::u64_safe_divmod(a.mag, u64_as_non_zero(ONE));
+    let (int_part, frac_part) = core::integer::u64_safe_divmod(a.mag, ONE.try_into().unwrap());
     let int_res = FixedTrait::new_unscaled(lut::exp2(int_part), false);
     let mut res_u = int_res;
 
@@ -95,7 +95,7 @@ fn exp2_int(exp: u64) -> Fixed {
 }
 
 fn floor(a: Fixed) -> Fixed {
-    let (div, rem) = core::integer::u64_safe_divmod(a.mag, u64_as_non_zero(ONE));
+    let (div, rem) = core::integer::u64_safe_divmod(a.mag, ONE.try_into().unwrap());
 
     if rem == 0 {
         return a;
@@ -207,7 +207,7 @@ fn neg(a: Fixed) -> Fixed {
 // self is a Fixed point value
 // b is a Fixed point value
 fn pow(a: Fixed, b: Fixed) -> Fixed {
-    let (_div, rem) = core::integer::u64_safe_divmod(b.mag, u64_as_non_zero(ONE));
+    let (_div, rem) = core::integer::u64_safe_divmod(b.mag, ONE.try_into().unwrap());
 
     // use the more performant integer pow when y is an int
     if (rem == 0) {
@@ -232,7 +232,7 @@ fn pow_int(a: Fixed, b: u64, sign: bool) -> Fixed {
     }
 
     let mut y = FixedTrait::ONE();
-    let two = core::integer::u64_as_non_zero(2);
+    let two = 2_u64.try_into().unwrap();
 
     loop {
         if n <= 1 {
@@ -257,7 +257,7 @@ fn rem(a: Fixed, b: Fixed) -> Fixed {
 }
 
 fn round(a: Fixed) -> Fixed {
-    let (div, rem) = core::integer::u64_safe_divmod(a.mag, u64_as_non_zero(ONE));
+    let (div, rem) = core::integer::u64_safe_divmod(a.mag, ONE.try_into().unwrap());
 
     if (HALF <= rem) {
         return FixedTrait::new_unscaled(div + 1, a.sign);
