@@ -52,7 +52,9 @@ pub impl Vector6Impl<
     /// The zero 6-dimensional column vector. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> Vector6<T> {
-        Vector6 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO, a: R::ZERO, b: R::ZERO }
+        Vector6 {
+            x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+        }
     }
 
     /// The 6-dimensional column vector whose components all equal `elem`. Upstream: `from_element`.

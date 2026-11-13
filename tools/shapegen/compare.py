@@ -38,18 +38,18 @@ MANIFEST = """[package]
 name = "shapegen_compare"
 version = "0.1.0"
 edition = "2024_07"
-cairo-version = "2.19.4"
+cairo-version = "2.20.0"
 publish = false
 
 [dependencies]
-simba = "0.2.0"
+simba = "0.3.0"
 
 [dev-dependencies]
-fixed = "0.4.0"
+fixed = "0.5.0"
 nalgebra = {{ path = "{root}/crates/nalgebra" }}
 nalgebra_testing = {{ path = "{root}/crates/testing" }}
-snforge_std = "0.61.0"
-assert_macros = "2.19.4"
+snforge_std = "0.64.0"
+assert_macros = "2.20.0"
 
 [tool.fmt]
 sort-module-level-items = true

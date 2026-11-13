@@ -52,7 +52,7 @@ pub impl RowVector3Impl<
     /// The zero 3-dimensional row vector. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> RowVector3<T> {
-        RowVector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO }
+        RowVector3 { x: R::zero(), y: R::zero(), z: R::zero() }
     }
 
     /// The 3-dimensional row vector whose components all equal `elem`. Upstream: `from_element`.

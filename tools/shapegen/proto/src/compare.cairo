@@ -7,12 +7,18 @@
 //! assertion, one baseline).
 
 use fixed::Fixed;
-use nalgebra::base::matrix2::{Matrix2 as HMatrix2, Matrix2Trait as HMatrix2Trait};
-use nalgebra::base::matrix3::{Matrix3 as HMatrix3, Matrix3Trait as HMatrix3Trait};
-use nalgebra::base::vector2::{Vector2 as HVector2, Vector2Trait as HVector2Trait};
-use nalgebra::base::vector3::{Vector3 as HVector3, Vector3Trait as HVector3Trait};
-use nalgebra::base::vector6::{Vector6 as HVector6, Vector6Trait as HVector6Trait};
+use nalgebra_core::base::matrix_mul::MatrixMul as HMatrixMul;
+use nalgebra_static2::base::matrix2::Matrix2Trait as HMatrix2Trait;
+use nalgebra_static2::base::vector2::Vector2Trait as HVector2Trait;
+use nalgebra_static3::base::matrix3::Matrix3Trait as HMatrix3Trait;
+use nalgebra_static3::base::vector3::Vector3Trait as HVector3Trait;
+use nalgebra_static6_tall::base::vector6::Vector6Trait as HVector6Trait;
 use nalgebra_testing::black_box;
+use nalgebra_types2::base::matrix2::Matrix2 as HMatrix2;
+use nalgebra_types2::base::vector2::Vector2 as HVector2;
+use nalgebra_types3::base::matrix3::Matrix3 as HMatrix3;
+use nalgebra_types3::base::vector3::Vector3 as HVector3;
+use nalgebra_types6::base::vector6::Vector6 as HVector6;
 use simba::scalar::Real;
 use crate::matrix1::Matrix1;
 use crate::matrix2::{Matrix2, Matrix2Trait};
@@ -2673,24 +2679,30 @@ fn test_matrix2_mul_vec_bit_identical() {
         to_h_vector2(
             Matrix2Trait::new(fx(-61430393688), fx(33933310020), fx(30196978309), fx(10245204405))
                 .mul_vec(Vector2Trait::new(fx(-14868344629), fx(-7882028313))),
-        ) == HMatrix2Trait::new(fx(-61430393688), fx(33933310020), fx(30196978309), fx(10245204405))
-            .mul_vec(HVector2Trait::new(fx(-14868344629), fx(-7882028313))),
+        ) == HMatrixMul::mul_mat(
+            HMatrix2Trait::new(fx(-61430393688), fx(33933310020), fx(30196978309), fx(10245204405)),
+            HVector2Trait::new(fx(-14868344629), fx(-7882028313)),
+        ),
     );
     assert!(
         to_h_vector2(
             Matrix2Trait::new(fx(-35644907854), fx(-60084470935), fx(-26175590953), fx(68266725631))
                 .mul_vec(Vector2Trait::new(fx(-28824984163), fx(-58103291624))),
-        ) == HMatrix2Trait::new(
-            fx(-35644907854), fx(-60084470935), fx(-26175590953), fx(68266725631),
-        )
-            .mul_vec(HVector2Trait::new(fx(-28824984163), fx(-58103291624))),
+        ) == HMatrixMul::mul_mat(
+            HMatrix2Trait::new(
+                fx(-35644907854), fx(-60084470935), fx(-26175590953), fx(68266725631),
+            ),
+            HVector2Trait::new(fx(-28824984163), fx(-58103291624)),
+        ),
     );
     assert!(
         to_h_vector2(
             Matrix2Trait::new(fx(63117245971), fx(64889141962), fx(48510738172), fx(-2310205094))
                 .mul_vec(Vector2Trait::new(fx(24089280340), fx(-40654741287))),
-        ) == HMatrix2Trait::new(fx(63117245971), fx(64889141962), fx(48510738172), fx(-2310205094))
-            .mul_vec(HVector2Trait::new(fx(24089280340), fx(-40654741287))),
+        ) == HMatrixMul::mul_mat(
+            HMatrix2Trait::new(fx(63117245971), fx(64889141962), fx(48510738172), fx(-2310205094)),
+            HVector2Trait::new(fx(24089280340), fx(-40654741287)),
+        ),
     );
 }
 
@@ -2724,7 +2736,7 @@ fn bench_matrix2_mul_vec__handwritten() {
     );
     let v = black_box(HVector2Trait::new(fx(-14868344629), fx(-7882028313)));
     let e = black_box(HVector2 { x: fx(150386466113), y: fx(-123337859159) });
-    assert!(a.mul_vec(v) == e);
+    assert!(HMatrixMul::mul_mat(a, v) == e);
 }
 
 #[test]
@@ -4538,18 +4550,20 @@ fn test_matrix3_mul_vec_bit_identical() {
                 fx(11858018239),
             )
                 .mul_vec(Vector3Trait::new(fx(5082243443), fx(-24948391384), fx(-31039353532))),
-        ) == HMatrix3Trait::new(
-            fx(44943538613),
-            fx(-58828694031),
-            fx(-23043289298),
-            fx(-44083600487),
-            fx(58964402122),
-            fx(37654228708),
-            fx(12481995665),
-            fx(37362926691),
-            fx(11858018239),
-        )
-            .mul_vec(HVector3Trait::new(fx(5082243443), fx(-24948391384), fx(-31039353532))),
+        ) == HMatrixMul::mul_mat(
+            HMatrix3Trait::new(
+                fx(44943538613),
+                fx(-58828694031),
+                fx(-23043289298),
+                fx(-44083600487),
+                fx(58964402122),
+                fx(37654228708),
+                fx(12481995665),
+                fx(37362926691),
+                fx(11858018239),
+            ),
+            HVector3Trait::new(fx(5082243443), fx(-24948391384), fx(-31039353532)),
+        ),
     );
     assert!(
         to_h_vector3(
@@ -4565,18 +4579,20 @@ fn test_matrix3_mul_vec_bit_identical() {
                 fx(30034686663),
             )
                 .mul_vec(Vector3Trait::new(fx(-57614826035), fx(-60809059049), fx(2332426357))),
-        ) == HMatrix3Trait::new(
-            fx(-52755243725),
-            fx(16571109318),
-            fx(-28339940617),
-            fx(53596755430),
-            fx(65539972232),
-            fx(62513367304),
-            fx(-27636976416),
-            fx(53031655231),
-            fx(30034686663),
-        )
-            .mul_vec(HVector3Trait::new(fx(-57614826035), fx(-60809059049), fx(2332426357))),
+        ) == HMatrixMul::mul_mat(
+            HMatrix3Trait::new(
+                fx(-52755243725),
+                fx(16571109318),
+                fx(-28339940617),
+                fx(53596755430),
+                fx(65539972232),
+                fx(62513367304),
+                fx(-27636976416),
+                fx(53031655231),
+                fx(30034686663),
+            ),
+            HVector3Trait::new(fx(-57614826035), fx(-60809059049), fx(2332426357)),
+        ),
     );
     assert!(
         to_h_vector3(
@@ -4592,18 +4608,20 @@ fn test_matrix3_mul_vec_bit_identical() {
                 fx(29302097046),
             )
                 .mul_vec(Vector3Trait::new(fx(1520031597), fx(-25017499961), fx(-18100762315))),
-        ) == HMatrix3Trait::new(
-            fx(-46433129721),
-            fx(-34782515410),
-            fx(-39578623337),
-            fx(-61142789542),
-            fx(-5190450692),
-            fx(-58934324656),
-            fx(-48016256915),
-            fx(-25971441949),
-            fx(29302097046),
-        )
-            .mul_vec(HVector3Trait::new(fx(1520031597), fx(-25017499961), fx(-18100762315))),
+        ) == HMatrixMul::mul_mat(
+            HMatrix3Trait::new(
+                fx(-46433129721),
+                fx(-34782515410),
+                fx(-39578623337),
+                fx(-61142789542),
+                fx(-5190450692),
+                fx(-58934324656),
+                fx(-48016256915),
+                fx(-25971441949),
+                fx(29302097046),
+            ),
+            HVector3Trait::new(fx(1520031597), fx(-25017499961), fx(-18100762315)),
+        ),
     );
 }
 
@@ -4667,7 +4685,7 @@ fn bench_matrix3_mul_vec__handwritten() {
     );
     let v = black_box(HVector3Trait::new(fx(5082243443), fx(-24948391384), fx(-31039353532)));
     let e = black_box(HVector3 { x: fx(561434796726), y: fx(-666797507607), z: fx(-287958792883) });
-    assert!(a.mul_vec(v) == e);
+    assert!(HMatrixMul::mul_mat(a, v) == e);
 }
 
 #[test]

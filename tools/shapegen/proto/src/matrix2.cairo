@@ -48,7 +48,7 @@ pub impl Matrix2Impl<
     /// The zero 2x2 matrix. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> Matrix2<T> {
-        Matrix2 { m11: R::ZERO, m21: R::ZERO, m12: R::ZERO, m22: R::ZERO }
+        Matrix2 { m11: R::zero(), m21: R::zero(), m12: R::zero(), m22: R::zero() }
     }
 
     /// The 2x2 matrix whose components all equal `elem`. Upstream: `from_element`.
@@ -67,7 +67,7 @@ pub impl Matrix2Impl<
     /// The identity matrix. Upstream: `Matrix2::identity`.
     #[inline(always)]
     fn identity() -> Matrix2<T> {
-        Matrix2 { m11: R::ONE, m21: R::ZERO, m12: R::ZERO, m22: R::ONE }
+        Matrix2 { m11: R::one(), m21: R::zero(), m12: R::zero(), m22: R::one() }
     }
 
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale` (`self * k`).

@@ -3,7 +3,9 @@
 A throwaway workspace of six tiny packages, kept to reproduce the Cairo 2.19.4 / Scarb 2.19.4
 facts of `docs/SPLIT.md` §1. Not a workspace member of nalgebra-cairo. Copy it to a temporary
 directory and build there (`scarb build -p pd`, `scarb build -p pe`); the build ERRORS are the
-result.
+result. Pinned to Scarb 2.20.1 / Cairo 2.20.0 since TC2 (its `.tool-versions` travels with the
+copy; every package inherits `cairo-version`): the `pd` and `pe` diagnostics are the same as on
+2.19.4, word for word.
 
 | package | role |
 |---|---|
