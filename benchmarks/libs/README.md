@@ -4,9 +4,9 @@ Empirical Sierra-gas measurements of **cubit**, **orion**, **alexandria** and **
 operations a fixed-point linear algebra library for a provable physics engine needs, each next to a
 hand-written comparison point. Figures below are snforge 0.64.0 (scarb 2.20.1 / Cairo 2.20.0,
 re-measured by TC2-FIGS; the vendored cubit and orion carry the corelib 2.20.0 patch of TC2-LIBS).
-Against the earlier snforge 0.61.0 figures (scarb 2.19.4), every raw figure is lower by a
-per-group harness constant (-7830, -7730 for `matvec3_q32` and the two `shl_u64` bitshift
-variants), so net figures are unchanged except those two alexandria `shl_u64` variants (+100).
+Against the earlier snforge 0.61.0 figures (scarb 2.19.4), every raw figure is lower by its group
+baseline's harness constant (-7830, -7730 for `matvec3_q32`), so net figures are unchanged, except
+alexandria's two `shl_u64` bitshift variants: they drop by 7730 against a 7830 baseline (net +100).
 
 The full, generated report is [`GAS.md`](GAS.md) (50 groups, 131 variants plus their baselines).
 This file explains how the numbers were obtained and what to conclude from them.
