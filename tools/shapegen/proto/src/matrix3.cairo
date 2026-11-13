@@ -54,15 +54,15 @@ pub impl Matrix3Impl<
     #[inline(always)]
     fn zeros() -> Matrix3<T> {
         Matrix3 {
-            m11: R::ZERO,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m12: R::ZERO,
-            m22: R::ZERO,
-            m32: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ZERO,
+            m11: R::zero(),
+            m21: R::zero(),
+            m31: R::zero(),
+            m12: R::zero(),
+            m22: R::zero(),
+            m32: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::zero(),
         }
     }
 
@@ -103,15 +103,15 @@ pub impl Matrix3Impl<
     #[inline(always)]
     fn identity() -> Matrix3<T> {
         Matrix3 {
-            m11: R::ONE,
-            m21: R::ZERO,
-            m31: R::ZERO,
-            m12: R::ZERO,
-            m22: R::ONE,
-            m32: R::ZERO,
-            m13: R::ZERO,
-            m23: R::ZERO,
-            m33: R::ONE,
+            m11: R::one(),
+            m21: R::zero(),
+            m31: R::zero(),
+            m12: R::zero(),
+            m22: R::one(),
+            m32: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
+            m33: R::one(),
         }
     }
 

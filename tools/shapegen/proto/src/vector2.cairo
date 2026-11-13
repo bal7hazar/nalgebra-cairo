@@ -51,7 +51,7 @@ pub impl Vector2Impl<
     /// The zero 2-dimensional column vector. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> Vector2<T> {
-        Vector2 { x: R::ZERO, y: R::ZERO }
+        Vector2 { x: R::zero(), y: R::zero() }
     }
 
     /// The 2-dimensional column vector whose components all equal `elem`. Upstream: `from_element`.

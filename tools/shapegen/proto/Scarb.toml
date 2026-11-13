@@ -2,18 +2,24 @@
 name = "shapegen_proto"
 version = "0.1.0"
 edition = "2024_07"
-cairo-version = "2.19.4"
+cairo-version = "2.20.0"
 publish = false
 
 [dependencies]
-simba = "0.2.0"
+simba = "0.3.0"
 
 [dev-dependencies]
-fixed = "0.4.0"
-nalgebra = { path = "../../../crates/nalgebra" }
+fixed = "0.5.0"
+nalgebra_core = { path = "../../../crates/core", default-features = false }
+nalgebra_static2 = { path = "../../../crates/static2", default-features = false }
+nalgebra_static3 = { path = "../../../crates/static3", default-features = false }
+nalgebra_static6_tall = { path = "../../../crates/static6_tall", default-features = false }
+nalgebra_types2 = { path = "../../../crates/types2", default-features = false }
+nalgebra_types3 = { path = "../../../crates/types3", default-features = false }
+nalgebra_types6 = { path = "../../../crates/types6", default-features = false }
 nalgebra_testing = { path = "../../../crates/testing" }
-snforge_std = "0.61.0"
-assert_macros = "2.19.4"
+snforge_std = "0.64.0"
+assert_macros = "2.20.0"
 
 [tool.fmt]
 sort-module-level-items = true

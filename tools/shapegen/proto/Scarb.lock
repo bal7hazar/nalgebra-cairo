@@ -3,50 +3,177 @@ version = 1
 
 [[package]]
 name = "fixed"
-version = "0.3.0"
+version = "0.5.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:2f5867291f4bc0660ee113c1cb5e3edac65515dc4fb8618283d26b30bd13a021"
+checksum = "sha256:697d3e82f4eb156e56dfcc025d96fd77edca6d05878a0fc16d3ac8c664230fb9"
 
 [[package]]
-name = "nalgebra"
-version = "0.1.0"
+name = "nalgebra_core"
+version = "0.3.0"
 dependencies = [
  "simba",
 ]
 
 [[package]]
+name = "nalgebra_static2"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_static3"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_static2",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_static4"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_static2",
+ "nalgebra_static3",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_static5"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_static2",
+ "nalgebra_static3",
+ "nalgebra_static4",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_static6_tall"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_static2",
+ "nalgebra_static3",
+ "nalgebra_static4",
+ "nalgebra_static5",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "nalgebra_types6",
+ "simba",
+]
+
+[[package]]
 name = "nalgebra_testing"
-version = "0.1.0"
+version = "0.3.0"
+
+[[package]]
+name = "nalgebra_types2"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_types3"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_types2",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_types4"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_types5"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "simba",
+]
+
+[[package]]
+name = "nalgebra_types6"
+version = "0.3.0"
+dependencies = [
+ "nalgebra_core",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types4",
+ "nalgebra_types5",
+ "simba",
+]
 
 [[package]]
 name = "shapegen_proto"
 version = "0.1.0"
 dependencies = [
  "fixed",
- "nalgebra",
+ "nalgebra_core",
+ "nalgebra_static2",
+ "nalgebra_static3",
+ "nalgebra_static6_tall",
  "nalgebra_testing",
+ "nalgebra_types2",
+ "nalgebra_types3",
+ "nalgebra_types6",
  "simba",
  "snforge_std",
 ]
 
 [[package]]
 name = "simba"
-version = "0.1.0"
+version = "0.3.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:b2477769287bb0f3e920410c480ab6bf8117cef5f6b960b35f056c044863de13"
 dependencies = [
  "fixed",
 ]
 
 [[package]]
 name = "snforge_scarb_plugin"
-version = "0.61.0"
+version = "0.64.1"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:6b5d7d4e3fc03b00a9913cb31c9bcf2a1fde23c10760e776fdac493b1f39086b"
+checksum = "sha256:811790c3a1b0c4008c3da568ba2bb4204ecedadb15a0b73fed4b81572bb66e88"
 
 [[package]]
 name = "snforge_std"
-version = "0.61.0"
+version = "0.64.1"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:e54712a6a33b746e1898db099688ed8b980eaed24d4dd21abf54285f04cf3aeb"
+checksum = "sha256:01fe1a1853f8899a455cdc99a408a56f76cc6c069abdf56dcf98709665c272e8"
 dependencies = [
  "snforge_scarb_plugin",
 ]

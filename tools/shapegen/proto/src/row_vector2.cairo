@@ -51,7 +51,7 @@ pub impl RowVector2Impl<
     /// The zero 2-dimensional row vector. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> RowVector2<T> {
-        RowVector2 { x: R::ZERO, y: R::ZERO }
+        RowVector2 { x: R::zero(), y: R::zero() }
     }
 
     /// The 2-dimensional row vector whose components all equal `elem`. Upstream: `from_element`.

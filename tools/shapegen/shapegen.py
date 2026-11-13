@@ -219,14 +219,14 @@ def family_construction(s: Shape, shapes: set[Shape], out: ShapeFile):
     ))
     out.methods.append(method(
         "zeros", f"The zero {s.kind}. Upstream: `zeros`.",
-        f"zeros() -> {S}<T>", s.lit({k: "R::ZERO" for k in s.fields})))
+        f"zeros() -> {S}<T>", s.lit({k: "R::zero()" for k in s.fields})))
     for name, note in (("from_element", "Upstream: `from_element`."),
                        ("repeat", "Alias of `from_element`. Upstream: `repeat`.")):
         out.methods.append(method(
             name, f"The {s.kind} whose components all equal `elem`. {note}",
             f"{name}(elem: T) -> {S}<T>", s.lit({k: "elem" for k in s.fields})))
     if s.is_square:
-        ident = {s.f(i, j): ("R::ONE" if i == j else "R::ZERO")
+        ident = {s.f(i, j): ("R::one()" if i == j else "R::zero()")
                  for i in range(s.r) for j in range(s.c)}
         out.methods.append(method(
             "identity", f"The identity matrix. Upstream: `{upstream(s)}::identity`.",
@@ -762,8 +762,10 @@ def use_lines(body: str, shapes: list[Shape], methods_on: set[Shape], extra: set
     """The `use` lines a generated test module needs, and no more (no unused-import warning):
     a struct when its name appears, its trait when named or when its methods are called."""
     uses = set(extra)
-    if re.search(r"\bmul_mat\b", body):
+    if re.search(r"(?<!HMatrixMul::)\bmul_mat\b", body):
         uses.add("crate::MatrixMul")
+    if re.search(r"\bHMatrixMul::", body):
+        uses.add(f"{HANDWRITTEN_MATRIX_MUL} as HMatrixMul")
     if re.search(r"\berrors::", body):
         uses.add("crate::errors")
     if re.search(r"\bReal::", body):
@@ -776,10 +778,9 @@ def use_lines(body: str, shapes: list[Shape], methods_on: set[Shape], extra: set
             uses.add(f"crate::{s.module}::{{{', '.join(names)}}}" if len(names) > 1
                      else f"crate::{s.module}::{names[0]}")
     for hname in HANDWRITTEN.values():
-        names = [f"{n} as H{n}" for n in (hname, f"{hname}Trait")
-                 if re.search(rf"\bH{n}\b", body)]
-        if names:
-            uses.add(f"nalgebra::base::{hname.lower()}::{{{', '.join(names)}}}")
+        for crate, n in zip(HANDWRITTEN_CRATES[hname], (hname, f"{hname}Trait")):
+            if re.search(rf"\bH{n}\b", body):
+                uses.add(f"{crate}::base::{hname.lower()}::{n} as H{n}")
     return "\n".join(f"use {u};" for u in sorted(uses))
 
 
@@ -800,6 +801,18 @@ HANDWRITTEN = {
     Shape(2, 2): "Matrix2",
     Shape(3, 3): "Matrix3",
 }
+
+# The packages of the package split that hold each hand-written shape (struct, trait), and its
+# `MatrixMul`: the prototype depends on them, not on the `nalgebra` facade, whose test build does
+# not fit the 8 GiB build cap (TC2).
+HANDWRITTEN_CRATES = {
+    "Vector2": ("nalgebra_types2", "nalgebra_static2"),
+    "Vector3": ("nalgebra_types3", "nalgebra_static3"),
+    "Vector6": ("nalgebra_types6", "nalgebra_static6_tall"),
+    "Matrix2": ("nalgebra_types2", "nalgebra_static2"),
+    "Matrix3": ("nalgebra_types3", "nalgebra_static3"),
+}
+HANDWRITTEN_MATRIX_MUL = "nalgebra_core::base::matrix_mul::MatrixMul"
 
 # (op, arity, returns a shape?) of the overlapping surface, and the shapes that have it.
 COMPARE_OPS = {
@@ -823,8 +836,6 @@ def render_compare(shapes: list[Shape]) -> str:
         if s not in shapeset:
             continue
         uses.add(f"crate::{s.module}::{{{s.name}, {s.name}Trait}}")
-        uses.add(f"nalgebra::base::{hname.lower()}::{{{hname} as H{hname}, "
-                 f"{hname}Trait as H{hname}Trait}}")
         fns.append(f"fn to_h_{s.module}(g: {s.name}<Fixed>) -> H{hname}<Fixed> {{\n"
                    f"{hw_literal(s, {f: f'g.{f}' for f in s.fields})}\n}}")
         vec = Shape(s.r, 1) if s.is_square and s.r > 1 else None
@@ -934,7 +945,9 @@ def call(op: str, s: Shape, side: str, c: Case, vec, literal: bool) -> str:
     return {"zeros": f"{trait}::zeros()", "identity": f"{trait}::identity()",
             "add": f"({a} + {b})", "sub": f"({a} - {b})", "neg": f"(-{a})",
             "scale": f"{a}.scale({k})", "transpose": f"{a}.transpose()", "mul": f"({a} * {b})",
-            "mul_vec": f"{a}.mul_vec({v})", "dot": f"{a}.dot({b})", "cross": f"{a}.cross({b})",
+            # the hand-written shapes lost `mul_vec` for `MatrixMul::mul_mat` (WP 8.1b-3)
+            "mul_vec": f"{a}.mul_vec({v})" if side == "g" else f"HMatrixMul::mul_mat({a}, {v})",
+            "dot": f"{a}.dot({b})", "cross": f"{a}.cross({b})",
             "norm_squared": f"{a}.norm_squared()",
             "determinant": f"{a}.determinant()"}[op]
 
@@ -1079,17 +1092,17 @@ MANIFEST = """[package]
 name = "{name}"
 version = "0.1.0"
 edition = "2024_07"
-cairo-version = "2.19.4"
+cairo-version = "2.20.0"
 publish = false
 
 [dependencies]
-simba = "0.2.0"
+simba = "0.3.0"
 
 [dev-dependencies]
-fixed = "0.4.0"
+fixed = "0.5.0"
 {nalgebra}nalgebra_testing = {{ path = "{root}/crates/testing" }}
-snforge_std = "0.61.0"
-assert_macros = "2.19.4"
+snforge_std = "0.64.0"
+assert_macros = "2.20.0"
 
 [tool.fmt]
 sort-module-level-items = true
@@ -1106,7 +1119,9 @@ def generate(pkg: Path, shapes: list[Shape], compare: bool, tests: bool, manifes
     if src.exists():
         shutil.rmtree(src)
     (src / "tests").mkdir(parents=True)
-    nalgebra = f'nalgebra = {{ path = "{manifest_root}/crates/nalgebra" }}\n' if compare else ""
+    crates = sorted({c for pair in HANDWRITTEN_CRATES.values() for c in pair} | {"nalgebra_core"})
+    nalgebra = "".join(f'{c} = {{ path = "{manifest_root}/crates/{c.removeprefix("nalgebra_")}", '
+                       f'default-features = false }}\n' for c in crates) if compare else ""
     (pkg / "Scarb.toml").write_text(MANIFEST.format(root=manifest_root, name=name,
                                                     nalgebra=nalgebra))
     shapeset = set(shapes)

@@ -2,6 +2,7 @@
 name = "pa"
 version.workspace = true
 edition.workspace = true
+cairo-version.workspace = true
 experimental-features = ["user_defined_inline_macros", "associated_item_constraints"]
 [dependencies]
 [dev-dependencies]

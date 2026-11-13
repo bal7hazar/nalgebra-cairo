@@ -52,7 +52,7 @@ pub impl Vector3Impl<
     /// The zero 3-dimensional column vector. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> Vector3<T> {
-        Vector3 { x: R::ZERO, y: R::ZERO, z: R::ZERO }
+        Vector3 { x: R::zero(), y: R::zero(), z: R::zero() }
     }
 
     /// The 3-dimensional column vector whose components all equal `elem`. Upstream: `from_element`.

@@ -50,7 +50,7 @@ pub impl Matrix1Impl<
     /// The zero 1x1 matrix. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> Matrix1<T> {
-        Matrix1 { x: R::ZERO }
+        Matrix1 { x: R::zero() }
     }
 
     /// The 1x1 matrix whose components all equal `elem`. Upstream: `from_element`.
@@ -69,7 +69,7 @@ pub impl Matrix1Impl<
     /// The identity matrix. Upstream: `Vector1::identity`.
     #[inline(always)]
     fn identity() -> Matrix1<T> {
-        Matrix1 { x: R::ONE }
+        Matrix1 { x: R::one() }
     }
 
     /// `self * k`, each component floored once. Panics on overflow. Upstream: `scale` (`self * k`).

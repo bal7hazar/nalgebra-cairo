@@ -54,7 +54,12 @@ pub impl Matrix2x3Impl<
     #[inline(always)]
     fn zeros() -> Matrix2x3<T> {
         Matrix2x3 {
-            m11: R::ZERO, m21: R::ZERO, m12: R::ZERO, m22: R::ZERO, m13: R::ZERO, m23: R::ZERO,
+            m11: R::zero(),
+            m21: R::zero(),
+            m12: R::zero(),
+            m22: R::zero(),
+            m13: R::zero(),
+            m23: R::zero(),
         }
     }
 

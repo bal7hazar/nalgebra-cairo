@@ -53,7 +53,9 @@ pub impl RowVector6Impl<
     /// The zero 6-dimensional row vector. Upstream: `zeros`.
     #[inline(always)]
     fn zeros() -> RowVector6<T> {
-        RowVector6 { x: R::ZERO, y: R::ZERO, z: R::ZERO, w: R::ZERO, a: R::ZERO, b: R::ZERO }
+        RowVector6 {
+            x: R::zero(), y: R::zero(), z: R::zero(), w: R::zero(), a: R::zero(), b: R::zero(),
+        }
     }
 
     /// The 6-dimensional row vector whose components all equal `elem`. Upstream: `from_element`.
