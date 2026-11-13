@@ -11,10 +11,16 @@ plus its pinned dependencies alexandria@800f5ad and cubit@6275608 which fail too
 machinery is one ~106-method trait implemented for 11 element types, spread over 244 source files
 (108 for the tensor operators alone); porting it was out of the time box.
 
-Verbatim files (byte-identical to upstream):
+Verbatim files (byte-identical to upstream, except the corelib 2.20.0 patch below):
   - src/numbers/fixed_point/core.cairo, utils.cairo
   - src/numbers/fixed_point/implementations/{fp16x16,fp32x32,fp64x64}{.cairo,/**}
   - src/operators/tensor/linalg/matmul.cairo
+
+Corelib 2.20.0 patch (TC2-LIBS, 2026-11-13): `core::integer::u32_as_non_zero` was removed. Each
+`integer::u32_as_non_zero(x)` became `x.try_into().unwrap()` (corelib's TryInto<T, NonZero<T>>,
+which also panics on zero; every argument is a non-zero constant): 8 call sites, in
+src/numbers/fixed_point/implementations/fp16x16/math/{core,trig}.cairo. Same results: the 64 unit
+tests pass before (2.19.4) and after (2.20.1); Sierra gas moves only by the toolchain's offset.
 
 Verbatim with one marked PATCH:
   - src/operators/vec.cairo: `VecTrait` (from alexandria_data_structures@800f5ad) inlined.

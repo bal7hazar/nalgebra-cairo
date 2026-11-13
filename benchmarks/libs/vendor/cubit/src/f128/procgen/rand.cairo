@@ -1,5 +1,5 @@
 use core::array::ArrayTrait;
-use core::integer::{u128_safe_divmod, u128_as_non_zero, u256_from_felt252};
+use core::integer::{u128_safe_divmod, u256_from_felt252};
 use core::traits::Into;
 
 use cubit::f128::types::fixed::{Fixed, FixedTrait, ONE_u128};

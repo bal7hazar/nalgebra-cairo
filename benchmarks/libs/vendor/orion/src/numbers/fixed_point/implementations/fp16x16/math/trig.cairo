@@ -147,7 +147,7 @@ fn cos_fast(a: FP16x16) -> FP16x16 {
 
 fn sin(a: FP16x16) -> FP16x16 {
     let a1 = a.mag % TWO_PI;
-    let (whole_rem, partial_rem) = integer::u32_safe_divmod(a1, integer::u32_as_non_zero(PI));
+    let (whole_rem, partial_rem) = integer::u32_safe_divmod(a1, PI.try_into().unwrap());
     let a2 = FixedTrait::new(partial_rem, false);
     let partial_sign = whole_rem == 1;
 
@@ -158,7 +158,7 @@ fn sin(a: FP16x16) -> FP16x16 {
 
 fn sin_fast(a: FP16x16) -> FP16x16 {
     let a1 = a.mag % TWO_PI;
-    let (whole_rem, mut partial_rem) = integer::u32_safe_divmod(a1, integer::u32_as_non_zero(PI));
+    let (whole_rem, mut partial_rem) = integer::u32_safe_divmod(a1, PI.try_into().unwrap());
     let partial_sign = whole_rem == 1;
 
     if partial_rem >= HALF_PI {

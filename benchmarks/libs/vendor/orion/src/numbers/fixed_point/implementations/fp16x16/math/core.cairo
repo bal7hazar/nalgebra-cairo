@@ -29,7 +29,7 @@ fn add(a: FP16x16, b: FP16x16) -> FP16x16 {
 }
 
 fn ceil(a: FP16x16) -> FP16x16 {
-    let (div, rem) = integer::u32_safe_divmod(a.mag, integer::u32_as_non_zero(ONE));
+    let (div, rem) = integer::u32_safe_divmod(a.mag, ONE.try_into().unwrap());
 
     if rem == 0 {
         a
@@ -65,7 +65,7 @@ fn exp2(a: FP16x16) -> FP16x16 {
         return FixedTrait::ONE();
     }
 
-    let (int_part, frac_part) = integer::u32_safe_divmod(a.mag, integer::u32_as_non_zero(ONE));
+    let (int_part, frac_part) = integer::u32_safe_divmod(a.mag, ONE.try_into().unwrap());
     let int_res = FixedTrait::new_unscaled(lut::exp2(int_part), false);
     let mut res_u = int_res;
 
@@ -93,7 +93,7 @@ fn exp2_int(exp: u32) -> FP16x16 {
 }
 
 fn floor(a: FP16x16) -> FP16x16 {
-    let (div, rem) = integer::u32_safe_divmod(a.mag, integer::u32_as_non_zero(ONE));
+    let (div, rem) = integer::u32_safe_divmod(a.mag, ONE.try_into().unwrap());
 
     if rem == 0 {
         a
@@ -206,7 +206,7 @@ fn neg(a: FP16x16) -> FP16x16 {
 // self is a FP16x16 point value
 // b is a FP16x16 point value
 fn pow(a: FP16x16, b: FP16x16) -> FP16x16 {
-    let (_, rem) = integer::u32_safe_divmod(b.mag, integer::u32_as_non_zero(ONE));
+    let (_, rem) = integer::u32_safe_divmod(b.mag, ONE.try_into().unwrap());
 
     // use the more performant integer pow when y is an int
     if (rem == 0) {
@@ -231,7 +231,7 @@ fn pow_int(a: FP16x16, b: u32, sign: bool) -> FP16x16 {
     }
 
     let mut y = FixedTrait::ONE();
-    let two = integer::u32_as_non_zero(2);
+    let two = 2_u32.try_into().unwrap();
 
     while n > 1 {
         let (div, rem) = integer::u32_safe_divmod(n, two);
@@ -252,7 +252,7 @@ fn rem(a: FP16x16, b: FP16x16) -> FP16x16 {
 }
 
 fn round(a: FP16x16) -> FP16x16 {
-    let (div, rem) = integer::u32_safe_divmod(a.mag, integer::u32_as_non_zero(ONE));
+    let (div, rem) = integer::u32_safe_divmod(a.mag, ONE.try_into().unwrap());
 
     if (HALF <= rem) {
         FixedTrait::new_unscaled(div + 1, a.sign)

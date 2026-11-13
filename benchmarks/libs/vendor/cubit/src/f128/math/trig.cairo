@@ -1,5 +1,5 @@
 use core::debug::PrintTrait;
-use core::integer::{u128_safe_divmod, u128_as_non_zero};
+use core::integer::{u128_safe_divmod};
 use core::option::OptionTrait;
 
 use cubit::f128::math::lut;
@@ -151,7 +151,7 @@ fn cos_fast(a: Fixed) -> Fixed {
 
 fn sin(a: Fixed) -> Fixed {
     let a1_u128 = a.mag % (2 * PI_u128);
-    let (whole_rem, partial_rem) = u128_safe_divmod(a1_u128, u128_as_non_zero(PI_u128));
+    let (whole_rem, partial_rem) = u128_safe_divmod(a1_u128, PI_u128.try_into().unwrap());
     let a2 = FixedTrait::new(partial_rem, false);
     let partial_sign = whole_rem == 1;
 
@@ -161,7 +161,7 @@ fn sin(a: Fixed) -> Fixed {
 
 fn sin_fast(a: Fixed) -> Fixed {
     let a1_u128 = a.mag % (2 * PI_u128);
-    let (whole_rem, mut partial_rem) = u128_safe_divmod(a1_u128, u128_as_non_zero(PI_u128));
+    let (whole_rem, mut partial_rem) = u128_safe_divmod(a1_u128, PI_u128.try_into().unwrap());
     let partial_sign = whole_rem == 1;
 
     if partial_rem >= HALF_PI_u128 {

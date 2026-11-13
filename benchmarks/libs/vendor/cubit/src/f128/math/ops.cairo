@@ -3,7 +3,7 @@ use core::option::OptionTrait;
 use core::result::{ResultTrait, ResultTraitImpl};
 use core::traits::{Into, TryInto};
 use core::integer;
-use core::integer::{u256_safe_div_rem, u256_as_non_zero, upcast};
+use core::integer::{u256_safe_div_rem, upcast};
 use core::num::traits::{Sqrt, WideMul};
 
 use cubit::f128::math::lut;
@@ -188,7 +188,7 @@ fn lt(a: Fixed, b: Fixed) -> bool {
 fn mul(a: Fixed, b: Fixed) -> Fixed {
     let res_u256: u256 = WideMul::wide_mul(a.mag, b.mag);
     let ONE_u256 = u256 { low: ONE_u128, high: 0 };
-    let (scaled_u256, _) = u256_safe_div_rem(res_u256, u256_as_non_zero(ONE_u256));
+    let (scaled_u256, _) = u256_safe_div_rem(res_u256, ONE_u256.try_into().unwrap());
 
     assert(scaled_u256.high == 0, 'result overflow');
 
@@ -250,7 +250,7 @@ fn pow_int(a: Fixed, b: u128, sign: bool) -> Fixed {
     }
 
     let mut y = FixedTrait::ONE();
-    let two = integer::u128_as_non_zero(2);
+    let two = 2_u128.try_into().unwrap();
 
     loop {
         if n <= 1 {
@@ -300,7 +300,7 @@ fn sub(a: Fixed, b: Fixed) -> Fixed {
 
 // Ignores sign and always returns false
 fn _split_unsigned(a: Fixed) -> (u128, u128) {
-    return integer::u128_safe_divmod(a.mag, integer::u128_as_non_zero(ONE_u128));
+    return integer::u128_safe_divmod(a.mag, ONE_u128.try_into().unwrap());
 }
 
 // Tests --------------------------------------------------------------------------------------------------------------

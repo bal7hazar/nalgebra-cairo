@@ -1,6 +1,6 @@
 use core::debug::PrintTrait;
 
-use core::integer::{U128DivRem, u128_as_non_zero};
+use core::integer::{U128DivRem};
 use core::ops::{AddAssign, DivAssign, MulAssign, SubAssign};
 use core::option::OptionTrait;
 use core::result::{ResultTrait, ResultTraitImpl};
@@ -521,7 +521,7 @@ impl PackFixed of StorePacking<Fixed, felt252> {
 
     fn unpack(value: felt252) -> Fixed {
         let value_u128: u128 = value.try_into().unwrap();
-        let (q, r) = U128DivRem::div_rem(value_u128, u128_as_non_zero(0x10000000000000000));
+        let (q, r) = U128DivRem::div_rem(value_u128, 0x10000000000000000_u128.try_into().unwrap());
         let mag: u64 = r.try_into().unwrap();
         let sign: bool = q.into() == 1;
         Fixed { mag: mag, sign: sign }
