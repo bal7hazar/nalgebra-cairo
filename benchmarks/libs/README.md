@@ -2,11 +2,11 @@
 
 Empirical Sierra-gas measurements of **cubit**, **orion**, **alexandria** and **origami** on the
 operations a fixed-point linear algebra library for a provable physics engine needs, each next to a
-hand-written comparison point. Figures below were measured with scarb 2.19.4 / Cairo 2.19.4,
-snforge 0.61.0; the package now builds and runs on scarb 2.20.1 / Cairo 2.20.0, snforge 0.64.0
-(TC2-LIBS), where `gas/` is re-snapshotted. There, every variant moves by its group baseline's
-toolchain offset (net unchanged), except alexandria's two `shl_u64` bitshift variants (net +100);
-the curated figures below are re-measured by TC2-FIGS.
+hand-written comparison point. Figures below are snforge 0.64.0 (scarb 2.20.1 / Cairo 2.20.0,
+re-measured by TC2-FIGS; the vendored cubit and orion carry the corelib 2.20.0 patch of TC2-LIBS).
+Against the earlier snforge 0.61.0 figures (scarb 2.19.4), every raw figure is lower by its group
+baseline's harness constant (-7830, -7730 for `matvec3_q32`), so net figures are unchanged, except
+alexandria's two `shl_u64` bitshift variants: they drop by 7730 against a 7830 baseline (net +100).
 
 The full, generated report is [`GAS.md`](GAS.md) (50 groups, 131 variants plus their baselines).
 This file explains how the numbers were obtained and what to conclude from them.
@@ -158,7 +158,7 @@ accuracy, i.e. cheaper **and** 10 000x more accurate than the LUT.
 |---|---:|---:|---:|
 | `isqrt(u128)`: `fast_sqrt(x, 40)` vs `Sqrt::sqrt` | 740 770 | **1 180** | x628 |
 | `x >> 16` (u64): `BitShift::shr` / `OptBitShift::shr` (LUT) vs `x / 0x10000` | 18 620 / 3 320 | **1 010** | x18 / x3.3 |
-| `x << 16` (u64): `BitShift::shl` / `OptBitShift::shl` vs `x * 0x10000` | 20 063 / 4 863 | **470** | x43 / x10 |
+| `x << 16` (u64): `BitShift::shl` / `OptBitShift::shl` vs `x * 0x10000` | 20 163 / 4 963 | **470** | x43 / x11 |
 | `2^n`: `pow` / `fast_power` / `const_pow::pow2` (LUT) vs `core Pow` | 17 410 / 91 120 / **1 540** | 13 950 | |
 | `dot` of 3 `u64` | 11 800 | **2 150** unrolled | x5.5 |
 | `kron` of two 3-vectors | 35 170 | **3 460** unrolled | x10 |
@@ -182,7 +182,7 @@ accuracy, i.e. cheaper **and** 10 000x more accurate than the LUT.
 | 11 | Taylor series evaluated term by term with a division per term | cubit / orion `sin`, `cos`, `tan` | sin 130 470 vs 33 300 for a Horner polynomial of the same accuracy (x3.9); `tan` = sin + cos + div = 269 140. |
 | 12 | Misleading API | orion | `FixedTrait::sin / acos / asin / atan` silently call the `_fast` LUT versions (25 290), while the accurate versions are only reachable through the module path (117 850). |
 | 13 | Newton iteration with a caller-supplied iteration count and `x/2` as the initial guess | alexandria `fast_sqrt`, `norm` | 40 iterations needed for a Q32.32 radicand (35 give a wrong answer, silently): 740 770 vs 1 180 (**x628**). `norm` of 3 small integers: x65. |
-| 14 | Variable shifts computed through a generic recursive `pow(2, n)` | alexandria `BitShift` | x18 (shr) and x43 (shl) against a literal; even the LUT version is x3.3 / x10. Fixed-point scales are compile-time constants: never shift by a runtime amount. |
+| 14 | Variable shifts computed through a generic recursive `pow(2, n)` | alexandria `BitShift` | x18 (shr) and x43 (shl) against a literal; even the LUT version is x3.3 / x11. Fixed-point scales are compile-time constants: never shift by a runtime amount. |
 | 15 | Re-implementing core traits for a foreign type | orion `FP32x32` = cubit `Fixed` | Importing orion's `FP32x32Add/Mul/Div/PartialOrd` next to cubit's own impls is a hard error on 2.19.4 (`E2313 multiple implementations`); the benchmarks have to call them by path. |
 
 ## Assessment per library
