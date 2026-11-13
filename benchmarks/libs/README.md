@@ -2,7 +2,11 @@
 
 Empirical Sierra-gas measurements of **cubit**, **orion**, **alexandria** and **origami** on the
 operations a fixed-point linear algebra library for a provable physics engine needs, each next to a
-hand-written comparison point. Toolchain: scarb 2.19.4 / Cairo 2.19.4, snforge 0.61.0.
+hand-written comparison point. Figures below were measured with scarb 2.19.4 / Cairo 2.19.4,
+snforge 0.61.0; the package now builds and runs on scarb 2.20.1 / Cairo 2.20.0, snforge 0.64.0
+(TC2-LIBS), where `gas/` is re-snapshotted. There, every variant moves by its group baseline's
+toolchain offset (net unchanged), except alexandria's two `shl_u64` bitshift variants (net +100);
+the curated figures below are re-measured by TC2-FIGS.
 
 The full, generated report is [`GAS.md`](GAS.md) (50 groups, 131 variants plus their baselines).
 This file explains how the numbers were obtained and what to conclude from them.
@@ -21,7 +25,7 @@ the parent `benchmarks` workspace, so that third-party code never leaks into it.
 | Library | Version measured | How it is consumed | Builds on 2.19.4 as a plain dependency? |
 |---|---|---|---|
 | alexandria (`alexandria_math`, `alexandria_linalg`) | 0.10.0 | **registry dependency** (scarbs.xyz) | yes |
-| cubit (influenceth) | 1.4.0 @ `8007a30` | **vendored**, 36 patched lines, test code only | no: parser error in its `#[cfg(test)]` code, git and registry (1.3.1) alike |
+| cubit (influenceth) | 1.4.0 @ `8007a30` | **vendored**, 36 patched test lines + 23 lines for corelib 2.20.0 | no: parser error in its `#[cfg(test)]` code, git and registry (1.3.1) alike |
 | origami `algebra` (dojoengine) | 1.1.2 @ `1ddafcb` | **vendored**, visibility-only patch | compiles, but every item is private: unusable |
 | orion (gizatechxyz) | 0.2.5 @ `bac0b42` | **minimal extraction** (see below) | no: 125 errors |
 
@@ -30,11 +34,13 @@ upstream URL, commit and the exact list of local changes. Summary of the patches
 
 - **cubit**: `assert(a <= b == false, ..)` became `assert((a <= b) == false, ..)` in 36 test
   assertions (`E1028 Consecutive comparison operators`, a parser error, so it fires even inside a
-  dependency's test module). Dead duplicate directories and JS files dropped. No library line
-  changed.
+  dependency's test module). Dead duplicate directories and JS files dropped. For corelib 2.20.0,
+  which removed `u{64,128,256}_as_non_zero`, each call became `x.try_into().unwrap()` (same
+  panic-on-zero semantics, non-zero constants only); no other library line changed.
 - **origami**: `pub` added on modules, structs, fields, traits and impls. Upstream declares
   `edition = "2024_07"` with `mod matrix;` in `lib.cairo`, hence `E2099 Item is not visible`.
-- **orion**: timeboxed. Kept byte-identical: the `FixedTrait`, the whole `fp16x16` implementation
+- **orion**: timeboxed. Kept byte-identical (save the corelib 2.20.0 `u32_as_non_zero` ->
+  `x.try_into().unwrap()` patch, 8 lines of `fp16x16/math`): the `FixedTrait`, the whole `fp16x16` implementation
   (orion's own code), the `fp32x32` / `fp64x64` wrappers and `tensor/linalg/matmul.cairo`.
   Extracted with verbatim function bodies: `Tensor<T>`, a `TensorTrait` cut down from ~106 methods
   to `new / at / add / matmul`, the shape / broadcasting helpers they call, the broadcasting `add`,

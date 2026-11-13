@@ -1,311 +1,311 @@
 {
   "libs::bench_alexandria::integer": {
     "isqrt_u128": {
-      "alexandria_fast_sqrt_40_iterations": 757010,
-      "baseline": 16240,
-      "core_sqrt": 17420
+      "alexandria_fast_sqrt_40_iterations": 749180,
+      "baseline": 8410,
+      "core_sqrt": 9590
     },
     "pow2_u64": {
-      "alexandria_const_pow2_lut": 18280,
-      "alexandria_fast_power": 107860,
-      "alexandria_pow": 34150,
-      "baseline": 16740,
-      "core_pow": 30690
+      "alexandria_const_pow2_lut": 10450,
+      "alexandria_fast_power": 100030,
+      "alexandria_pow": 26320,
+      "baseline": 8910,
+      "core_pow": 22860
     },
     "shl_u64": {
-      "alexandria_bitshift": 36803,
-      "alexandria_opt_bitshift_lut": 21603,
-      "baseline": 16740,
-      "reference_const_mul": 17210
+      "alexandria_bitshift": 29073,
+      "alexandria_opt_bitshift_lut": 13873,
+      "baseline": 8910,
+      "reference_const_mul": 9380
     },
     "shr_u64": {
-      "alexandria_bitshift": 35360,
-      "alexandria_opt_bitshift_lut": 20060,
-      "baseline": 16740,
-      "reference_const_div": 17750
+      "alexandria_bitshift": 27530,
+      "alexandria_opt_bitshift_lut": 12230,
+      "baseline": 8910,
+      "reference_const_div": 9920
     }
   },
   "libs::bench_alexandria::linalg": {
     "dot3_u64": {
-      "alexandria_dot": 31640,
-      "baseline": 19840,
-      "origami_vector": 31140,
-      "reference_unrolled": 21990
+      "alexandria_dot": 23810,
+      "baseline": 12010,
+      "origami_vector": 23310,
+      "reference_unrolled": 14160
     },
     "kron3_u64": {
-      "alexandria_kron": 55580,
-      "baseline": 20410,
-      "reference_unrolled": 23870
+      "alexandria_kron": 47750,
+      "baseline": 12580,
+      "reference_unrolled": 16040
     },
     "norm3_u64": {
-      "alexandria_norm": 235660,
-      "baseline": 19840,
-      "reference_unrolled": 23170
+      "alexandria_norm": 227830,
+      "baseline": 12010,
+      "reference_unrolled": 15340
     }
   },
   "libs::bench_alexandria::wad": {
     "div_wad": {
-      "alexandria_wad_div": 47570,
-      "baseline": 17840
+      "alexandria_wad_div": 39740,
+      "baseline": 10010
     },
     "mul_wad": {
-      "alexandria_wad_mul": 40540,
-      "baseline": 17840
+      "alexandria_wad_mul": 32710,
+      "baseline": 10010
     }
   },
   "libs::bench_mat": {
     "det3_q32": {
-      "baseline": 128540,
-      "origami_matrix_of_cubit": 408260,
-      "origami_matrix_of_reference": 386240,
-      "reference": 148110
+      "baseline": 120710,
+      "origami_matrix_of_cubit": 400430,
+      "origami_matrix_of_reference": 378410,
+      "reference": 140280
     },
     "inv3_q32": {
-      "baseline": 213330,
-      "origami_matrix_of_cubit": 1289430,
-      "origami_matrix_of_reference": 1254910,
-      "reference": 311820
+      "baseline": 205500,
+      "origami_matrix_of_cubit": 1281600,
+      "origami_matrix_of_reference": 1247080,
+      "reference": 303990
     },
     "matadd3_q32": {
-      "baseline": 213330,
-      "origami_matrix_of_cubit": 323660,
-      "origami_matrix_of_reference": 293180,
-      "orion_tensor_fp32x32": 1007540,
-      "reference": 227280
+      "baseline": 205500,
+      "origami_matrix_of_cubit": 315830,
+      "origami_matrix_of_reference": 285350,
+      "orion_tensor_fp32x32": 999710,
+      "reference": 219450
     },
     "matmul3_q32": {
-      "baseline": 213330,
-      "origami_matrix_of_cubit": 572340,
-      "origami_matrix_of_reference": 515470,
-      "orion_tensor_fp32x32": 562370,
-      "reference": 331050,
-      "reference_fused": 274170
+      "baseline": 205500,
+      "origami_matrix_of_cubit": 564510,
+      "origami_matrix_of_reference": 507640,
+      "orion_tensor_fp32x32": 554540,
+      "reference": 323220,
+      "reference_fused": 266340
     },
     "transpose3_q32": {
-      "baseline": 213330,
-      "origami_matrix_of_cubit": 270640,
-      "reference": 213630
+      "baseline": 205500,
+      "origami_matrix_of_cubit": 262810,
+      "reference": 205800
     }
   },
   "libs::bench_mat::matvec": {
     "matvec3_q32": {
-      "baseline": 268000,
-      "orion_mutmatrix_fp32x32": 494780,
-      "reference_fused": 288300
+      "baseline": 260270,
+      "orion_mutmatrix_fp32x32": 487050,
+      "reference_fused": 280570
     }
   },
   "libs::bench_mat::q16": {
     "matmul3_q16": {
-      "baseline": 180890,
-      "orion_tensor_fp16x16": 517040,
-      "reference_fused": 242360
+      "baseline": 173060,
+      "orion_tensor_fp16x16": 509210,
+      "reference_fused": 234530
     }
   },
   "libs::bench_q16": {
     "add_q16": {
-      "baseline": 20440,
-      "orion_fp16x16": 24490,
-      "reference": 21180
+      "baseline": 12610,
+      "orion_fp16x16": 16660,
+      "reference": 13350
     },
     "div_q16": {
-      "baseline": 20440,
-      "orion_fp16x16": 21720,
-      "reference": 25400
+      "baseline": 12610,
+      "orion_fp16x16": 13890,
+      "reference": 17570
     },
     "lt_q16": {
-      "baseline": 18840,
-      "orion_fp16x16": 19520,
-      "reference": 19710
+      "baseline": 11010,
+      "orion_fp16x16": 11690,
+      "reference": 11880
     },
     "mul_q16": {
-      "baseline": 20440,
-      "orion_fp16x16": 21720,
-      "reference": 23060
+      "baseline": 12610,
+      "orion_fp16x16": 13890,
+      "reference": 15230
     },
     "sqrt_q16": {
-      "baseline": 20440,
-      "orion_fp16x16": 22790
+      "baseline": 12610,
+      "orion_fp16x16": 14960
     }
   },
   "libs::bench_q32": {
     "add_q32": {
-      "baseline": 22040,
-      "cubit": 26090,
-      "cubit_same_sign": 26090,
-      "orion_fp32x32": 26090,
-      "reference": 22780
+      "baseline": 14210,
+      "cubit": 18260,
+      "cubit_same_sign": 18260,
+      "orion_fp32x32": 18260,
+      "reference": 14950
     },
     "div_q32": {
-      "baseline": 22040,
-      "cubit": 23790,
-      "orion_fp32x32": 23790,
-      "reference": 27470
+      "baseline": 14210,
+      "cubit": 15960,
+      "orion_fp32x32": 15960,
+      "reference": 19640
     },
     "eq_q32": {
-      "baseline": 20440,
-      "cubit": 21050,
-      "reference": 21040
+      "baseline": 12610,
+      "cubit": 13220,
+      "reference": 13210
     },
     "lt_q32": {
-      "baseline": 20440,
-      "cubit": 21120,
-      "cubit_same_sign": 22320,
-      "reference": 21310,
-      "reference_same_sign": 21310
+      "baseline": 12610,
+      "cubit": 13290,
+      "cubit_same_sign": 14490,
+      "reference": 13480,
+      "reference_same_sign": 13480
     },
     "mul_q32": {
-      "baseline": 22040,
-      "cubit": 23790,
-      "orion_fp32x32": 23790,
-      "reference": 25130,
-      "reference_bounded": 23990
+      "baseline": 14210,
+      "cubit": 15960,
+      "orion_fp32x32": 15960,
+      "reference": 17300,
+      "reference_bounded": 16160
     },
     "neg_q32": {
-      "baseline": 22040,
-      "cubit": 22340,
-      "reference": 22240
+      "baseline": 14210,
+      "cubit": 14510,
+      "reference": 14410
     },
     "sqrt_q32": {
-      "baseline": 22040,
-      "cubit": 27150,
-      "orion_fp32x32": 27150,
-      "reference": 23960
+      "baseline": 14210,
+      "cubit": 19320,
+      "orion_fp32x32": 19320,
+      "reference": 16130
     },
     "sub_q32": {
-      "baseline": 22040,
-      "cubit": 26600,
-      "cubit_same_sign": 26690,
-      "reference": 22780
+      "baseline": 14210,
+      "cubit": 18770,
+      "cubit_same_sign": 18860,
+      "reference": 14950
     }
   },
   "libs::bench_q64": {
     "add_q64": {
-      "baseline": 20440,
-      "cubit": 22680,
-      "reference": 20910
+      "baseline": 12610,
+      "cubit": 14850,
+      "reference": 13080
     },
     "div_q64": {
-      "baseline": 20440,
-      "cubit": 32020,
-      "reference": 36280
+      "baseline": 12610,
+      "cubit": 24190,
+      "reference": 28450
     },
     "lt_q64": {
-      "baseline": 18840,
-      "cubit": 19520,
-      "reference": 19710
+      "baseline": 11010,
+      "cubit": 11690,
+      "reference": 11880
     },
     "mul_q64": {
-      "baseline": 20440,
-      "cubit": 31720,
-      "orion_fp64x64": 31720,
-      "reference": 34610
+      "baseline": 12610,
+      "cubit": 23890,
+      "orion_fp64x64": 23890,
+      "reference": 26780
     },
     "sqrt_q64": {
-      "baseline": 20440,
-      "cubit": 29320,
-      "reference": 29800
+      "baseline": 12610,
+      "cubit": 21490,
+      "reference": 21970
     }
   },
   "libs::bench_trig::dec8": {
     "sin_dec8": {
-      "alexandria_fast_sin": 41190,
-      "baseline": 18020
+      "alexandria_fast_sin": 33360,
+      "baseline": 10190
     }
   },
   "libs::bench_trig::q16": {
     "sin_q16": {
-      "baseline": 18050,
-      "orion_fp16x16": 43340,
-      "orion_fp16x16_fast": 43340,
-      "orion_fp16x16_taylor": 135900
+      "baseline": 10220,
+      "orion_fp16x16": 35510,
+      "orion_fp16x16_fast": 35510,
+      "orion_fp16x16_taylor": 128070
     }
   },
   "libs::bench_trig::q32": {
     "acos_q32": {
-      "baseline": 21530,
-      "cubit": 136590,
-      "cubit_fast": 110140
+      "baseline": 13700,
+      "cubit": 128760,
+      "cubit_fast": 102310
     },
     "atan_q32": {
-      "baseline": 21530,
-      "cubit": 105270,
-      "cubit_fast": 78820
+      "baseline": 13700,
+      "cubit": 97440,
+      "cubit_fast": 70990
     },
     "cos_q32": {
-      "baseline": 21530,
-      "cubit": 156750,
-      "cubit_fast": 56600
+      "baseline": 13700,
+      "cubit": 148920,
+      "cubit_fast": 48770
     },
     "exp_q32": {
-      "baseline": 21530,
-      "cubit": 86400
+      "baseline": 13700,
+      "cubit": 78570
     },
     "ln_q32": {
-      "baseline": 21530,
-      "cubit": 91790
+      "baseline": 13700,
+      "cubit": 83960
     },
     "sin_q32": {
-      "baseline": 21530,
-      "cubit": 152000,
-      "cubit_fast": 51850,
-      "reference_poly": 54830
+      "baseline": 13700,
+      "cubit": 144170,
+      "cubit_fast": 44020,
+      "reference_poly": 47000
     },
     "tan_q32": {
-      "baseline": 21530,
-      "cubit": 290670,
-      "cubit_fast": 90870
+      "baseline": 13700,
+      "cubit": 282840,
+      "cubit_fast": 83040
     }
   },
   "libs::bench_trig::q64": {
     "sin_q64": {
-      "baseline": 18050,
-      "cubit": 478380,
-      "cubit_fast": 70650
+      "baseline": 10220,
+      "cubit": 470550,
+      "cubit_fast": 62820
     }
   },
   "libs::bench_vec": {
     "add3_q32": {
-      "baseline": 42160,
-      "cubit_vec3": 54310,
-      "origami_vector_of_cubit": 68170,
-      "reference": 46710
+      "baseline": 34330,
+      "cubit_vec3": 46480,
+      "origami_vector_of_cubit": 60340,
+      "reference": 38880
     },
     "build_vec3": {
-      "baseline": 17840,
-      "cubit_vec3": 17840,
-      "origami_vector": 19040,
-      "orion_tensor": 24150,
-      "orion_tensor_build_and_read": 31470
+      "baseline": 10010,
+      "cubit_vec3": 10010,
+      "origami_vector": 11210,
+      "orion_tensor": 16320,
+      "orion_tensor_build_and_read": 23640
     },
     "cross3_q32": {
-      "baseline": 45680,
-      "cubit_vec3": 74510,
-      "reference": 68170,
-      "reference_fused": 58890
+      "baseline": 37850,
+      "cubit_vec3": 66680,
+      "reference": 60340,
+      "reference_fused": 51060
     },
     "dot2_q32": {
-      "baseline": 42160,
-      "cubit_vec2": 50010,
-      "origami_vec2_of_cubit": 50010,
-      "reference_fused": 47750
+      "baseline": 34330,
+      "cubit_vec2": 42180,
+      "origami_vec2_of_cubit": 42180,
+      "reference_fused": 39920
     },
     "dot3_q32": {
-      "alexandria_dot_of_cubit": 71040,
-      "alexandria_dot_of_reference": 62610,
-      "baseline": 42160,
-      "cubit_vec3": 57610,
-      "origami_vector_of_cubit": 70640,
-      "origami_vector_of_reference": 62110,
-      "orion_tensor_fp32x32": 79980,
-      "reference": 54840,
-      "reference_bounded": 44510,
-      "reference_fused": 48520
+      "alexandria_dot_of_cubit": 63210,
+      "alexandria_dot_of_reference": 54780,
+      "baseline": 34330,
+      "cubit_vec3": 49780,
+      "origami_vector_of_cubit": 62810,
+      "origami_vector_of_reference": 54280,
+      "orion_tensor_fp32x32": 72150,
+      "reference": 47010,
+      "reference_bounded": 36680,
+      "reference_fused": 40690
     },
     "norm3_q32": {
-      "baseline": 42160,
-      "cubit_vec3": 63020,
-      "reference": 56760,
-      "reference_fused": 47520
+      "baseline": 34330,
+      "cubit_vec3": 55190,
+      "reference": 48930,
+      "reference_fused": 39690
     }
   }
 }
